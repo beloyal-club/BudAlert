@@ -73,7 +73,7 @@ http.route({
     try {
       // Optional: Verify API key
       const apiKey = request.headers.get("X-API-Key");
-      const expectedKey = process.env.CANNASIGNAL_INGEST_KEY;
+      const expectedKey = ((globalThis as any).process?.env?.CANNASIGNAL_INGEST_KEY) as string | undefined;
       
       if (expectedKey && apiKey !== expectedKey) {
         return corsErrorResponse("Unauthorized", 401);

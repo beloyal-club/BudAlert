@@ -77,17 +77,15 @@ export const getOutOfStock = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    let q = ctx.db.query("currentInventory");
-    
-    if (args.brandId) {
-      q = q.withIndex("by_stock_status", (q) =>
-        q.eq("inStock", false).eq("brandId", args.brandId)
-      );
-    } else {
-      q = q.filter((q) => q.eq(q.field("inStock"), false));
-    }
-    
-    const outOfStock = await q.take(args.limit || 50);
+    const outOfStock = args.brandId
+      ? await ctx.db.query("currentInventory")
+          .withIndex("by_stock_status", (q) =>
+            q.eq("inStock", false).eq("brandId", args.brandId!)
+          )
+          .take(args.limit || 50)
+      : await ctx.db.query("currentInventory")
+          .filter((q) => q.eq(q.field("inStock"), false))
+          .take(args.limit || 50);
     
     // Enrich with retailer, product, and brand data
     const enriched = await Promise.all(

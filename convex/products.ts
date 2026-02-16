@@ -12,15 +12,18 @@ export const list = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    let q = ctx.db.query("products");
-    
+    let products;
     if (args.brandId) {
-      q = q.withIndex("by_brand", (q) => q.eq("brandId", args.brandId));
+      products = await ctx.db.query("products")
+        .withIndex("by_brand", (q) => q.eq("brandId", args.brandId!))
+        .take(args.limit || 100);
     } else if (args.category) {
-      q = q.withIndex("by_category", (q) => q.eq("category", args.category));
+      products = await ctx.db.query("products")
+        .withIndex("by_category", (q) => q.eq("category", args.category!))
+        .take(args.limit || 100);
+    } else {
+      products = await ctx.db.query("products").take(args.limit || 100);
     }
-    
-    const products = await q.take(args.limit || 100);
     
     // Enrich with brand data
     const enriched = await Promise.all(

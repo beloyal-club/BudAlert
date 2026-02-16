@@ -11,13 +11,12 @@ export const list = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    let q = ctx.db.query("brands");
-    
     if (args.category) {
-      q = q.withIndex("by_category", (q) => q.eq("category", args.category));
+      return await ctx.db.query("brands")
+        .withIndex("by_category", (q) => q.eq("category", args.category!))
+        .take(args.limit || 100);
     }
-    
-    return await q.take(args.limit || 100);
+    return await ctx.db.query("brands").take(args.limit || 100);
   },
 });
 

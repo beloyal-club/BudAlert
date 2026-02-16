@@ -9,7 +9,7 @@
     "build": "cd dashboard && npm run build"
   },
   "dependencies": {
-    "convex": "^1.17.0",
+    "convex": "^1.31.7",
     "hono": "^4.5.0"
   },
   "devDependencies": {

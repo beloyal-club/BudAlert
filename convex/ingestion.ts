@@ -112,7 +112,7 @@ export const ingestScrapedBatch = mutation({
               firstSeenAt: Date.now(),
               lastSeenAt: Date.now(),
             });
-            product = await ctx.db.get(productId);
+            product = (await ctx.db.get(productId)) ?? undefined;
           } else {
             await ctx.db.patch(product._id, { lastSeenAt: Date.now() });
           }
