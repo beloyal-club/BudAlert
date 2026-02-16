@@ -29,11 +29,14 @@ Build a working CannaSignal MVP that can:
 - [ ] Convex deployment (needs credentials)
 - [ ] Sub-agent spawning
 
-### Phase 1: Database Layer (Hours 1-2)
-- [ ] Full schema from spec
-- [ ] Basic queries/mutations
-- [ ] Seed data (NYS retailers list)
-- [ ] Internal functions for normalization
+### Phase 1: Database Layer (Hours 1-2) ✅ COMPLETE
+- [x] Full schema from spec (11 tables)
+- [x] Basic queries/mutations (retailers, brands, products, inventory, analytics)
+- [x] Seed data: **98 NYS retailers** catalogued (593 total licensed in NYS)
+  - 15 on Dutchie
+  - NYC: 40+ | Long Island: 10 | Hudson Valley: 8 | Upstate: 35+
+- [x] HTTP routes for scraper ingestion
+- [x] TypeScript configs + generated type stubs
 
 ### Phase 2: Scraper Workers (Hours 2-4)
 - [ ] Dutchie scraper worker
@@ -68,6 +71,7 @@ Build a working CannaSignal MVP that can:
 |---------|------------|--------|---------------|
 | `cannasignal-retailer-research` | NYS retailer discovery | ✅ Done | 04:27 UTC |
 | `cannasignal-convex-setup` | TypeScript & HTTP routes | ✅ Done | 04:33 UTC |
+| `cannasignal-scraper-test` | Dutchie scraper validation | 🔄 Running | 04:36 UTC |
 
 ## ⏰ Automated Check-ins
 
@@ -103,6 +107,63 @@ Build a working CannaSignal MVP that can:
 - HTTP routes ready for Workers to call in
 - `_generated/` stubs will be replaced by real codegen after `npx convex dev`
 - Env var `CANNASIGNAL_INGEST_KEY` can be set for auth (optional)
+
+### 04:27 UTC — Retailer Research Sub-Agent (cannasignal-retailer-research)
+**Completed:**
+- ✅ **NYS OCM Verification Page Scraped**: Found **593 adult-use licensed dispensaries** statewide
+- ✅ **OCM Data API Accessed**: data.ny.gov dataset `jskf-tt3q` contains full license data
+- ✅ **Created `/root/clawd/cannasignal/data/nys-retailers.json`** with 95 verified retailers including:
+  - **15 confirmed Dutchie-powered dispensaries** with direct menu URLs
+  - Multi-location chains: FlynnStoned (9 locations), The Flowery (7), Gotham (4), Curaleaf (3), RISE (3), Etain (3), Just Breathe (3)
+  - Major MSOs: Curaleaf, Verilife, RISE, Etain (Registered Organizations)
+  - Strong indie presence: Housing Works, Travel Agency, Terp Bros, Happy Munkey
+
+**Dutchie Menu URLs Found:**
+- `dutchie.com/stores/the-bakery1` — The Bakery (Cohoes)
+- `dutchie.com/dispensary/robinsons-flower` — Robinson's Cannabis (Albany)
+- `dutchie.com/stores/high-society-dispensary-hudson-falls` — High Society (Hudson Falls)
+- `dutchie.com/dispensary/just-breathe-syracuse` — Just Breathe (Manlius)
+- `dutchie.com/dispensary/fumi-dispensary` — Fumi Dispensary (Queens Village)
+- `dutchie.com/stores/hudson-charisma` — Hudson Charisma (Newburgh)
+- `dutchie.com/dispensary/curaleaf-ny-hudson-valley` — Curaleaf (Newburgh)
+- `dutchie.com/dispensary/culture-house` — Culture House (Manhattan)
+- `dutchie.com/dispensary/riverbend-dispensary-hudson` — Riverbend (Hudson)
+- `dutchie.com/dispensary/silk-road-nyc` — Silk Road NYC (Jamaica)
+- `dutchie.com/dispensary/northern-lights1` — Northern Lights (Menands)
+- `dutchie.com/dispensary/ny-elite` — NY Elite (Bayside)
+- `dutchie.com/dispensary/elivate-ny` — Elevate NY (Mt Vernon)
+
+**Regional Distribution (in JSON):**
+- NYC: ~45 retailers (Manhattan, Brooklyn, Queens, Bronx, Staten Island)
+- Hudson Valley: ~12 retailers (White Plains, Kingston, Newburgh, etc.)
+- Long Island: ~10 retailers (Farmingdale, Riverhead, Southampton, etc.)
+- Upstate: ~28 retailers (Albany, Buffalo, Rochester, Syracuse, Ithaca, etc.)
+
+**Key Insights:**
+- OCM reports $1.02B total retail sales, $869M in 2024 alone
+- 55% of licenses held by Social & Economic Equity (SEE) applicants
+- Most retailers use custom websites, not Dutchie embeds
+- Many custom sites may still embed Dutchie iframes (needs browser scrape to verify)
+
+**JSON Schema Follows Spec:**
+```json
+{
+  "name": "...",
+  "slug": "...",
+  "licenseNumber": "...",
+  "address": { "street": "...", "city": "...", "state": "NY", "zip": "..." },
+  "region": "nyc|long_island|hudson_valley|upstate",
+  "menuPlatform": "dutchie|iheartjane|weedmaps|custom",
+  "menuUrl": "...",
+  "source": "ocm|dutchie|weedmaps"
+}
+```
+
+**Next Steps Recommended:**
+1. Use browser automation to check custom sites for embedded Dutchie iframes
+2. Cross-reference with data.ny.gov API for license numbers
+3. Expand to iHeartJane and Weedmaps menu discovery
+4. Priority scrape the 15 confirmed Dutchie URLs
 
 ---
 
