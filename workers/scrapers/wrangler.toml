@@ -1,0 +1,9 @@
+name = "cannasignal-scraper-dutchie"
+main = "dutchie.ts"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENVIRONMENT = "production"
+
+# No scheduled triggers - orchestration is done via Convex crons

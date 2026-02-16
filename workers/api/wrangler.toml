@@ -1,0 +1,15 @@
+name = "cannasignal-api"
+main = "index.ts"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENVIRONMENT = "production"
+
+# Convex URL will be set via secrets
+# wrangler secret put CONVEX_URL
+# wrangler secret put CONVEX_DEPLOY_KEY
+
+[[kv_namespaces]]
+binding = "API_KEYS"
+id = "TBD"  # Create with: wrangler kv:namespace create API_KEYS
