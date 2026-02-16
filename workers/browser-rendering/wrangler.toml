@@ -1,0 +1,8 @@
+name = "cannasignal-browser"
+main = "index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+browser = { binding = "BROWSER" }
+
+[vars]
+ENVIRONMENT = "production"
