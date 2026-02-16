@@ -1,0 +1,932 @@
+{
+  "metadata": {
+    "source": "NYS OCM Dispensary Location Verification",
+    "sourceUrl": "https://cannabis.ny.gov/dispensary-location-verification",
+    "lastUpdated": "2026-02-16",
+    "totalDispensaries": 593,
+    "retailersWithDutchie": 25,
+    "note": "593 licensed adult-use dispensaries in NYS as of Feb 2026"
+  },
+  "retailers": [
+    {
+      "name": "Housing Works Cannabis",
+      "slug": "housing-works-cannabis",
+      "licenseNumber": null,
+      "address": { "street": "750 Broadway", "city": "New York", "state": "NY", "zip": "10003" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://hwcannabis.co/",
+      "source": "ocm"
+    },
+    {
+      "name": "The Travel Agency Union Square",
+      "slug": "travel-agency-union-square",
+      "licenseNumber": null,
+      "address": { "street": "835 Broadway", "city": "New York", "state": "NY", "zip": "10003" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://www.thetravelagency.co",
+      "source": "ocm"
+    },
+    {
+      "name": "The Bakery Cannabis Dispensary",
+      "slug": "the-bakery-cannabis-dispensary",
+      "licenseNumber": null,
+      "address": { "street": "1099 Loudon Rd", "city": "Cohoes", "state": "NY", "zip": "12047" },
+      "region": "upstate",
+      "menuPlatform": "dutchie",
+      "menuUrl": "https://dutchie.com/stores/the-bakery1",
+      "source": "ocm"
+    },
+    {
+      "name": "Robinson's Cannabis",
+      "slug": "robinsons-cannabis",
+      "licenseNumber": null,
+      "address": { "street": "106 Everett Rd", "city": "Albany", "state": "NY", "zip": "12205" },
+      "region": "upstate",
+      "menuPlatform": "dutchie",
+      "menuUrl": "https://dutchie.com/dispensary/robinsons-flower",
+      "source": "ocm"
+    },
+    {
+      "name": "High Society Dispensary",
+      "slug": "high-society-dispensary-hudson-falls",
+      "licenseNumber": null,
+      "address": { "street": "345 Main St, Suite 2", "city": "Hudson Falls", "state": "NY", "zip": "12839" },
+      "region": "upstate",
+      "menuPlatform": "dutchie",
+      "menuUrl": "https://dutchie.com/stores/high-society-dispensary-hudson-falls",
+      "source": "ocm"
+    },
+    {
+      "name": "Just Breathe Syracuse",
+      "slug": "just-breathe-syracuse",
+      "licenseNumber": null,
+      "address": { "street": "185 W Seneca St", "city": "Manlius", "state": "NY", "zip": "13104" },
+      "region": "upstate",
+      "menuPlatform": "dutchie",
+      "menuUrl": "https://dutchie.com/dispensary/just-breathe-syracuse",
+      "source": "ocm"
+    },
+    {
+      "name": "Fumi Dispensary",
+      "slug": "fumi-dispensary",
+      "licenseNumber": null,
+      "address": { "street": "217-12 Hempstead Ave", "city": "Queens Village", "state": "NY", "zip": "11429" },
+      "region": "nyc",
+      "menuPlatform": "dutchie",
+      "menuUrl": "https://dutchie.com/dispensary/fumi-dispensary",
+      "source": "ocm"
+    },
+    {
+      "name": "Hudson Charisma",
+      "slug": "hudson-charisma",
+      "licenseNumber": null,
+      "address": { "street": "496 Broadway", "city": "Newburgh", "state": "NY", "zip": "12550" },
+      "region": "hudson_valley",
+      "menuPlatform": "dutchie",
+      "menuUrl": "https://dutchie.com/stores/hudson-charisma",
+      "source": "ocm"
+    },
+    {
+      "name": "Curaleaf Newburgh",
+      "slug": "curaleaf-newburgh",
+      "licenseNumber": null,
+      "address": { "street": "8 North Plank Rd", "city": "Newburgh", "state": "NY", "zip": "12550" },
+      "region": "hudson_valley",
+      "menuPlatform": "dutchie",
+      "menuUrl": "https://dutchie.com/dispensary/curaleaf-ny-hudson-valley",
+      "source": "ocm"
+    },
+    {
+      "name": "Culture House",
+      "slug": "culture-house",
+      "licenseNumber": null,
+      "address": { "street": "958 Sixth Ave", "city": "New York", "state": "NY", "zip": "10001" },
+      "region": "nyc",
+      "menuPlatform": "dutchie",
+      "menuUrl": "https://dutchie.com/dispensary/culture-house",
+      "source": "ocm"
+    },
+    {
+      "name": "Riverbend Dispensary",
+      "slug": "riverbend-dispensary",
+      "licenseNumber": null,
+      "address": { "street": "531 Warren St", "city": "Hudson", "state": "NY", "zip": "12434" },
+      "region": "hudson_valley",
+      "menuPlatform": "dutchie",
+      "menuUrl": "https://dutchie.com/dispensary/riverbend-dispensary-hudson",
+      "source": "ocm"
+    },
+    {
+      "name": "Silk Road NYC",
+      "slug": "silk-road-nyc",
+      "licenseNumber": null,
+      "address": { "street": "166-30 Jamaica Ave", "city": "Jamaica", "state": "NY", "zip": "11432" },
+      "region": "nyc",
+      "menuPlatform": "dutchie",
+      "menuUrl": "https://dutchie.com/dispensary/silk-road-nyc",
+      "source": "ocm"
+    },
+    {
+      "name": "Northern Lights Menards",
+      "slug": "northern-lights-menards",
+      "licenseNumber": null,
+      "address": { "street": "100 Broadway", "city": "Menands", "state": "NY", "zip": "12204" },
+      "region": "upstate",
+      "menuPlatform": "dutchie",
+      "menuUrl": "https://dutchie.com/dispensary/northern-lights1",
+      "source": "ocm"
+    },
+    {
+      "name": "NY Elite Cannabis",
+      "slug": "ny-elite-cannabis",
+      "licenseNumber": null,
+      "address": { "street": "4215 Bell Blvd", "city": "Bayside", "state": "NY", "zip": "11361" },
+      "region": "nyc",
+      "menuPlatform": "dutchie",
+      "menuUrl": "https://dutchie.com/dispensary/ny-elite",
+      "source": "ocm"
+    },
+    {
+      "name": "Elevate NY",
+      "slug": "elevate-ny",
+      "licenseNumber": null,
+      "address": { "street": "127 S Terrace Ave", "city": "Mt Vernon", "state": "NY", "zip": "10550" },
+      "region": "hudson_valley",
+      "menuPlatform": "dutchie",
+      "menuUrl": "https://dutchie.com/dispensary/elivate-ny",
+      "source": "ocm"
+    },
+    {
+      "name": "Gotham Buds",
+      "slug": "gotham-buds",
+      "licenseNumber": null,
+      "address": { "street": "248 W 125th St", "city": "New York", "state": "NY", "zip": "10027" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://gothambudsny.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Strain Stars Farmingdale",
+      "slug": "strain-stars-farmingdale",
+      "licenseNumber": null,
+      "address": { "street": "1815 Broadhollow Rd", "city": "Farmingdale", "state": "NY", "zip": "11735" },
+      "region": "long_island",
+      "menuPlatform": "custom",
+      "menuUrl": "https://strainstarsny.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Strain Stars Riverhead",
+      "slug": "strain-stars-riverhead",
+      "licenseNumber": null,
+      "address": { "street": "1871 Old Country Rd", "city": "Riverhead", "state": "NY", "zip": "11901" },
+      "region": "long_island",
+      "menuPlatform": "custom",
+      "menuUrl": "https://strainstarsny.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Verilife Albany",
+      "slug": "verilife-albany",
+      "licenseNumber": null,
+      "address": { "street": "2 Wade Rd", "city": "Latham", "state": "NY", "zip": "12110" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://www.verilife.com/ny",
+      "source": "ocm"
+    },
+    {
+      "name": "Verilife East Syracuse",
+      "slug": "verilife-east-syracuse",
+      "licenseNumber": null,
+      "address": { "street": "5841 Bridge St, Ste 100", "city": "East Syracuse", "state": "NY", "zip": "13057" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://www.verilife.com/ny/locations/east-syracuse",
+      "source": "ocm"
+    },
+    {
+      "name": "RISE Rochester",
+      "slug": "rise-rochester",
+      "licenseNumber": null,
+      "address": { "street": "556 Jefferson Rd", "city": "Rochester", "state": "NY", "zip": "14623" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://risecannabis.com/dispensary-locations/new-york",
+      "source": "ocm"
+    },
+    {
+      "name": "RISE Halfmoon",
+      "slug": "rise-halfmoon",
+      "licenseNumber": null,
+      "address": { "street": "1675 Route 9", "city": "Halfmoon", "state": "NY", "zip": "12065" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://risecannabis.com",
+      "source": "ocm"
+    },
+    {
+      "name": "RISE East Syracuse",
+      "slug": "rise-east-syracuse",
+      "licenseNumber": null,
+      "address": { "street": "6701 Manlius Center Rd", "city": "East Syracuse", "state": "NY", "zip": "13057" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://risecannabis.com/dispensaries/new-york/east-syracuse/",
+      "source": "ocm"
+    },
+    {
+      "name": "Curaleaf Plattsburgh",
+      "slug": "curaleaf-plattsburgh",
+      "licenseNumber": null,
+      "address": { "street": "345 Cornelia St", "city": "Plattsburgh", "state": "NY", "zip": "12901" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://curaleaf.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Curaleaf Queens",
+      "slug": "curaleaf-queens",
+      "licenseNumber": null,
+      "address": { "street": "107-18 70th Rd", "city": "Forest Hills", "state": "NY", "zip": "11375" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://curaleaf.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Etain White Plains",
+      "slug": "etain-white-plains",
+      "licenseNumber": null,
+      "address": { "street": "75 Mamaroneck Ave", "city": "White Plains", "state": "NY", "zip": "10601" },
+      "region": "hudson_valley",
+      "menuPlatform": "custom",
+      "menuUrl": "https://etainhealth.com/",
+      "source": "ocm"
+    },
+    {
+      "name": "Etain Kingston",
+      "slug": "etain-kingston",
+      "licenseNumber": null,
+      "address": { "street": "445 State Route 28", "city": "Kingston", "state": "NY", "zip": "12401" },
+      "region": "hudson_valley",
+      "menuPlatform": "custom",
+      "menuUrl": "https://www.etain.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Etain Manhattan",
+      "slug": "etain-manhattan",
+      "licenseNumber": null,
+      "address": { "street": "242 East 58th St", "city": "New York", "state": "NY", "zip": "10022" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://www.etain.com",
+      "source": "ocm"
+    },
+    {
+      "name": "The Flowery Staten Island",
+      "slug": "the-flowery-staten-island",
+      "licenseNumber": null,
+      "address": { "street": "3022 Veterans Rd W", "city": "Staten Island", "state": "NY", "zip": "10309" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://thefloweryny.com/",
+      "source": "ocm"
+    },
+    {
+      "name": "The Flowery Queens",
+      "slug": "the-flowery-queens",
+      "licenseNumber": null,
+      "address": { "street": "63-54 108th St", "city": "Forest Hills", "state": "NY", "zip": "11375" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://thefloweryny.com",
+      "source": "ocm"
+    },
+    {
+      "name": "The Flowery Brooklyn",
+      "slug": "the-flowery-brooklyn",
+      "licenseNumber": null,
+      "address": { "street": "692 Grand St", "city": "Brooklyn", "state": "NY", "zip": "11211" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://www.thefloweryny.com",
+      "source": "ocm"
+    },
+    {
+      "name": "The Flowery Upper West Side",
+      "slug": "the-flowery-upper-west-side",
+      "licenseNumber": null,
+      "address": { "street": "2465 Broadway", "city": "New York", "state": "NY", "zip": "10025" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://www.thefloweryny.com",
+      "source": "ocm"
+    },
+    {
+      "name": "The Flowery East Village",
+      "slug": "the-flowery-east-village",
+      "licenseNumber": null,
+      "address": { "street": "101 E 10th St", "city": "New York", "state": "NY", "zip": "10003" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://www.thefloweryny.com",
+      "source": "ocm"
+    },
+    {
+      "name": "The Flowery Chinatown",
+      "slug": "the-flowery-chinatown",
+      "licenseNumber": null,
+      "address": { "street": "70 Canal St", "city": "New York", "state": "NY", "zip": "10002" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://www.thefloweryny.com",
+      "source": "ocm"
+    },
+    {
+      "name": "The Flowery Richmond Hill",
+      "slug": "the-flowery-richmond-hill",
+      "licenseNumber": null,
+      "address": { "street": "2059 Richmond Ave", "city": "Staten Island", "state": "NY", "zip": "10314" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://www.thefloweryny.com/",
+      "source": "ocm"
+    },
+    {
+      "name": "Gotham CAURD",
+      "slug": "gotham-caurd",
+      "licenseNumber": null,
+      "address": { "street": "3 E 3rd St", "city": "New York", "state": "NY", "zip": "10003" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://gotham.nyc/",
+      "source": "ocm"
+    },
+    {
+      "name": "Gotham Hudson",
+      "slug": "gotham-hudson",
+      "licenseNumber": null,
+      "address": { "street": "260 Warren St", "city": "Hudson", "state": "NY", "zip": "12534" },
+      "region": "hudson_valley",
+      "menuPlatform": "custom",
+      "menuUrl": "https://www.gotham.nyc",
+      "source": "ocm"
+    },
+    {
+      "name": "Gotham Williamsburg",
+      "slug": "gotham-williamsburg",
+      "licenseNumber": null,
+      "address": { "street": "300 Kent Ave", "city": "Brooklyn", "state": "NY", "zip": "11249" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://gotham.nyc",
+      "source": "ocm"
+    },
+    {
+      "name": "Gotham Chelsea",
+      "slug": "gotham-chelsea",
+      "licenseNumber": null,
+      "address": { "street": "146 10th Ave", "city": "New York", "state": "NY", "zip": "10011" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://www.gotham.nyc",
+      "source": "ocm"
+    },
+    {
+      "name": "FlynnStoned Syracuse",
+      "slug": "flynnstoned-syracuse",
+      "licenseNumber": null,
+      "address": { "street": "219 Walton St", "city": "Syracuse", "state": "NY", "zip": "13202" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://flynnstoned.com/",
+      "source": "ocm"
+    },
+    {
+      "name": "FlynnStoned Oswego",
+      "slug": "flynnstoned-oswego",
+      "licenseNumber": null,
+      "address": { "street": "143 George St", "city": "Oswego", "state": "NY", "zip": "13126" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://flynnstoned.com",
+      "source": "ocm"
+    },
+    {
+      "name": "FlynnStoned Rochester",
+      "slug": "flynnstoned-rochester",
+      "licenseNumber": null,
+      "address": { "street": "125 State St", "city": "Rochester", "state": "NY", "zip": "14614" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://flynnstoned.com",
+      "source": "ocm"
+    },
+    {
+      "name": "FlynnStoned Greenpoint",
+      "slug": "flynnstoned-greenpoint",
+      "licenseNumber": null,
+      "address": { "street": "807 Manhattan Ave", "city": "Brooklyn", "state": "NY", "zip": "11222" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://flynnstoned.com",
+      "source": "ocm"
+    },
+    {
+      "name": "FlynnStoned Chelsea",
+      "slug": "flynnstoned-chelsea",
+      "licenseNumber": null,
+      "address": { "street": "206 8th Ave", "city": "New York", "state": "NY", "zip": "10011" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://flynnstoned.com",
+      "source": "ocm"
+    },
+    {
+      "name": "FlynnStoned Binghamton",
+      "slug": "flynnstoned-binghamton",
+      "licenseNumber": null,
+      "address": { "street": "1143 Upper Front St", "city": "Binghamton", "state": "NY", "zip": "13905" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://flynnstoned.com",
+      "source": "ocm"
+    },
+    {
+      "name": "FlynnStoned Bay Ridge",
+      "slug": "flynnstoned-bay-ridge",
+      "licenseNumber": null,
+      "address": { "street": "8112 5th Ave", "city": "Brooklyn", "state": "NY", "zip": "11209" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://flynnstoned.com",
+      "source": "ocm"
+    },
+    {
+      "name": "FlynnStoned Staten Island",
+      "slug": "flynnstoned-staten-island",
+      "licenseNumber": null,
+      "address": { "street": "755 Forest Ave", "city": "Staten Island", "state": "NY", "zip": "10310" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://flynnstoned.com/?loc=nyc-staten-island",
+      "source": "ocm"
+    },
+    {
+      "name": "FlynnStoned Baytowne",
+      "slug": "flynnstoned-baytowne",
+      "licenseNumber": null,
+      "address": { "street": "1900 Empire Blvd, Ste 190", "city": "Rochester", "state": "NY", "zip": "14580" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://flynnstoned.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Just Breathe Binghamton",
+      "slug": "just-breathe-binghamton",
+      "licenseNumber": null,
+      "address": { "street": "75 Court St", "city": "Binghamton", "state": "NY", "zip": "13901" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://justbreathelife.org/",
+      "source": "ocm"
+    },
+    {
+      "name": "Just Breathe Fingerlakes",
+      "slug": "just-breathe-fingerlakes",
+      "licenseNumber": null,
+      "address": { "street": "2988 US Route 20", "city": "Seneca Falls", "state": "NY", "zip": "13148" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://justbreatheflx.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Happy Munkey Manhattan",
+      "slug": "happy-munkey-manhattan",
+      "licenseNumber": null,
+      "address": { "street": "151 Dyckman St", "city": "New York", "state": "NY", "zip": "10040" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://happymunkey.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Happy Munkey Brooklyn",
+      "slug": "happy-munkey-brooklyn",
+      "licenseNumber": null,
+      "address": { "street": "453 Fulton St", "city": "Brooklyn", "state": "NY", "zip": "11201" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://happymunkey.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Dazed NYC",
+      "slug": "dazed-nyc",
+      "licenseNumber": null,
+      "address": { "street": "33 Union Sq. W", "city": "New York", "state": "NY", "zip": "10003" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://dazed.fun",
+      "source": "ocm"
+    },
+    {
+      "name": "Dazed Syracuse",
+      "slug": "dazed-syracuse",
+      "licenseNumber": null,
+      "address": { "street": "135 Marshall St", "city": "Syracuse", "state": "NY", "zip": "13210" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://dazed.fun",
+      "source": "ocm"
+    },
+    {
+      "name": "Good Grades",
+      "slug": "good-grades",
+      "licenseNumber": null,
+      "address": { "street": "162-03 Jamaica Ave", "city": "Jamaica", "state": "NY", "zip": "11432" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://www.goodgradesnyc.com/",
+      "source": "ocm"
+    },
+    {
+      "name": "Legacy Dispensary",
+      "slug": "legacy-dispensary",
+      "licenseNumber": null,
+      "address": { "street": "1839 Central Ave", "city": "Albany", "state": "NY", "zip": "12205" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://legacy-dispensary.com/",
+      "source": "ocm"
+    },
+    {
+      "name": "Upstate Canna Co",
+      "slug": "upstate-canna-co",
+      "licenseNumber": null,
+      "address": { "street": "1613 Union St", "city": "Schenectady", "state": "NY", "zip": "12309" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://upstate-canna.co/",
+      "source": "ocm"
+    },
+    {
+      "name": "William Jane Corporation",
+      "slug": "william-jane-corporation",
+      "licenseNumber": null,
+      "address": { "street": "119-121 E State St", "city": "Ithaca", "state": "NY", "zip": "14850" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://williamjane420.com/",
+      "source": "ocm"
+    },
+    {
+      "name": "Smacked Village",
+      "slug": "smacked-village",
+      "licenseNumber": null,
+      "address": { "street": "144 Bleecker St", "city": "New York", "state": "NY", "zip": "10012" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://getsmacked.online/",
+      "source": "ocm"
+    },
+    {
+      "name": "The Cannabis Place",
+      "slug": "the-cannabis-place",
+      "licenseNumber": null,
+      "address": { "street": "74-03 Metropolitan Ave", "city": "Middle Village", "state": "NY", "zip": "11379" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://thecannabisplace.org",
+      "source": "ocm"
+    },
+    {
+      "name": "Stage One Cannabis",
+      "slug": "stage-one-cannabis",
+      "licenseNumber": null,
+      "address": { "street": "810C Broadway", "city": "Rensselaer", "state": "NY", "zip": "12144" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://stageonedispensary.com/",
+      "source": "ocm"
+    },
+    {
+      "name": "SESH NYC",
+      "slug": "sesh-nyc",
+      "licenseNumber": null,
+      "address": { "street": "4219 Webster Ave", "city": "Bronx", "state": "NY", "zip": "10470" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://myseshnyc.com/",
+      "source": "ocm"
+    },
+    {
+      "name": "Greenery Spot",
+      "slug": "greenery-spot",
+      "licenseNumber": null,
+      "address": { "street": "246 Main St", "city": "Johnson City", "state": "NY", "zip": "13790" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://www.greeneryspot.com/",
+      "source": "ocm"
+    },
+    {
+      "name": "Statis Cannabis",
+      "slug": "statis-cannabis",
+      "licenseNumber": null,
+      "address": { "street": "817 E Tremont Ave", "city": "Bronx", "state": "NY", "zip": "10460" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://statiscannabis.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Sacred Bloom",
+      "slug": "sacred-bloom",
+      "licenseNumber": null,
+      "address": { "street": "1308 Vestal Pkwy E, 1st Floor, Set D", "city": "Vestal", "state": "NY", "zip": "13850" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://sacred-bloom.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Dank 716",
+      "slug": "dank-716",
+      "licenseNumber": null,
+      "address": { "street": "501 Main St", "city": "Buffalo", "state": "NY", "zip": "14203" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://716dank.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Herbal IQ",
+      "slug": "herbal-iq",
+      "licenseNumber": null,
+      "address": { "street": "6300 Transit Rd", "city": "Depew", "state": "NY", "zip": "14043" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://herbaliq.org",
+      "source": "ocm"
+    },
+    {
+      "name": "Canterra",
+      "slug": "canterra",
+      "licenseNumber": null,
+      "address": { "street": "451 Elmwood Ave, Ste 105", "city": "Buffalo", "state": "NY", "zip": "14222" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://canterra.co/",
+      "source": "ocm"
+    },
+    {
+      "name": "Dosha Farms",
+      "slug": "dosha-farms",
+      "licenseNumber": null,
+      "address": { "street": "76 Main St", "city": "Oneonta", "state": "NY", "zip": "13820" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://doshafarms.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Air City Cannabis",
+      "slug": "air-city-cannabis",
+      "licenseNumber": null,
+      "address": { "street": "1707 Oriskany St W", "city": "Utica", "state": "NY", "zip": "13502" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://aircitycannabis.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Elevate ADK",
+      "slug": "elevate-adk",
+      "licenseNumber": null,
+      "address": { "street": "622 Lake Flower Ave, Ste 7", "city": "Saranac Lake", "state": "NY", "zip": "12983" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://elevateadk.com/",
+      "source": "ocm"
+    },
+    {
+      "name": "Terp Bros Astoria",
+      "slug": "terp-bros-astoria",
+      "licenseNumber": null,
+      "address": { "street": "3610 Ditmars Blvd", "city": "Queens", "state": "NY", "zip": "11105" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://www.terpbrosnyc.com/",
+      "source": "ocm"
+    },
+    {
+      "name": "Terp Bros Ozone Park",
+      "slug": "terp-bros-ozone-park",
+      "licenseNumber": null,
+      "address": { "street": "135-26 Crossbay Blvd", "city": "Ozone Park", "state": "NY", "zip": "11417" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://www.terpbrosnyc.com",
+      "source": "ocm"
+    },
+    {
+      "name": "CONBUD Delancey",
+      "slug": "conbud-delancey",
+      "licenseNumber": null,
+      "address": { "street": "85 Delancey St", "city": "New York", "state": "NY", "zip": "10002" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://conbud.com",
+      "source": "ocm"
+    },
+    {
+      "name": "CONBUD Bronx",
+      "slug": "conbud-bronx",
+      "licenseNumber": null,
+      "address": { "street": "2412 Third Ave", "city": "Bronx", "state": "NY", "zip": "10454" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://www.conbudbx.com",
+      "source": "ocm"
+    },
+    {
+      "name": "CONBUD Yankee Stadium",
+      "slug": "conbud-yankee-stadium",
+      "licenseNumber": null,
+      "address": { "street": "898 Gerard Ave", "city": "Bronx", "state": "NY", "zip": "10452" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://conbud.com/locations/gerard-avenue/",
+      "source": "ocm"
+    },
+    {
+      "name": "The Highest Peak",
+      "slug": "the-highest-peak",
+      "licenseNumber": null,
+      "address": { "street": "25 Market St", "city": "Potsdam", "state": "NY", "zip": "13676" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://www.highestpeakny.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Premier Earth",
+      "slug": "premier-earth",
+      "licenseNumber": null,
+      "address": { "street": "1297 Hertel Ave", "city": "Buffalo", "state": "NY", "zip": "14216" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://premierearth.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Capital District Cannabis",
+      "slug": "capital-district-cannabis",
+      "licenseNumber": null,
+      "address": { "street": "997 Central Ave, Ste 200", "city": "Albany", "state": "NY", "zip": "12205" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://capitaldistrictcannabis.com",
+      "source": "ocm"
+    },
+    {
+      "name": "420 Bliss",
+      "slug": "420-bliss",
+      "licenseNumber": null,
+      "address": { "street": "740 Hoosick Rd", "city": "Troy", "state": "NY", "zip": "12180" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://420-bliss.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Amsterdam Cannabis",
+      "slug": "amsterdam-cannabis",
+      "licenseNumber": null,
+      "address": { "street": "1451 State Highway 5S", "city": "Amsterdam", "state": "NY", "zip": "12010" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://damcanna.com",
+      "source": "ocm"
+    },
+    {
+      "name": "MJ Dispensary",
+      "slug": "mj-dispensary",
+      "licenseNumber": null,
+      "address": { "street": "900 Jefferson Rd, Ste 902", "city": "Rochester", "state": "NY", "zip": "14623" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://mjdispensary585.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Hush Cannabis",
+      "slug": "hush-cannabis",
+      "licenseNumber": null,
+      "address": { "street": "2460 Williamsbridge Rd, Fl 1", "city": "Bronx", "state": "NY", "zip": "10469" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://hushny.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Dagmar Cannabis SoHo",
+      "slug": "dagmar-cannabis-soho",
+      "licenseNumber": null,
+      "address": { "street": "412 W Broadway", "city": "New York", "state": "NY", "zip": "10012" },
+      "region": "nyc",
+      "menuPlatform": "custom",
+      "menuUrl": "https://dagmarcannabis.com",
+      "source": "ocm"
+    },
+    {
+      "name": "The Firehaus NY",
+      "slug": "the-firehaus-ny",
+      "licenseNumber": null,
+      "address": { "street": "7479 US Highway 11", "city": "Potsdam", "state": "NY", "zip": "13676" },
+      "region": "upstate",
+      "menuPlatform": "custom",
+      "menuUrl": "https://www.thefirehausny.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Long Island Cannabis Club",
+      "slug": "long-island-cannabis-club",
+      "licenseNumber": null,
+      "address": { "street": "94 East Industry Ct", "city": "Deer Park", "state": "NY", "zip": "11729" },
+      "region": "long_island",
+      "menuPlatform": "custom",
+      "menuUrl": "https://cannabisclubli.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Happy Days Dispensary",
+      "slug": "happy-days-dispensary",
+      "licenseNumber": null,
+      "address": { "street": "105 Route 109", "city": "Farmingdale", "state": "NY", "zip": "11735" },
+      "region": "long_island",
+      "menuPlatform": "custom",
+      "menuUrl": "https://happydaysli.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Planet Nugg",
+      "slug": "planet-nugg",
+      "licenseNumber": null,
+      "address": { "street": "2043 Wellwood Ave", "city": "Farmingdale", "state": "NY", "zip": "11735" },
+      "region": "long_island",
+      "menuPlatform": "custom",
+      "menuUrl": "https://planetnugg.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Strong Strains",
+      "slug": "strong-strains",
+      "licenseNumber": null,
+      "address": { "street": "19 Technology Dr", "city": "East Setauket", "state": "NY", "zip": "11733" },
+      "region": "long_island",
+      "menuPlatform": "custom",
+      "menuUrl": "https://strongstrains.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Beleaf Calverton",
+      "slug": "beleaf-calverton",
+      "licenseNumber": null,
+      "address": { "street": "4462 Middle Country Rd", "city": "Calverton", "state": "NY", "zip": "11933" },
+      "region": "long_island",
+      "menuPlatform": "custom",
+      "menuUrl": "https://beleafny.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Brown Budda New York",
+      "slug": "brown-budda-new-york",
+      "licenseNumber": null,
+      "address": { "street": "1533 Country Rd 39", "city": "Southampton", "state": "NY", "zip": "11968" },
+      "region": "long_island",
+      "menuPlatform": "custom",
+      "menuUrl": "https://www.brownbuddanewyork.com",
+      "source": "ocm"
+    },
+    {
+      "name": "Charlie Fox Hamptons",
+      "slug": "charlie-fox-hamptons",
+      "licenseNumber": null,
+      "address": { "street": "471 County Rd 39", "city": "Southampton", "state": "NY", "zip": "11968" },
+      "region": "long_island",
+      "menuPlatform": "custom",
+      "menuUrl": "https://charliefoxhamptons.com",
+      "source": "ocm"
+    }
+  ]
+}

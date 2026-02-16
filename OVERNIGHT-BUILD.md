@@ -169,11 +169,82 @@ Build a working CannaSignal MVP that can:
 
 ## 🔧 Blockers / Notes
 
-- Need Convex credentials (deploy key or login)
-- No existing Convex project detected
+- ~~**⚠️ BLOCKING: Convex credentials still needed**~~ ✅ RESOLVED 16:00 UTC
+- Steven got Convex working! Database is live at `quick-weasel-225.convex.cloud`
+- Deploy key saved in TOOLS.md
+
+---
+
+## 📊 15:41 UTC Check-in (Automated Cron)
+
+**Build Time Elapsed:** ~11 hours (target was 8h)
+
+**Status:** Holding — all infrastructure code complete, waiting on Convex auth
+
+**Completed Since Last Check:**
+- ✅ Business case updated with premium pricing ($249/$499)
+- ✅ State expansion plan completed (10-state Year 1 roadmap)
+- ✅ Browser worker deployed and tested at `cannasignal-browser.prtl.workers.dev`
+- ✅ All Convex schema/functions/HTTP routes ready
+
+**What's Ready:**
+- 11-table Convex schema
+- HTTP ingestion endpoints
+- Browser scraper worker
+- Dashboard scaffold (demo mode)
+- 98 NYS retailers catalogued
+
+**✅ Unblocked at 16:00 UTC:**
+- Convex deployed and operational
+- 3 retailers + 10 brands seeded as test data
+
+---
+
+---
+
+## 📊 16:26 UTC Check-in (Automated Cron)
+
+**Build Time Elapsed:** ~12 hours
+
+**Status:** 🟢 UNBLOCKED — Convex is live!
+
+**What Changed:**
+- ✅ Steven deployed Convex at 16:00 UTC
+- ✅ Database seeded with 3 test retailers + 10 brands
+- ✅ Deploy key saved in TOOLS.md for API access
+
+**Ready to Resume:**
+- Phase 2: Wire up scraper → Convex ingestion pipeline
+- Phase 3: Test live data flow
+- Phase 4: Connect dashboard to real data
+
+**Next Steps:**
+User was asked to choose: seed all 98 retailers, test scrape pipeline, or wire dashboard. Awaiting direction.
 
 ---
 
 ## 📝 Boardroom Notes
 
 *Meeting notes from sub-agent sync sessions will be logged here*
+
+
+---
+
+## 🚀 16:40 UTC — Convex Live + Sub-Agents Spawned
+
+**Convex Database:** ✅ CONNECTED
+- URL: https://quick-weasel-225.convex.cloud
+- Seeded: 3 retailers, 10 brands
+
+**Browser Worker:** ✅ DEPLOYED
+- URL: https://cannasignal-browser.prtl.workers.dev
+
+**Active Sub-Agents:**
+| Agent | Task | Status |
+|-------|------|--------|
+| cannasignal-dashboard-live | Wire dashboard to Convex | 🔄 Running |
+| cannasignal-scrape-pipeline | Test scrape → ingest flow | 🔄 Running |
+| cannasignal-stack-research | UI/UX stack recommendations | 🔄 Running |
+
+**Full Retailer List:** Saved at `/data/nys-retailers.json` (98 retailers)
+
