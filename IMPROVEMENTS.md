@@ -29,7 +29,7 @@
 - [x] **UX-001**: Dashboard real-time updates via Convex subscriptions ✅ *DONE* 2026-02-17
 
 ### 🔬 Research Track (Parallel)
-- [ ] **RESEARCH-001**: Stealth scraping techniques (Playwright CLI, CDP, modern bypass)
+- [x] **RESEARCH-001**: Stealth scraping techniques ✅ *DONE* 2026-02-17 → `docs/STEALTH-RESEARCH.md`
 
 ### Medium Priority → ELEVATED
 - [x] **DATA-005**: Product normalization (THC%, strain matching) ✅ *DONE* 2026-02-17
