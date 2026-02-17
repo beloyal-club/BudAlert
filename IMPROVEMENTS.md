@@ -40,7 +40,7 @@
 ### Low Priority (Polish)
 - [x] **UX-003**: Mobile-responsive dashboard ✅ *DONE* 2026-02-17
 - [x] **REL-002**: Alerting on scraper failures ✅ *DONE* 2026-02-17
-- [ ] **DATA-006**: Historical price tracking setup
+- [x] **DATA-006**: Historical price tracking setup ✅ *DONE* 2026-02-17
 
 ---
 
@@ -56,6 +56,7 @@
 
 | ID | Description | Impact | Completed |
 |----|-------------|--------|-----------|
+| DATA-006 | Historical price tracking | priceHistory module, 6 queries, 3 HTTP endpoints, dashboard page | 2026-02-17 |
 | REL-002 | Scraper alerting system | Discord webhooks, alert conditions, dashboard panel, HTTP endpoints | 2026-02-17 |
 | UX-003 | Mobile-responsive dashboard | MobileNav hamburger, xs breakpoint, responsive cards/grids, safe area insets | 2026-02-17 |
 | PERF-002 | Stats cache layer | O(1) dashboard stats via statsCache table, 5-min TTL, HTTP refresh endpoint | 2026-02-17 |
@@ -131,6 +132,54 @@
 ---
 
 ## 📝 Improvement Log
+
+### 2026-02-17 — DATA-006: Historical Price Tracking Complete
+**Worker:** Cron Improvement Worker (Cycle 17)
+
+**Summary:**
+Implemented comprehensive price history tracking to monitor price trends and surface deals.
+
+**New Module - `convex/priceHistory.ts`:**
+- **Queries:**
+  - `getProductPriceHistory` - Price timeline for a specific product at a retailer
+  - `getProductPriceComparison` - Compare same product prices across retailers
+  - `getRecentPriceChanges` - Recent drops/increases with filters
+  - `getBrandPriceTrends` - Brand-level price trends with hourly/daily/weekly granularity
+  - `getPriceDrops` - Hot deals (significant price drops in last 24h)
+  - `getPriceSummary` - Dashboard summary with category averages
+
+**HTTP Endpoints (`convex/http.ts`):**
+- `GET /price/summary` - Overview stats and category averages
+- `GET /price/drops` - Price drops with region/category/minPercent filters
+- `GET /price/changes` - All price changes with type/region/category filters
+
+**Dashboard Page - `PriceHistory.tsx`:**
+- Summary stats cards (tracked items, history, snapshots)
+- Category average prices grid
+- Hot deals section with prominent display
+- Recent price changes table with filters
+- Change type filter (all/drops/increases)
+- Category filter (flower/vape/edible/etc)
+- Min change % threshold
+- Mobile responsive
+
+**Navigation:**
+- Added `/prices` route to App.tsx
+- Added "Prices" link to MobileNav
+
+**CLI Script - `scripts/price-history-test.ts`:**
+- `summary` - View price tracking overview
+- `drops` - View recent price drops
+- `changes` - View all price changes
+
+**Data Quality Impact:**
+- Price tracking now queryable from historical menuSnapshots
+- Leverages existing `previousPrice`, `priceChangedAt` fields in currentInventory
+- No schema changes needed - uses existing infrastructure
+
+**Commit:** be4e327 (pushed to main)
+
+---
 
 ### 2026-02-17 — REL-002: Scraper Alerting System Complete
 **Worker:** Cron Improvement Worker (Cycle 15)
