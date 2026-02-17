@@ -35,7 +35,7 @@
 ### Medium Priority
 - [x] **DATA-005**: Product normalization (THC%, strain matching) ✅ *DONE* 2026-02-17
 - [ ] **PERF-002**: Cache frequently-accessed brand/retailer data
-- [ ] **UX-002**: Add filtering/search to dashboard tables
+- [x] **UX-002**: Add filtering/search to dashboard tables ✅ *DONE* 2026-02-17
 
 ### Low Priority (Polish)
 - [ ] **UX-003**: Mobile-responsive dashboard
@@ -56,6 +56,7 @@
 
 | ID | Description | Impact | Completed |
 |----|-------------|--------|-----------|
+| UX-002 | Dashboard search/filter | SearchFilter component, debounced search, text highlight, sort options | 2026-02-17 |
 | DATA-004 | OCM license sync | 580 licenses synced, 238 operational retailers, Convex integration | 2026-02-17 |
 | PERF-001 | Benchmark Convex query latency | HTTP: p95<115ms, 938 RPS. Full query benchmark scripts created. | 2026-02-17 |
 | UX-001 | Dashboard real-time updates | LiveIndicator, useLastUpdated hook, visual feedback on changes | 2026-02-17 |
@@ -127,6 +128,39 @@
 ---
 
 ## 📝 Improvement Log
+
+### 2026-02-17 — UX-002: Dashboard Search/Filter Complete
+**Worker:** Cron Improvement Worker
+
+**Summary:**
+Implemented comprehensive search and filtering for dashboard tables.
+
+**Components Created:**
+- `dashboard/src/components/SearchFilter.tsx`:
+  - `SearchFilter` - Debounced search input with clear button
+  - `FilterBar` - Combined search + filter buttons + result count
+  - `FilterButton` - Consistent styled filter buttons
+
+**Retailers Page Enhancements:**
+- Search by name, city, license number, platform
+- Sort by name or last scraped
+- Text highlighting in search results
+- Result count display
+
+**Brands Page Enhancements:**
+- Search by name or aliases
+- Sort by name or recently added
+- Text highlighting in search results
+- Result count display
+
+**Performance Notes:**
+- Client-side filtering (fast, no extra API calls)
+- Debounced search (200ms) to avoid re-renders
+- Increased fetch limit from 50→100 for better UX
+
+**Commit:** 3b26b89 (pushed to main)
+
+---
 
 ### 2026-02-17 — DATA-004: OCM License Sync Complete
 **Worker:** Cron Improvement Worker
