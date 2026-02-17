@@ -300,6 +300,29 @@ export default defineSchema({
   // Precomputed aggregates for fast dashboard queries
   // ============================================================
 
+  // ============================================================
+  // SCRAPER ALERTS (REL-002)
+  // Alert history for scraper monitoring
+  // ============================================================
+
+  scraperAlerts: defineTable({
+    type: v.string(),                   // "new_failures" | "high_failure_rate" | "stale_scraper" | "rate_limit_spike"
+    severity: v.string(),               // "low" | "medium" | "high" | "critical"
+    title: v.string(),
+    message: v.string(),
+    data: v.optional(v.any()),          // Additional context (summary, conditions)
+    deliveredTo: v.array(v.string()),   // ["discord", "email", etc.]
+    acknowledged: v.boolean(),
+    acknowledgedAt: v.optional(v.number()),
+    acknowledgedBy: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_type", ["type", "createdAt"])
+    .index("by_severity", ["severity", "createdAt"])
+    .index("by_acknowledged", ["acknowledged", "createdAt"])
+    .index("by_time", ["createdAt"]),
+
   statsCache: defineTable({
     key: v.string(),                    // "global" | "region:nyc" | etc.
     retailers: v.object({

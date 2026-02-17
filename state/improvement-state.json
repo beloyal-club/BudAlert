@@ -14,7 +14,11 @@
     "measuredAt": "2026-02-17T09:44:00Z",
     "notes": "Cycle 14 evaluation. 11 tasks complete. Both services healthy. Ready for REL-002."
   },
-  "activeWork": null,
+  "activeWork": {
+    "taskId": "REL-002",
+    "sessionKey": "cron-improvement-worker",
+    "startedAt": "2026-02-17T10:10:00Z"
+  },
   "parallelResearch": null,
   "queue": {
     "next": "REL-002",

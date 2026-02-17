@@ -25,6 +25,7 @@ import type * as lib_productNormalizer from "../lib/productNormalizer.js";
 import type * as ocmSync from "../ocmSync.js";
 import type * as products from "../products.js";
 import type * as retailers from "../retailers.js";
+import type * as scraperAlerts from "../scraperAlerts.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -47,6 +48,7 @@ declare const fullApi: ApiFromModules<{
   ocmSync: typeof ocmSync;
   products: typeof products;
   retailers: typeof retailers;
+  scraperAlerts: typeof scraperAlerts;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

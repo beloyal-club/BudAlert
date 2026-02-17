@@ -189,6 +189,124 @@ http.route({
 });
 
 // ============================================================
+// ALERT ENDPOINTS (REL-002)
+// ============================================================
+
+http.route({
+  path: "/alerts/check",
+  method: "OPTIONS",
+  handler: httpAction(async () => {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders,
+    });
+  }),
+});
+
+http.route({
+  path: "/alerts/check",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const body = await request.json().catch(() => ({}));
+      const webhookUrl = body.webhookUrl || ((globalThis as any).process?.env?.DISCORD_ALERT_WEBHOOK);
+      const forceAlert = body.forceAlert === true;
+      
+      const result = await ctx.runAction(api.scraperAlerts.checkAndAlert, {
+        webhookUrl,
+        forceAlert,
+      });
+      
+      return corsResponse(result);
+    } catch (error) {
+      console.error("Alert check error:", error);
+      return corsErrorResponse(
+        error instanceof Error ? error.message : "Internal server error",
+        500
+      );
+    }
+  }),
+});
+
+http.route({
+  path: "/alerts/digest",
+  method: "GET",
+  handler: httpAction(async (ctx) => {
+    try {
+      const digest = await ctx.runQuery(api.scraperAlerts.getAlertDigest, {});
+      return corsResponse(digest);
+    } catch (error) {
+      console.error("Alert digest error:", error);
+      return corsErrorResponse(
+        error instanceof Error ? error.message : "Internal server error",
+        500
+      );
+    }
+  }),
+});
+
+http.route({
+  path: "/alerts/conditions",
+  method: "GET",
+  handler: httpAction(async (ctx) => {
+    try {
+      const conditions = await ctx.runQuery(api.scraperAlerts.checkAlertConditions, {});
+      return corsResponse(conditions);
+    } catch (error) {
+      console.error("Alert conditions error:", error);
+      return corsErrorResponse(
+        error instanceof Error ? error.message : "Internal server error",
+        500
+      );
+    }
+  }),
+});
+
+http.route({
+  path: "/alerts/history",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const url = new URL(request.url);
+      const limit = parseInt(url.searchParams.get("limit") || "50", 10);
+      
+      const history = await ctx.runQuery(api.scraperAlerts.getAlertHistory, { limit });
+      return corsResponse({ alerts: history });
+    } catch (error) {
+      console.error("Alert history error:", error);
+      return corsErrorResponse(
+        error instanceof Error ? error.message : "Internal server error",
+        500
+      );
+    }
+  }),
+});
+
+http.route({
+  path: "/alerts/webhook-test",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const body = await request.json();
+      const webhookUrl = body.webhookUrl;
+      
+      if (!webhookUrl || typeof webhookUrl !== "string") {
+        return corsErrorResponse("Missing webhookUrl in request body", 400);
+      }
+      
+      const result = await ctx.runAction(api.scraperAlerts.testWebhook, { webhookUrl });
+      return corsResponse(result);
+    } catch (error) {
+      console.error("Webhook test error:", error);
+      return corsErrorResponse(
+        error instanceof Error ? error.message : "Internal server error",
+        500
+      );
+    }
+  }),
+});
+
+// ============================================================
 // Catch-all for unmatched routes
 // ============================================================
 

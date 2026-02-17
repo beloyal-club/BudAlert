@@ -1,6 +1,7 @@
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { useLastUpdated, LastUpdatedText } from "../components/LiveIndicator";
+import { AlertPanel } from "../components/AlertPanel";
 
 export function Overview() {
   // Live stats subscription
@@ -97,6 +98,11 @@ export function Overview() {
           </div>
         </section>
       )}
+
+      {/* Scraper Health & Alerts */}
+      <section>
+        <AlertPanel />
+      </section>
 
       {/* Recent Activity Feed */}
       {activity && activity.length > 0 && (
