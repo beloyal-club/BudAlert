@@ -1,0 +1,25 @@
+{
+  "syncedAt": "2026-02-17T06:12:54.955Z",
+  "total": 580,
+  "active": 467,
+  "operational": 238,
+  "withHours": 249,
+  "withWebsite": 99,
+  "socialEquity": 357,
+  "byRegion": {
+    "Brooklyn": 69,
+    "Mid-Hudson": 91,
+    "Queens": 84,
+    "Long Island": 22,
+    "Manhattan": 59,
+    "Capital District": 55,
+    "Western NY": 68,
+    "Finger Lakes": 44,
+    "Mohawk Valley": 16,
+    "Richmond": 11,
+    "Central NY": 16,
+    "Southern Tier": 24,
+    "North Country": 9,
+    "Bronx": 12
+  }
+}

@@ -22,18 +22,18 @@
 ### High Priority
 - [x] **DATA-001**: Validate scraper output against Dutchie live data ✅ *DONE* 2026-02-17
 - [x] **DATA-007**: Scrape embedded Dutchie menus on retailer domains ✅ *DONE* 2026-02-17
-- [ ] **DATA-002**: Expand coverage to iHeartJane-powered retailers ⭐ *UNBLOCKED: free API found*
-- [ ] **DATA-003**: Add Weedmaps menu discovery 🔬 *BLOCKED: stealth research*
+- [ ] **DATA-002**: Expand coverage to iHeartJane-powered retailers 🔒 *BLOCKED: iHeartJane CF-protected*
+- [ ] **DATA-003**: Add Weedmaps menu discovery 🔬 *BLOCKED: needs stealth browser*
 - [x] **PERF-001**: Benchmark Convex query latency under load ✅ *PARTIAL* 2026-02-17
 - [x] **REL-001**: Add retry logic + dead letter queue to scraper ✅ *DONE* 2026-02-17
 - [x] **UX-001**: Dashboard real-time updates via Convex subscriptions ✅ *DONE* 2026-02-17
+- [x] **DATA-004**: Cross-reference OCM API for license validation ✅ *DONE* 2026-02-17
 
 ### 🔬 Research Track (Parallel)
 - [x] **RESEARCH-001**: Stealth scraping techniques ✅ *DONE* 2026-02-17 → `docs/STEALTH-RESEARCH.md`
 
-### Medium Priority → ELEVATED
+### Medium Priority
 - [x] **DATA-005**: Product normalization (THC%, strain matching) ✅ *DONE* 2026-02-17
-- [ ] **DATA-004**: Cross-reference OCM API for license validation
 - [ ] **PERF-002**: Cache frequently-accessed brand/retailer data
 - [ ] **UX-002**: Add filtering/search to dashboard tables
 
@@ -56,6 +56,7 @@
 
 | ID | Description | Impact | Completed |
 |----|-------------|--------|-----------|
+| DATA-004 | OCM license sync | 580 licenses synced, 238 operational retailers, Convex integration | 2026-02-17 |
 | PERF-001 | Benchmark Convex query latency | HTTP: p95<115ms, 938 RPS. Full query benchmark scripts created. | 2026-02-17 |
 | UX-001 | Dashboard real-time updates | LiveIndicator, useLastUpdated hook, visual feedback on changes | 2026-02-17 |
 | DATA-001 | Scraper validation against live Dutchie | Normalizer verified 10/10, Cloudflare gap documented, category inference fix | 2026-02-17 |
@@ -126,6 +127,64 @@
 ---
 
 ## 📝 Improvement Log
+
+### 2026-02-17 — DATA-004: OCM License Sync Complete
+**Worker:** Cron Improvement Worker
+
+**Summary:**
+Integrated NYS Office of Cannabis Management (OCM) open data API for license validation and retailer discovery.
+
+**Data Retrieved:**
+- **Total Retail Licenses:** 580
+- **Active Licenses:** 467
+- **Operational (Open):** 238
+- **With Hours Listed:** 249
+- **With Website:** 99
+- **Social Equity Licensees:** 357
+
+**Regional Breakdown:**
+| Region | Retailers |
+|--------|-----------|
+| Mid-Hudson | 91 |
+| Queens | 84 |
+| Brooklyn | 69 |
+| Western NY | 68 |
+| Manhattan | 59 |
+| Capital District | 55 |
+| Finger Lakes | 44 |
+| Southern Tier | 24 |
+| Long Island | 22 |
+| Mohawk Valley | 16 |
+| Central NY | 16 |
+| Bronx | 12 |
+| Richmond | 11 |
+| North Country | 9 |
+
+**Files Created:**
+- `scripts/ocm-license-sync.ts` - CLI script to fetch & process OCM data
+- `scripts/export-ocm-retailers.ts` - Export retailers to JSON
+- `convex/ocmSync.ts` - Convex mutations/actions for database sync
+- `data/ocm-retailers.json` - Full retailer data (580 records)
+- `data/ocm-retailers-operational.json` - Operational only (238 records)
+- `data/ocm-sync-stats.json` - Sync statistics
+
+**Integration:**
+- Name matching algorithm (normalized comparison + word overlap scoring)
+- Automatic retailer creation/update via Convex mutations
+- Stores license number, DBA, hours, website, social equity categories
+
+**Blocker Update:**
+- **DATA-002** (iHeartJane) is now BLOCKED - their API is behind Cloudflare
+- Need Browserless BQL or similar stealth browser service to proceed
+
+**Coverage Impact:**
+- Baseline coverage: 15/100 → **25/100**
+- 238 verified operational retailers available for menu discovery
+- Cross-reference capability to validate existing retailer data
+
+**Commit:** (this session)
+
+---
 
 ### 2026-02-17 — UX-001: Dashboard Real-Time Updates Complete
 **Worker:** Cron Improvement Worker
