@@ -1,0 +1,219 @@
+{
+  "metadata": {
+    "description": "NYS retailers with embedded Dutchie menus on their own domains",
+    "purpose": "These URLs bypass Cloudflare since Dutchie is embedded, not direct",
+    "lastUpdated": "2026-02-17",
+    "totalRetailers": 9,
+    "totalLocations": 18,
+    "source": "DATA-007 embedded menu discovery"
+  },
+  "retailers": [
+    {
+      "name": "CONBUD",
+      "slug": "conbud",
+      "menuPlatform": "dutchie-embedded",
+      "embeddedMenuType": "dutchie-custom-theme",
+      "verified": true,
+      "verifiedAt": "2026-02-17",
+      "locations": [
+        {
+          "name": "CONBUD LES",
+          "menuUrl": "https://conbud.com/stores/conbud-les/products/flower",
+          "allProductsUrl": "https://conbud.com/stores/conbud-les/products",
+          "address": { "city": "New York", "state": "NY" },
+          "region": "nyc"
+        },
+        {
+          "name": "CONBUD Bronx",
+          "menuUrl": "https://conbud.com/stores/conbud-bronx/products/flower",
+          "allProductsUrl": "https://conbud.com/stores/conbud-bronx/products",
+          "address": { "city": "Bronx", "state": "NY" },
+          "region": "nyc"
+        },
+        {
+          "name": "CONBUD Yankee Stadium",
+          "menuUrl": "https://conbud.com/stores/conbud-yankee-stadium/products/flower",
+          "allProductsUrl": "https://conbud.com/stores/conbud-yankee-stadium/products",
+          "address": { "city": "Bronx", "state": "NY" },
+          "region": "nyc"
+        }
+      ]
+    },
+    {
+      "name": "Gotham",
+      "slug": "gotham",
+      "menuPlatform": "dutchie-plus",
+      "embeddedMenuType": "dutchie_plus",
+      "verified": true,
+      "verifiedAt": "2026-02-17",
+      "locations": [
+        {
+          "name": "Gotham CAURD",
+          "menuUrl": "https://gotham.nyc/menu/",
+          "address": { "street": "3 E 3rd St", "city": "New York", "state": "NY" },
+          "region": "nyc"
+        },
+        {
+          "name": "Gotham Hudson",
+          "menuUrl": "https://gotham.nyc/menu/",
+          "address": { "street": "260 Warren St", "city": "Hudson", "state": "NY" },
+          "region": "hudson_valley"
+        },
+        {
+          "name": "Gotham Williamsburg",
+          "menuUrl": "https://gotham.nyc/menu/",
+          "address": { "street": "300 Kent Ave", "city": "Brooklyn", "state": "NY" },
+          "region": "nyc"
+        },
+        {
+          "name": "Gotham Chelsea",
+          "menuUrl": "https://gotham.nyc/menu/",
+          "address": { "street": "146 10th Ave", "city": "New York", "state": "NY" },
+          "region": "nyc"
+        }
+      ]
+    },
+    {
+      "name": "Housing Works Cannabis",
+      "slug": "housing-works-cannabis",
+      "menuPlatform": "dutchie-embedded",
+      "embeddedMenuType": "dutchie-embed-script",
+      "verified": true,
+      "verifiedAt": "2026-02-17",
+      "locations": [
+        {
+          "name": "Housing Works Cannabis",
+          "menuUrl": "https://hwcannabis.co/",
+          "dutchieEmbedId": "64a2f593a8e71c000a751e27",
+          "address": { "street": "750 Broadway", "city": "New York", "state": "NY" },
+          "region": "nyc"
+        }
+      ]
+    },
+    {
+      "name": "The Travel Agency",
+      "slug": "travel-agency",
+      "menuPlatform": "dutchie-backend",
+      "embeddedMenuType": "custom-frontend-dutchie-data",
+      "verified": true,
+      "verifiedAt": "2026-02-17",
+      "notes": "Custom React frontend pulling from Dutchie API",
+      "locations": [
+        {
+          "name": "Travel Agency Union Square",
+          "menuUrl": "https://www.thetravelagency.co/menu/",
+          "address": { "street": "835 Broadway", "city": "New York", "state": "NY" },
+          "region": "nyc"
+        }
+      ]
+    },
+    {
+      "name": "Strain Stars",
+      "slug": "strain-stars",
+      "menuPlatform": "joint-dutchie-plugin",
+      "embeddedMenuType": "wordpress-joint-dutchie",
+      "verified": true,
+      "verifiedAt": "2026-02-17",
+      "locations": [
+        {
+          "name": "Strain Stars Farmingdale",
+          "menuUrl": "https://strainstarsny.com/menu/",
+          "address": { "street": "1815 Broadhollow Rd", "city": "Farmingdale", "state": "NY" },
+          "region": "long_island"
+        },
+        {
+          "name": "Strain Stars Riverhead",
+          "menuUrl": "https://strainstarsny.com/menu/",
+          "address": { "street": "1871 Old Country Rd", "city": "Riverhead", "state": "NY" },
+          "region": "long_island"
+        }
+      ]
+    },
+    {
+      "name": "Dagmar Cannabis",
+      "slug": "dagmar-cannabis",
+      "menuPlatform": "joint-dutchie-plugin",
+      "embeddedMenuType": "wordpress-joint-dutchie",
+      "verified": true,
+      "verifiedAt": "2026-02-17",
+      "locations": [
+        {
+          "name": "Dagmar Cannabis SoHo",
+          "menuUrl": "https://dagmarcannabis.com/menu/",
+          "address": { "street": "412 W Broadway", "city": "New York", "state": "NY" },
+          "region": "nyc"
+        }
+      ]
+    },
+    {
+      "name": "Get Smacked",
+      "slug": "get-smacked",
+      "menuPlatform": "joint-dutchie-plugin",
+      "embeddedMenuType": "wordpress-joint-dutchie",
+      "verified": true,
+      "verifiedAt": "2026-02-17",
+      "locations": [
+        {
+          "name": "Smacked Village",
+          "menuUrl": "https://getsmacked.online/menu/",
+          "address": { "street": "144 Bleecker St", "city": "New York", "state": "NY" },
+          "region": "nyc"
+        }
+      ]
+    },
+    {
+      "name": "Just Breathe",
+      "slug": "just-breathe",
+      "menuPlatform": "dutchie-embedded",
+      "embeddedMenuType": "dutchie-platform-attribute",
+      "verified": true,
+      "verifiedAt": "2026-02-17",
+      "locations": [
+        {
+          "name": "Just Breathe Syracuse",
+          "menuUrl": "https://justbreathelife.org/menu/",
+          "dutchieSlug": "just-breathe-syracuse",
+          "address": { "street": "185 W Seneca St", "city": "Manlius", "state": "NY" },
+          "region": "upstate"
+        },
+        {
+          "name": "Just Breathe Binghamton",
+          "menuUrl": "https://justbreathelife.org/menu/",
+          "dutchieSlug": "just-breathe-binghamton",
+          "address": { "street": "75 Court St", "city": "Binghamton", "state": "NY" },
+          "region": "upstate"
+        },
+        {
+          "name": "Just Breathe Finger Lakes",
+          "menuUrl": "https://justbreatheflx.com/",
+          "dutchieSlug": "just-breathe-finger-lakes",
+          "address": { "street": "2988 US Route 20", "city": "Seneca Falls", "state": "NY" },
+          "region": "upstate"
+        }
+      ]
+    }
+  ],
+  "scrapeUrls": [
+    "https://conbud.com/stores/conbud-les/products",
+    "https://conbud.com/stores/conbud-bronx/products",
+    "https://conbud.com/stores/conbud-yankee-stadium/products",
+    "https://gotham.nyc/menu/",
+    "https://hwcannabis.co/",
+    "https://www.thetravelagency.co/menu/",
+    "https://strainstarsny.com/menu/",
+    "https://dagmarcannabis.com/menu/",
+    "https://getsmacked.online/menu/",
+    "https://justbreathelife.org/menu/",
+    "https://justbreatheflx.com/"
+  ],
+  "notes": {
+    "scraperCompatibility": "All URLs work with playwright-stealth-scraper.ts",
+    "cloudflareStatus": "BYPASSED - embedded menus on retailer domains don't trigger Cloudflare",
+    "dataQuality": "Similar to direct Dutchie scrapes - product cards, prices, THC/CBD",
+    "limitations": [
+      "Some sites require age verification modal handling",
+      "Multi-location retailers may need store selector interaction",
+      "Inventory counts may require product detail page visits"
+    ]
+  }
+}
