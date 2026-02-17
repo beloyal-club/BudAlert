@@ -37,6 +37,11 @@ interface Product {
   category: string | null;
   url: string | null;
   imageUrl: string | null;
+  // Inventory tracking fields
+  inventoryCount: number | null;      // actual count if shown (e.g., "6 left")
+  inventoryText: string | null;       // raw text like "6 left in stock – order soon!"
+  isLowStock: boolean;                // true if < 10 remaining
+  stockConfidence: 'exact' | 'low_signal' | 'unknown';  // how confident are we
 }
 
 interface ScrapeResult {
@@ -389,6 +394,44 @@ export class DutchieStealthScraper {
           var link = container.querySelector('a[href*="product"]');
           var productUrl = link ? link.getAttribute('href') : null;
 
+          // Inventory extraction - look for low stock messages
+          var inventoryEl = container.querySelector(
+            '[data-testid="product-low-inventory-message"], ' +
+            '[class*="low-inventory"], [class*="lowInventory"], [class*="LowInventory"], ' +
+            '[class*="stock-level"], [class*="stockLevel"], [class*="StockLevel"], ' +
+            '[class*="inventory"], [class*="Inventory"], ' +
+            '[class*="quantity-left"], [class*="remaining"]'
+          );
+          var inventoryText = inventoryEl ? clean(inventoryEl.textContent) : null;
+          
+          // Also check for inventory patterns in full text
+          if (!inventoryText) {
+            var invMatch = text.match(/(\d+)\s*(left|remaining|in stock|available)/i);
+            if (invMatch) {
+              inventoryText = invMatch[0];
+            }
+          }
+          
+          // Parse numeric inventory count
+          var inventoryCount = null;
+          var stockConfidence = 'unknown';
+          if (inventoryText) {
+            var countMatch = inventoryText.match(/(\d+)\s*(left|remaining|in stock|available)/i);
+            if (countMatch) {
+              inventoryCount = parseInt(countMatch[1], 10);
+              stockConfidence = 'exact';
+            } else {
+              // Has inventory text but couldn't parse number - it's a low stock signal
+              stockConfidence = 'low_signal';
+            }
+          }
+          
+          var isLowStock = inventoryCount !== null && inventoryCount < 10;
+          // Also flag as low stock if we found a low inventory message element
+          if (inventoryEl && inventoryText) {
+            isLowStock = true;
+          }
+
           products.push({
             name: name,
             brand: brand,
@@ -399,7 +442,11 @@ export class DutchieStealthScraper {
             cbd: cbd,
             category: null,
             url: productUrl,
-            imageUrl: imageUrl
+            imageUrl: imageUrl,
+            inventoryCount: inventoryCount,
+            inventoryText: inventoryText,
+            isLowStock: isLowStock,
+            stockConfidence: stockConfidence
           });
         });
 
@@ -421,6 +468,11 @@ export class DutchieStealthScraper {
             if (seen[key]) return;
             seen[key] = true;
 
+            // Check for inventory in link text
+            var linkInvMatch = text.match(/(\d+)\s*(left|remaining|in stock|available)/i);
+            var linkInventoryText = linkInvMatch ? linkInvMatch[0] : null;
+            var linkInventoryCount = linkInvMatch ? parseInt(linkInvMatch[1], 10) : null;
+
             products.push({
               name: name,
               brand: null,
@@ -431,7 +483,11 @@ export class DutchieStealthScraper {
               cbd: extractCannabinoid(text, 'CBD'),
               category: null,
               url: href,
-              imageUrl: null
+              imageUrl: null,
+              inventoryCount: linkInventoryCount,
+              inventoryText: linkInventoryText,
+              isLowStock: linkInventoryCount !== null && linkInventoryCount < 10,
+              stockConfidence: linkInventoryCount !== null ? 'exact' : 'unknown'
             });
           });
         }
@@ -441,6 +497,192 @@ export class DutchieStealthScraper {
     `);
 
     return extractedProducts as Product[];
+  }
+
+  /**
+   * Scrape a single product detail page for more inventory info
+   * Use this for products without visible inventory on listing pages
+   */
+  async scrapeProductDetail(productUrl: string): Promise<{
+    inventoryCount: number | null;
+    inventoryText: string | null;
+    stockConfidence: 'exact' | 'low_signal' | 'unknown';
+    nextDataInventory: any;
+    error: string | null;
+  }> {
+    if (!this.context) {
+      throw new Error('Browser not launched. Call launch() first.');
+    }
+
+    const page = await this.context.newPage();
+    const result = {
+      inventoryCount: null as number | null,
+      inventoryText: null as string | null,
+      stockConfidence: 'unknown' as 'exact' | 'low_signal' | 'unknown',
+      nextDataInventory: null as any,
+      error: null as string | null,
+    };
+
+    try {
+      console.log(`  → Scraping product detail: ${productUrl}`);
+      await this.randomDelay(500, 1000);
+
+      await page.goto(productUrl, { 
+        waitUntil: 'domcontentloaded',
+        timeout: 20000 
+      });
+      
+      await this.randomDelay(1500, 2500);
+      
+      // Handle age verification if needed
+      await this.handleAgeVerification(page);
+
+      // Strategy 1: Look for low inventory message on detail page
+      const inventoryMessage = await page.evaluate(`
+        (function() {
+          var selectors = [
+            '[data-testid="product-low-inventory-message"]',
+            '[class*="low-inventory"]',
+            '[class*="lowInventory"]',
+            '[class*="LowInventory"]',
+            '[class*="stock-level"]',
+            '[class*="inventory-message"]',
+            '[class*="InventoryMessage"]',
+            '[class*="quantity-warning"]'
+          ];
+          
+          for (var i = 0; i < selectors.length; i++) {
+            var el = document.querySelector(selectors[i]);
+            if (el && el.textContent) {
+              return el.textContent.trim();
+            }
+          }
+          
+          // Also search all elements for inventory patterns
+          var allText = document.body.textContent || '';
+          var match = allText.match(/(\\d+)\\s*(left|remaining|in stock).*?(order soon|hurry)?/i);
+          return match ? match[0] : null;
+        })()
+      `);
+
+      if (inventoryMessage) {
+        result.inventoryText = inventoryMessage as string;
+        const countMatch = (inventoryMessage as string).match(/(\d+)\s*(left|remaining|in stock)/i);
+        if (countMatch) {
+          result.inventoryCount = parseInt(countMatch[1], 10);
+          result.stockConfidence = 'exact';
+        } else {
+          result.stockConfidence = 'low_signal';
+        }
+      }
+
+      // Strategy 2: Extract __NEXT_DATA__ for SSR inventory data
+      const nextData = await page.evaluate(`
+        (function() {
+          var script = document.querySelector('script#__NEXT_DATA__');
+          if (!script) return null;
+          try {
+            var data = JSON.parse(script.textContent);
+            // Look for inventory info in various paths
+            var props = data.props?.pageProps || {};
+            return {
+              product: props.product || null,
+              menu: props.menu || null,
+              inventory: props.inventory || props.product?.inventory || null,
+              // Dutchie sometimes uses these
+              stockLevel: props.product?.stockLevel || null,
+              quantityAvailable: props.product?.quantityAvailable || null,
+              availableQuantity: props.product?.availableQuantity || null,
+              stock: props.product?.stock || null,
+            };
+          } catch (e) {
+            return { error: e.message };
+          }
+        })()
+      `);
+
+      if (nextData) {
+        result.nextDataInventory = nextData;
+        
+        // Try to extract inventory from SSR data
+        const ssr = nextData as any;
+        const qty = ssr.quantityAvailable || ssr.availableQuantity || 
+                    ssr.inventory?.available || ssr.stock?.quantity ||
+                    ssr.product?.inventoryCount || ssr.product?.quantity;
+        
+        if (typeof qty === 'number' && result.inventoryCount === null) {
+          result.inventoryCount = qty;
+          result.stockConfidence = 'exact';
+        }
+      }
+
+    } catch (error: any) {
+      console.error(`  Error scraping product detail: ${error.message}`);
+      result.error = error.message;
+    } finally {
+      await page.close();
+    }
+
+    return result;
+  }
+
+  /**
+   * Scrape listing page and optionally visit product detail pages for inventory
+   */
+  async scrapeWithDetailPages(
+    listingUrl: string, 
+    options: { maxDetailPages?: number; skipDetailIfInventory?: boolean } = {}
+  ): Promise<ScrapeResult & { detailResults?: Record<string, any> }> {
+    const { maxDetailPages = 5, skipDetailIfInventory = true } = options;
+    
+    // First scrape the listing page
+    const result = await this.scrapeDutchie(listingUrl);
+    
+    if (!result.success || result.products.length === 0) {
+      return result;
+    }
+
+    // Find products that need detail page scraping
+    const needsDetail = result.products.filter(p => {
+      if (!p.url) return false;
+      if (skipDetailIfInventory && p.inventoryCount !== null) return false;
+      return true;
+    }).slice(0, maxDetailPages);
+
+    if (needsDetail.length === 0) {
+      console.log('All products have inventory data, skipping detail pages');
+      return result;
+    }
+
+    console.log(`\nScraping ${needsDetail.length} product detail pages for inventory...`);
+    
+    const detailResults: Record<string, any> = {};
+    
+    for (const product of needsDetail) {
+      let fullUrl = product.url!;
+      if (fullUrl.startsWith('/')) {
+        // Relative URL - construct full URL from listing URL
+        const baseUrl = new URL(listingUrl);
+        fullUrl = `${baseUrl.origin}${fullUrl}`;
+      }
+      
+      const detailResult = await this.scrapeProductDetail(fullUrl);
+      detailResults[product.name] = detailResult;
+      
+      // Update product with detail page data
+      if (detailResult.inventoryCount !== null) {
+        product.inventoryCount = detailResult.inventoryCount;
+        product.stockConfidence = detailResult.stockConfidence;
+      }
+      if (detailResult.inventoryText) {
+        product.inventoryText = detailResult.inventoryText;
+        product.isLowStock = true;
+      }
+      
+      await this.randomDelay(1500, 3000);
+    }
+
+    return { ...result, detailResults };
   }
 
   async scrapeMultiple(urls: string[]): Promise<ScrapeResult[]> {
@@ -460,9 +702,9 @@ export class DutchieStealthScraper {
   }
 }
 
-// Main execution
+// Main execution - Inventory Extraction Test
 async function main() {
-  const outputDir = '/root/clawd/cannasignal/data/stealth-test';
+  const outputDir = '/root/clawd/cannasignal/data/inventory-test';
   
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
@@ -470,43 +712,99 @@ async function main() {
 
   const scraper = new DutchieStealthScraper(outputDir);
   
-  const testUrls = [
-    'https://dutchie.com/dispensary/housing-works-cannabis-co',
-    'https://conbud.com/stores/conbud-les/products/flower',
-  ];
+  // Focus on CONBUD for inventory testing
+  const testUrl = 'https://conbud.com/stores/conbud-les/products/flower';
 
-  console.log('='.repeat(60));
-  console.log('Playwright Stealth Scraper - Dutchie Test (v2)');
-  console.log('='.repeat(60));
-  console.log(`Test URLs: ${testUrls.length}`);
-  console.log(`Output directory: ${outputDir}`);
-  console.log('Changes: domcontentloaded, age verification, better extraction');
-  console.log('='.repeat(60));
+  console.log('='.repeat(70));
+  console.log('Playwright Stealth Scraper - INVENTORY EXTRACTION TEST');
+  console.log('='.repeat(70));
+  console.log(`Target: ${testUrl}`);
+  console.log(`Output: ${outputDir}`);
+  console.log('Focus: Extracting inventory counts for sell-through velocity');
+  console.log('='.repeat(70));
 
   try {
     await scraper.launch();
-    const results = await scraper.scrapeMultiple(testUrls);
     
-    const resultsPath = path.join(outputDir, `results-${Date.now()}.json`);
-    fs.writeFileSync(resultsPath, JSON.stringify(results, null, 2));
-    console.log(`\nResults saved to: ${resultsPath}`);
+    // Use the new detail-page-aware scraper
+    const result = await scraper.scrapeWithDetailPages(testUrl, {
+      maxDetailPages: 5,  // Scrape up to 5 detail pages
+      skipDetailIfInventory: true  // Skip if listing already has inventory
+    });
+    
+    // Save full results
+    const resultsPath = path.join(outputDir, `inventory-results-${Date.now()}.json`);
+    fs.writeFileSync(resultsPath, JSON.stringify(result, null, 2));
+    console.log(`\nFull results saved to: ${resultsPath}`);
 
-    console.log('\n' + '='.repeat(60));
-    console.log('SUMMARY');
-    console.log('='.repeat(60));
+    // Create inventory summary
+    const inventorySummary = {
+      timestamp: result.timestamp,
+      url: result.url,
+      totalProducts: result.products.length,
+      withExactInventory: result.products.filter(p => p.stockConfidence === 'exact').length,
+      withLowStockSignal: result.products.filter(p => p.stockConfidence === 'low_signal').length,
+      unknownInventory: result.products.filter(p => p.stockConfidence === 'unknown').length,
+      lowStockProducts: result.products
+        .filter(p => p.isLowStock)
+        .map(p => ({
+          name: p.name,
+          brand: p.brand,
+          price: p.price,
+          inventoryCount: p.inventoryCount,
+          inventoryText: p.inventoryText,
+        })),
+      products: result.products.map(p => ({
+        name: p.name,
+        brand: p.brand,
+        price: p.price,
+        inventoryCount: p.inventoryCount,
+        inventoryText: p.inventoryText,
+        isLowStock: p.isLowStock,
+        stockConfidence: p.stockConfidence,
+      })),
+    };
+
+    const summaryPath = path.join(outputDir, `inventory-summary-${Date.now()}.json`);
+    fs.writeFileSync(summaryPath, JSON.stringify(inventorySummary, null, 2));
+
+    console.log('\n' + '='.repeat(70));
+    console.log('INVENTORY EXTRACTION SUMMARY');
+    console.log('='.repeat(70));
     
-    for (const result of results) {
-      console.log(`\n${result.url}`);
-      console.log(`  Success: ${result.success}`);
-      console.log(`  Blocked: ${result.blocked}${result.blockReason ? ` (${result.blockReason})` : ''}`);
-      console.log(`  Products: ${result.products.length}`);
-      if (result.products.length > 0) {
-        console.log(`  Sample: ${result.products[0].name} - ${result.products[0].price}`);
+    console.log(`\nSuccess: ${result.success}`);
+    console.log(`Blocked: ${result.blocked}`);
+    console.log(`\nTotal Products: ${result.products.length}`);
+    console.log(`  ├─ With exact inventory count: ${inventorySummary.withExactInventory}`);
+    console.log(`  ├─ With low-stock signal: ${inventorySummary.withLowStockSignal}`);
+    console.log(`  └─ Unknown inventory: ${inventorySummary.unknownInventory}`);
+
+    if (inventorySummary.lowStockProducts.length > 0) {
+      console.log('\n🔴 LOW STOCK PRODUCTS:');
+      console.log('-'.repeat(50));
+      for (const p of inventorySummary.lowStockProducts) {
+        console.log(`  ${p.name}`);
+        console.log(`    └─ Count: ${p.inventoryCount ?? 'signal only'} | "${p.inventoryText}"`);
       }
-      if (result.error) {
-        console.log(`  Error: ${result.error}`);
-      }
+    } else {
+      console.log('\n✅ No low-stock products detected on listing page');
+      console.log('   (Inventory may be visible on product detail pages only)');
     }
+
+    console.log('\n📊 ALL PRODUCTS WITH INVENTORY DATA:');
+    console.log('-'.repeat(50));
+    for (const p of result.products.slice(0, 10)) {
+      const inv = p.inventoryCount !== null 
+        ? `${p.inventoryCount} units`
+        : (p.stockConfidence === 'low_signal' ? '⚠️ low signal' : '—');
+      console.log(`  ${p.name.substring(0, 40).padEnd(40)} | ${inv}`);
+    }
+    if (result.products.length > 10) {
+      console.log(`  ... and ${result.products.length - 10} more`);
+    }
+
+    console.log('\n' + '='.repeat(70));
+    console.log(`Summary saved to: ${summaryPath}`);
 
   } catch (error: any) {
     console.error('Fatal error:', error);
