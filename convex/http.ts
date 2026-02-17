@@ -307,6 +307,85 @@ http.route({
 });
 
 // ============================================================
+// PRICE HISTORY ENDPOINTS (DATA-006)
+// ============================================================
+
+http.route({
+  path: "/price/summary",
+  method: "GET",
+  handler: httpAction(async (ctx) => {
+    try {
+      const summary = await ctx.runQuery(api.priceHistory.getPriceSummary, {});
+      return corsResponse(summary);
+    } catch (error) {
+      console.error("Price summary error:", error);
+      return corsErrorResponse(
+        error instanceof Error ? error.message : "Internal server error",
+        500
+      );
+    }
+  }),
+});
+
+http.route({
+  path: "/price/drops",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const url = new URL(request.url);
+      const region = url.searchParams.get("region") || undefined;
+      const category = url.searchParams.get("category") || undefined;
+      const minDropPercent = parseFloat(url.searchParams.get("minDropPercent") || "10");
+      const limit = parseInt(url.searchParams.get("limit") || "25", 10);
+      
+      const drops = await ctx.runQuery(api.priceHistory.getPriceDrops, {
+        region,
+        category,
+        minDropPercent,
+        limit,
+      });
+      return corsResponse(drops);
+    } catch (error) {
+      console.error("Price drops error:", error);
+      return corsErrorResponse(
+        error instanceof Error ? error.message : "Internal server error",
+        500
+      );
+    }
+  }),
+});
+
+http.route({
+  path: "/price/changes",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const url = new URL(request.url);
+      const region = url.searchParams.get("region") || undefined;
+      const category = url.searchParams.get("category") || undefined;
+      const changeType = (url.searchParams.get("type") as "drop" | "increase" | "all") || "all";
+      const minChangePercent = parseFloat(url.searchParams.get("minChangePercent") || "5");
+      const limit = parseInt(url.searchParams.get("limit") || "50", 10);
+      
+      const changes = await ctx.runQuery(api.priceHistory.getRecentPriceChanges, {
+        region,
+        category,
+        changeType,
+        minChangePercent,
+        limit,
+      });
+      return corsResponse(changes);
+    } catch (error) {
+      console.error("Price changes error:", error);
+      return corsErrorResponse(
+        error instanceof Error ? error.message : "Internal server error",
+        500
+      );
+    }
+  }),
+});
+
+// ============================================================
 // Catch-all for unmatched routes
 // ============================================================
 

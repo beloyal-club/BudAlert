@@ -4,6 +4,7 @@ import { Overview } from "./pages/Overview";
 import { Brands } from "./pages/Brands";
 import { Retailers } from "./pages/Retailers";
 import { Analytics } from "./pages/Analytics";
+import { PriceHistory } from "./pages/PriceHistory";
 import { LiveIndicator } from "./components/LiveIndicator";
 import { MobileNav } from "./components/MobileNav";
 
@@ -70,6 +71,7 @@ function AppContent() {
             <Route path="/" element={<Overview />} />
             <Route path="/brands" element={<Brands />} />
             <Route path="/retailers" element={<Retailers />} />
+            <Route path="/prices" element={<PriceHistory />} />
             <Route path="/analytics" element={<Analytics />} />
           </Routes>
         </main>

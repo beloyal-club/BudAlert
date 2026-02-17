@@ -10,6 +10,7 @@ const navLinks: NavLink[] = [
   { to: "/", label: "Overview" },
   { to: "/brands", label: "Brands" },
   { to: "/retailers", label: "Retailers" },
+  { to: "/prices", label: "Prices" },
   { to: "/analytics", label: "Analytics" },
 ];
 

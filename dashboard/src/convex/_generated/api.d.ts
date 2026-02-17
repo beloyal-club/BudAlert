@@ -15,14 +15,18 @@ import type {
 } from "convex/server";
 import type * as analytics from "../analytics.js";
 import type * as brands from "../brands.js";
+import type * as cache from "../cache.js";
 import type * as dashboard from "../dashboard.js";
 import type * as deadLetterQueue from "../deadLetterQueue.js";
 import type * as http from "../http.js";
 import type * as ingestion from "../ingestion.js";
 import type * as inventory from "../inventory.js";
 import type * as lib_productNormalizer from "../lib/productNormalizer.js";
+import type * as ocmSync from "../ocmSync.js";
+import type * as priceHistory from "../priceHistory.js";
 import type * as products from "../products.js";
 import type * as retailers from "../retailers.js";
+import type * as scraperAlerts from "../scraperAlerts.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -35,14 +39,18 @@ import type * as retailers from "../retailers.js";
 declare const fullApi: ApiFromModules<{
   analytics: typeof analytics;
   brands: typeof brands;
+  cache: typeof cache;
   dashboard: typeof dashboard;
   deadLetterQueue: typeof deadLetterQueue;
   http: typeof http;
   ingestion: typeof ingestion;
   inventory: typeof inventory;
   "lib/productNormalizer": typeof lib_productNormalizer;
+  ocmSync: typeof ocmSync;
+  priceHistory: typeof priceHistory;
   products: typeof products;
   retailers: typeof retailers;
+  scraperAlerts: typeof scraperAlerts;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,
