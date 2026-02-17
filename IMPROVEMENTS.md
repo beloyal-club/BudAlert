@@ -24,7 +24,7 @@
 - [ ] **DATA-002**: Expand coverage to iHeartJane-powered retailers ⭐ *PRIORITY*
 - [ ] **DATA-003**: Add Weedmaps menu discovery
 - [ ] **PERF-001**: Benchmark Convex query latency under load
-- [ ] **REL-001**: Add retry logic + dead letter queue to scraper ⭐ *PRIORITY*
+- [x] **REL-001**: Add retry logic + dead letter queue to scraper ✅ *DONE* 2026-02-17
 - [ ] **UX-001**: Dashboard real-time updates via Convex subscriptions
 
 ### Medium Priority → ELEVATED
@@ -53,6 +53,7 @@
 | ID | Description | Impact | Completed |
 |----|-------------|--------|-----------|
 | DATA-005 | Product name parsing/normalization | Clean product names, THC/strain/weight extraction | 2026-02-17 |
+| REL-001 | Retry logic + dead letter queue | Resilient scraping with 3 retries + failed scrape tracking | 2026-02-17 |
 
 ---
 
@@ -118,6 +119,31 @@
 ---
 
 ## 📝 Improvement Log
+
+### 2026-02-17 — REL-001: Retry Logic + Dead Letter Queue Complete
+**Worker:** Cron Improvement Worker
+
+**Changes:**
+- `workers/scrapers/dutchie.ts`: Added `scrapeRetailerWithRetry()` with exponential backoff
+  - 3 max retries, 1s base delay, 2x multiplier, 10s cap
+  - Jitter (±25%) to prevent thundering herd
+  - Retryable: HTTP 429/500/502/503/504, timeouts, network errors
+  - Posts to dead letter queue after exhausting retries
+  
+- `workers/browser-rendering/index.ts`: Added retry wrappers for screenshot and menu scrape
+  - 2 max retries, 2s base delay
+  
+- `convex/schema.ts`: New `deadLetterQueue` table with indexes by status/retailer/error type
+
+- `convex/deadLetterQueue.ts`: Full CRUD for dead letter management
+  - `addFailedScrape` - Auto-classifies error type, merges with existing unresolved entries
+  - `resolve` / `bulkResolve` - Mark entries as fixed/skipped/permanent
+  - `listUnresolved` / `getStats` - Dashboard queries
+  - `getByRetailer` - Debug specific retailer issues
+
+**Commit:** c440791 (pushed to main)
+
+---
 
 ### 2026-02-17 — DATA-005: Product Normalization Complete
 **Worker:** Subagent (cannasignal-worker-data005)
