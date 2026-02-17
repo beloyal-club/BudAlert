@@ -21,11 +21,15 @@
 
 ### High Priority
 - [x] **DATA-001**: Validate scraper output against Dutchie live data ✅ *DONE* 2026-02-17
-- [ ] **DATA-002**: Expand coverage to iHeartJane-powered retailers ⭐ *PRIORITY*
-- [ ] **DATA-003**: Add Weedmaps menu discovery
+- [ ] **DATA-007**: Scrape embedded Dutchie menus on retailer domains ⭐ *ACTIVE*
+- [ ] **DATA-002**: Expand coverage to iHeartJane-powered retailers 🔬 *BLOCKED: stealth research*
+- [ ] **DATA-003**: Add Weedmaps menu discovery 🔬 *BLOCKED: stealth research*
 - [ ] **PERF-001**: Benchmark Convex query latency under load
 - [x] **REL-001**: Add retry logic + dead letter queue to scraper ✅ *DONE* 2026-02-17
 - [ ] **UX-001**: Dashboard real-time updates via Convex subscriptions
+
+### 🔬 Research Track (Parallel)
+- [ ] **RESEARCH-001**: Stealth scraping techniques (Playwright CLI, CDP, modern bypass)
 
 ### Medium Priority → ELEVATED
 - [x] **DATA-005**: Product normalization (THC%, strain matching) ✅ *DONE* 2026-02-17
