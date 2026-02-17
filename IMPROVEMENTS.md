@@ -20,7 +20,7 @@
 ## 📋 Improvement Backlog
 
 ### High Priority
-- [ ] **DATA-001**: Validate scraper output against Dutchie live data ⭐ *PRIORITY*
+- [x] **DATA-001**: Validate scraper output against Dutchie live data ✅ *DONE* 2026-02-17
 - [ ] **DATA-002**: Expand coverage to iHeartJane-powered retailers ⭐ *PRIORITY*
 - [ ] **DATA-003**: Add Weedmaps menu discovery
 - [ ] **PERF-001**: Benchmark Convex query latency under load
@@ -52,6 +52,7 @@
 
 | ID | Description | Impact | Completed |
 |----|-------------|--------|-----------|
+| DATA-001 | Scraper validation against live Dutchie | Normalizer verified 10/10, Cloudflare gap documented, category inference fix | 2026-02-17 |
 | DATA-005 | Product name parsing/normalization | Clean product names, THC/strain/weight extraction | 2026-02-17 |
 | REL-001 | Retry logic + dead letter queue | Resilient scraping with 3 retries + failed scrape tracking | 2026-02-17 |
 
@@ -119,6 +120,30 @@
 ---
 
 ## 📝 Improvement Log
+
+### 2026-02-17 — DATA-001: Scraper Validation Complete
+**Worker:** Subagent (budalert-worker-data001)
+
+**Findings:**
+- ✅ Product normalizer: 10/10 test cases pass
+- ✅ Field extraction: THC, price, brand, strain, weight all accurate
+- ❌ Direct dutchie.com URLs blocked by Cloudflare
+- ❌ Browser worker times out (lacks stealth capability)
+- ✅ Embedded menus on retailer domains work with stealth Playwright
+- ❌ Inventory counts unavailable (all null) - Dutchie doesn't expose
+
+**Fixes Made:**
+- `convex/lib/productNormalizer.ts`: Added cannabis weight → flower category inference
+  - "Quarter Ounce" format now correctly categorized as flower
+  - Weights in 1-28g range inferred as flower
+
+**Architecture Gap Identified:**
+- Local stealth Playwright works but can't run in CF Workers
+- Need self-hosted browser pool or BrowserBase for production
+
+**Commit:** ed9443e
+
+---
 
 ### 2026-02-17 — REL-001: Retry Logic + Dead Letter Queue Complete
 **Worker:** Cron Improvement Worker
