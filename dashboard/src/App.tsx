@@ -4,6 +4,7 @@ import { Overview } from "./pages/Overview";
 import { Brands } from "./pages/Brands";
 import { Retailers } from "./pages/Retailers";
 import { Analytics } from "./pages/Analytics";
+import { LiveIndicator } from "./components/LiveIndicator";
 
 const CONVEX_URL = import.meta.env.VITE_CONVEX_URL;
 const isLiveMode = !!CONVEX_URL;
@@ -12,15 +13,18 @@ const isLiveMode = !!CONVEX_URL;
 const convex = CONVEX_URL ? new ConvexReactClient(CONVEX_URL) : null;
 
 function ConnectionBadge() {
+  // In live mode, we use the LiveIndicator component for real-time status
+  if (isLiveMode) {
+    return (
+      <span className="ml-3">
+        <LiveIndicator />
+      </span>
+    );
+  }
+  
   return (
-    <span
-      className={`ml-2 text-xs px-2 py-0.5 rounded-full font-medium ${
-        isLiveMode
-          ? "bg-green-900 text-green-300 border border-green-700"
-          : "bg-yellow-900 text-yellow-300 border border-yellow-700"
-      }`}
-    >
-      {isLiveMode ? "● LIVE" : "◌ DEMO"}
+    <span className="ml-2 text-xs px-2 py-0.5 rounded-full font-medium bg-yellow-900 text-yellow-300 border border-yellow-700">
+      ◌ DEMO
     </span>
   );
 }

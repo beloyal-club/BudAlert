@@ -1,12 +1,18 @@
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
+import { useLastUpdated, LastUpdatedText } from "../components/LiveIndicator";
 
 export function Overview() {
+  // Live stats subscription
+  const stats = useQuery(api.dashboard.getStats);
+  const { lastUpdated: statsUpdated, justUpdated: statsJustUpdated } = useLastUpdated(stats);
+
   const trending = useQuery(api.analytics.getTrending, {
     region: "statewide",
     period: "weekly",
     limit: 10,
   });
+  const { lastUpdated: trendingUpdated, justUpdated: trendingJustUpdated } = useLastUpdated(trending);
 
   const priceChanges = useQuery(api.inventory.getPriceChanges, {
     hoursAgo: 24,
@@ -17,46 +23,112 @@ export function Overview() {
     limit: 10,
   });
 
+  const activity = useQuery(api.dashboard.getActivityFeed, { limit: 5 });
+
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Market Overview</h1>
-        <p className="text-gray-400">
-          Real-time cannabis market intelligence for New York State
-        </p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Market Overview</h1>
+          <p className="text-gray-400">
+            Real-time cannabis market intelligence for New York State
+          </p>
+        </div>
+        <div className="text-right">
+          <LastUpdatedText date={statsUpdated} />
+        </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className={`grid grid-cols-1 md:grid-cols-4 gap-4 transition-all duration-300 ${
+        statsJustUpdated ? "ring-2 ring-green-500/50 rounded-xl" : ""
+      }`}>
         <StatCard
           title="Active Retailers"
-          value="—"
-          change="+3 this week"
+          value={stats?.retailers.total ?? "—"}
+          change={stats ? `${stats.retailers.byRegion.nyc || 0} in NYC` : "Loading..."}
           color="green"
+          pulse={statsJustUpdated}
         />
         <StatCard
           title="Tracked Brands"
-          value={trending?.brands?.length || "—"}
-          change="Top performers"
+          value={stats?.brands.total ?? "—"}
+          change={stats ? `${stats.brands.verified} verified` : "Loading..."}
           color="blue"
+          pulse={statsJustUpdated}
         />
         <StatCard
           title="Price Drops"
-          value={priceChanges?.filter((p: any) => p.direction === "down").length || "—"}
+          value={stats?.priceChanges.drops ?? "—"}
           change="Last 24h"
           color="yellow"
+          pulse={statsJustUpdated}
         />
         <StatCard
           title="Out of Stock"
-          value={outOfStock?.length || "—"}
-          change="High velocity signal"
+          value={stats?.inventory.outOfStock ?? "—"}
+          change={stats ? `${stats.inventory.stockRate}% in stock` : "High velocity signal"}
           color="red"
+          pulse={statsJustUpdated}
         />
       </div>
 
+      {/* Inventory Summary */}
+      {stats && stats.inventory.totalRecords > 0 && (
+        <section className="bg-gray-900/50 rounded-lg p-4 border border-gray-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <div>
+                <span className="text-2xl font-bold text-white">{stats.inventory.totalRecords}</span>
+                <span className="text-gray-400 ml-2">inventory records</span>
+              </div>
+              <div className="text-gray-500">•</div>
+              <div>
+                <span className="text-xl font-semibold text-green-400">{stats.inventory.uniqueProducts}</span>
+                <span className="text-gray-400 ml-2">unique products</span>
+              </div>
+            </div>
+            {stats.scrapeHealth.unresolvedErrors > 0 && (
+              <div className="flex items-center gap-2 text-yellow-400">
+                <span className="text-sm">⚠️ {stats.scrapeHealth.unresolvedErrors} scrape errors</span>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Recent Activity Feed */}
+      {activity && activity.length > 0 && (
+        <section className="bg-gray-900 rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-4">📡 Recent Scrapes</h2>
+          <div className="space-y-2">
+            {activity.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center justify-between p-3 bg-gray-800 rounded text-sm"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-green-400">✓</span>
+                  <span className="font-medium">{item.retailerName}</span>
+                </div>
+                <div className="flex items-center gap-4 text-gray-400">
+                  <span>{item.productCount} products</span>
+                  <span>{new Date(item.timestamp).toLocaleTimeString()}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Trending Brands */}
-      <section className="bg-gray-900 rounded-lg p-6">
-        <h2 className="text-xl font-semibold mb-4">🔥 Trending Brands</h2>
+      <section className={`bg-gray-900 rounded-lg p-6 transition-all duration-300 ${
+        trendingJustUpdated ? "ring-2 ring-blue-500/50" : ""
+      }`}>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">🔥 Trending Brands</h2>
+          <LastUpdatedText date={trendingUpdated} />
+        </div>
         {trending === undefined ? (
           <div className="text-gray-500">Loading...</div>
         ) : trending?.brands?.length === 0 ? (
@@ -163,11 +235,13 @@ function StatCard({
   value,
   change,
   color,
+  pulse = false,
 }: {
   title: string;
   value: string | number;
   change: string;
   color: "green" | "blue" | "yellow" | "red";
+  pulse?: boolean;
 }) {
   const colorMap = {
     green: "border-green-500",
@@ -176,8 +250,19 @@ function StatCard({
     red: "border-red-500",
   };
 
+  const pulseColor = {
+    green: "bg-green-500/20",
+    blue: "bg-blue-500/20",
+    yellow: "bg-yellow-500/20",
+    red: "bg-red-500/20",
+  };
+
   return (
-    <div className={`bg-gray-900 rounded-lg p-4 border-l-4 ${colorMap[color]}`}>
+    <div
+      className={`bg-gray-900 rounded-lg p-4 border-l-4 ${colorMap[color]} transition-all duration-300 ${
+        pulse ? pulseColor[color] : ""
+      }`}
+    >
       <div className="text-sm text-gray-400">{title}</div>
       <div className="text-2xl font-bold mt-1">{value}</div>
       <div className="text-xs text-gray-500 mt-1">{change}</div>

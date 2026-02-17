@@ -8,54 +8,47 @@
  * @module
  */
 
-import type * as analytics from "../analytics.js";
-import type * as brands from "../brands.js";
-import type * as http from "../http.js";
-import type * as ingestion from "../ingestion.js";
-import type * as inventory from "../inventory.js";
-import type * as products from "../products.js";
-import type * as retailers from "../retailers.js";
-
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
 } from "convex/server";
-
-declare const fullApi: ApiFromModules<{
-  analytics: typeof analytics;
-  brands: typeof brands;
-  http: typeof http;
-  ingestion: typeof ingestion;
-  inventory: typeof inventory;
-  products: typeof products;
-  retailers: typeof retailers;
-}>;
+import type * as analytics from "../analytics.js";
+import type * as brands from "../brands.js";
+import type * as dashboard from "../dashboard.js";
+import type * as deadLetterQueue from "../deadLetterQueue.js";
+import type * as http from "../http.js";
+import type * as ingestion from "../ingestion.js";
+import type * as inventory from "../inventory.js";
+import type * as lib_productNormalizer from "../lib/productNormalizer.js";
+import type * as products from "../products.js";
+import type * as retailers from "../retailers.js";
 
 /**
- * A utility for referencing Convex functions in your app's public API.
+ * A utility for referencing Convex functions in your app's API.
  *
  * Usage:
  * ```js
  * const myFunctionReference = api.myModule.myFunction;
  * ```
  */
+declare const fullApi: ApiFromModules<{
+  analytics: typeof analytics;
+  brands: typeof brands;
+  dashboard: typeof dashboard;
+  deadLetterQueue: typeof deadLetterQueue;
+  http: typeof http;
+  ingestion: typeof ingestion;
+  inventory: typeof inventory;
+  "lib/productNormalizer": typeof lib_productNormalizer;
+  products: typeof products;
+  retailers: typeof retailers;
+}>;
 export declare const api: FilterApi<
   typeof fullApi,
   FunctionReference<any, "public">
 >;
-
-/**
- * A utility for referencing Convex functions in your app's internal API.
- *
- * Usage:
- * ```js
- * const myFunctionReference = internal.myModule.myFunction;
- * ```
- */
 export declare const internal: FilterApi<
   typeof fullApi,
   FunctionReference<any, "internal">
 >;
-
-export declare const components: {};
