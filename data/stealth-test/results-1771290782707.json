@@ -1,0 +1,24 @@
+[
+  {
+    "url": "https://dutchie.com/dispensary/housing-works-cannabis-co",
+    "timestamp": "2026-02-17T01:12:04.736Z",
+    "success": false,
+    "blocked": false,
+    "blockReason": null,
+    "products": [],
+    "pageTitle": "",
+    "error": "page.evaluate: ReferenceError: __name is not defined\n    at eval (eval at evaluate (:290:30), <anonymous>:1:23)\n    at UtilityScript.evaluate (<anonymous>:292:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)",
+    "screenshotPath": "/root/clawd/cannasignal/data/stealth-test/error-1771290749646.png"
+  },
+  {
+    "url": "https://conbud.com/stores/conbud-les/products/flower",
+    "timestamp": "2026-02-17T01:12:34.364Z",
+    "success": false,
+    "blocked": false,
+    "blockReason": null,
+    "products": [],
+    "pageTitle": "Cannabis Flower | CONBUD",
+    "error": "page.evaluate: ReferenceError: __name is not defined\n    at eval (eval at evaluate (:290:30), <anonymous>:1:23)\n    at UtilityScript.evaluate (<anonymous>:292:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)",
+    "screenshotPath": "/root/clawd/cannasignal/data/stealth-test/error-1771290781419.png"
+  }
+]
