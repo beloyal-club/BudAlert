@@ -39,7 +39,7 @@
 
 ### Low Priority (Polish)
 - [x] **UX-003**: Mobile-responsive dashboard ✅ *DONE* 2026-02-17
-- [ ] **REL-002**: Alerting on scraper failures
+- [x] **REL-002**: Alerting on scraper failures ✅ *DONE* 2026-02-17
 - [ ] **DATA-006**: Historical price tracking setup
 
 ---
@@ -56,6 +56,7 @@
 
 | ID | Description | Impact | Completed |
 |----|-------------|--------|-----------|
+| REL-002 | Scraper alerting system | Discord webhooks, alert conditions, dashboard panel, HTTP endpoints | 2026-02-17 |
 | UX-003 | Mobile-responsive dashboard | MobileNav hamburger, xs breakpoint, responsive cards/grids, safe area insets | 2026-02-17 |
 | PERF-002 | Stats cache layer | O(1) dashboard stats via statsCache table, 5-min TTL, HTTP refresh endpoint | 2026-02-17 |
 | UX-002 | Dashboard search/filter | SearchFilter component, debounced search, text highlight, sort options | 2026-02-17 |
@@ -130,6 +131,66 @@
 ---
 
 ## 📝 Improvement Log
+
+### 2026-02-17 — REL-002: Scraper Alerting System Complete
+**Worker:** Cron Improvement Worker (Cycle 15)
+
+**Summary:**
+Implemented comprehensive scraper alerting to proactively detect and notify on scraper issues.
+
+**New Module - `convex/scraperAlerts.ts`:**
+- **Alert Conditions:**
+  - `new_failures` - Triggers when 3+ new dead letter queue entries in last hour
+  - `high_failure_rate` - Triggers when >20% of scrape jobs fail
+  - `stale_scraper` - Triggers when 3+ retailers haven't been scraped in 6+ hours
+  - `rate_limit_spike` - Triggers when 5+ rate limit (429) errors in last hour
+- **Severity Levels:** low, medium, high, critical (based on thresholds)
+- **Cooldown:** 30-minute minimum between alerts of same type
+- **Discord Webhook:** Rich embeds with emoji indicators, summary stats
+
+**Queries/Mutations:**
+- `checkAlertConditions` - Evaluate all conditions without sending
+- `getAlertHistory` - Get past alerts with filtering
+- `getLastAlerts` - Cooldown checking
+- `recordAlert` - Store alert in history
+- `acknowledgeAlert` - Mark alert as handled
+- `getAlertDigest` - Dashboard summary
+
+**Actions:**
+- `checkAndAlert` - Full check + optional Discord delivery
+- `testWebhook` - Verify webhook configuration
+
+**HTTP Endpoints (`convex/http.ts`):**
+- `POST /alerts/check` - Trigger alert check, optionally send
+- `GET /alerts/digest` - Dashboard summary
+- `GET /alerts/conditions` - Current condition status
+- `GET /alerts/history` - Alert history
+- `POST /alerts/webhook-test` - Test Discord webhook
+
+**Dashboard Component - `AlertPanel.tsx`:**
+- Real-time alert conditions with severity colors
+- Pulsing animation for critical alerts
+- Recent alert history with inline acknowledgment
+- Summary stats grid (errors, rate limits, stale, jobs/hr)
+- `AlertStatusBadge` for nav integration
+
+**Schema Changes:**
+- New `scraperAlerts` table with indexes by type, severity, acknowledged, time
+
+**CLI Script - `scripts/alert-test.ts`:**
+- `check` - View current conditions
+- `digest` - Get dashboard summary
+- `test-webhook <URL>` - Test Discord delivery
+- `trigger [URL]` - Force alert check
+
+**Reliability Impact:**
+- Proactive failure detection before problems compound
+- Clear severity escalation for prioritization
+- Full audit trail of alerts and acknowledgments
+
+**Commit:** 0b3ab3a (pushed to main)
+
+---
 
 ### 2026-02-17 — PERF-002: Stats Cache Layer Complete
 **Worker:** Cron Improvement Worker (Cycle 11)
