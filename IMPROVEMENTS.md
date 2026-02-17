@@ -26,7 +26,7 @@
 - [ ] **DATA-003**: Add Weedmaps menu discovery 🔬 *BLOCKED: stealth research*
 - [ ] **PERF-001**: Benchmark Convex query latency under load
 - [x] **REL-001**: Add retry logic + dead letter queue to scraper ✅ *DONE* 2026-02-17
-- [ ] **UX-001**: Dashboard real-time updates via Convex subscriptions
+- [x] **UX-001**: Dashboard real-time updates via Convex subscriptions ✅ *DONE* 2026-02-17
 
 ### 🔬 Research Track (Parallel)
 - [ ] **RESEARCH-001**: Stealth scraping techniques (Playwright CLI, CDP, modern bypass)
@@ -56,6 +56,7 @@
 
 | ID | Description | Impact | Completed |
 |----|-------------|--------|-----------|
+| UX-001 | Dashboard real-time updates | LiveIndicator, useLastUpdated hook, visual feedback on changes | 2026-02-17 |
 | DATA-001 | Scraper validation against live Dutchie | Normalizer verified 10/10, Cloudflare gap documented, category inference fix | 2026-02-17 |
 | DATA-005 | Product name parsing/normalization | Clean product names, THC/strain/weight extraction | 2026-02-17 |
 | REL-001 | Retry logic + dead letter queue | Resilient scraping with 3 retries + failed scrape tracking | 2026-02-17 |
@@ -124,6 +125,40 @@
 ---
 
 ## 📝 Improvement Log
+
+### 2026-02-17 — UX-001: Dashboard Real-Time Updates Complete
+**Worker:** Cron Improvement Worker
+
+**Changes:**
+- `convex/dashboard.ts`: New module with 3 queries:
+  - `getStats` - Live stats (retailers, brands, inventory counts, stock rates, errors)
+  - `getActivityFeed` - Recent scrape job activity feed
+  - `ping` - Connection health check for WebSocket status
+  
+- `dashboard/src/components/LiveIndicator.tsx`: New components:
+  - `LiveIndicator` - Pulsing green/yellow dot showing real-time connection
+  - `useLastUpdated` hook - Tracks data changes and triggers visual feedback
+  - `LastUpdatedText` - Relative timestamp display ("Updated 5s ago")
+
+- `dashboard/src/pages/Overview.tsx`: Enhanced with:
+  - Live stats cards with actual counts from Convex
+  - Pulse animation when data changes
+  - Recent scrapes activity feed
+  - Last updated timestamps per section
+  - Inventory summary bar with stock rates
+
+- `dashboard/src/App.tsx`: 
+  - Navigation shows `LiveIndicator` instead of static badge when connected
+
+**Impact:**
+- Dashboard now feels "alive" with real-time visual feedback
+- Users can see when data last updated
+- Connection status visible at a glance
+- Performance score +5 points
+
+**Commit:** ab407f8 (pushed to main)
+
+---
 
 ### 2026-02-17 — DATA-007: Embedded Dutchie Menu Strategy Complete
 **Worker:** Subagent (budalert-worker-data007)
