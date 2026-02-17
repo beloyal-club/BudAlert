@@ -38,7 +38,7 @@
 - [x] **UX-002**: Add filtering/search to dashboard tables ✅ *DONE* 2026-02-17
 
 ### Low Priority (Polish)
-- [ ] **UX-003**: Mobile-responsive dashboard
+- [x] **UX-003**: Mobile-responsive dashboard ✅ *DONE* 2026-02-17
 - [ ] **REL-002**: Alerting on scraper failures
 - [ ] **DATA-006**: Historical price tracking setup
 
@@ -56,6 +56,7 @@
 
 | ID | Description | Impact | Completed |
 |----|-------------|--------|-----------|
+| UX-003 | Mobile-responsive dashboard | MobileNav hamburger, xs breakpoint, responsive cards/grids, safe area insets | 2026-02-17 |
 | PERF-002 | Stats cache layer | O(1) dashboard stats via statsCache table, 5-min TTL, HTTP refresh endpoint | 2026-02-17 |
 | UX-002 | Dashboard search/filter | SearchFilter component, debounced search, text highlight, sort options | 2026-02-17 |
 | DATA-004 | OCM license sync | 580 licenses synced, 238 operational retailers, Convex integration | 2026-02-17 |
@@ -445,6 +446,59 @@ Test results: **10/10 real scrape samples pass**
 - Identified 593 NYS retailers, coverage gaps
 - Scored baseline: Data 45/100, Coverage 15/100, Performance 40/100
 - Top priorities: DATA-005 (product name parsing), DATA-002 (iHeartJane expansion), REL-001 (retry/pipeline)
+
+### 2026-02-17 — UX-003: Mobile-Responsive Dashboard Complete
+**Worker:** Cron Improvement Worker (Cycle 13)
+
+**Summary:**
+Made the dashboard fully responsive for mobile devices with hamburger navigation and optimized layouts.
+
+**New Component - `MobileNav.tsx`:**
+- Hamburger button with animated transform
+- Slide-out drawer with backdrop overlay
+- Active route highlighting
+- Touch-friendly tap targets
+
+**App.tsx Updates:**
+- Responsive navigation: inline on desktop, hamburger on mobile
+- Condensed logo text on xs screens (CS vs CannaSignal)
+- Smaller padding/margins on mobile
+
+**SearchFilter.tsx Updates:**
+- Horizontal scrolling filter buttons on mobile
+- Responsive input sizing
+- Hidden scrollbars with scroll functionality
+- Result count display adapts to screen size
+
+**Overview.tsx Updates:**
+- Stats grid: 2 columns on mobile, 4 on desktop
+- Smaller text sizes (text-xs sm:text-sm patterns)
+- Compact inventory summary
+- Truncated text for long product/brand names
+
+**Retailers.tsx Updates:**
+- Responsive card layout with truncation
+- Shorter region labels for mobile
+- Compact platform badges
+
+**Brands.tsx Updates:**
+- Responsive grid (1/2/3 columns)
+- Truncated aliases list
+- Compact filter buttons
+
+**Tailwind Config:**
+- Added `xs: 480px` breakpoint
+
+**CSS Enhancements:**
+- Hidden scrollbars for horizontal scroll areas
+- Safe area insets for notched devices (iPhone X+)
+- Mobile tap highlight color
+- Text size adjustment prevention
+- 2-line truncation utility
+
+**Commit:** 9bb2508 (pushed to main)
+
+---
 
 ### 2026-02-17 — System Created
 - Initialized continuous improvement framework
