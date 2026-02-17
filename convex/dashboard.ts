@@ -6,16 +6,48 @@ import { v } from "convex/values";
 // ============================================================
 
 /**
- * Get live dashboard stats - subscribed to all relevant tables
+ * Get dashboard stats - uses cache when available (PERF-002)
+ * Falls back to live computation if cache is stale/missing
  */
 export const getStats = query({
   args: {},
   handler: async (ctx) => {
+    const now = Date.now();
+    const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+    
+    // Try cache first (O(1) lookup)
+    const cached = await ctx.db
+      .query("statsCache")
+      .withIndex("by_key", (q) => q.eq("key", "global"))
+      .first();
+    
+    // Use cache if fresh
+    if (cached && (now - cached.computedAt) < CACHE_TTL_MS) {
+      return {
+        timestamp: cached.computedAt,
+        retailers: {
+          total: cached.retailers.total,
+          byRegion: cached.retailers.byRegion,
+        },
+        brands: cached.brands,
+        inventory: {
+          ...cached.inventory,
+          stockRate: cached.inventory.totalRecords > 0
+            ? Math.round((cached.inventory.inStock / cached.inventory.totalRecords) * 100)
+            : 0,
+        },
+        priceChanges: { last24h: 0, drops: 0 }, // TODO: add to cache
+        scrapeHealth: cached.scrapeHealth,
+        fromCache: true,
+        cacheVersion: cached.version,
+      };
+    }
+    
+    // Cache miss/stale - compute live (original logic)
     const [retailers, brands, inventory, deadLetters] = await Promise.all([
       ctx.db.query("retailers").filter(q => q.eq(q.field("isActive"), true)).collect(),
       ctx.db.query("brands").collect(),
       ctx.db.query("currentInventory").collect(),
-      // Dead letters without resolvedAt are unresolved
       ctx.db.query("deadLetterQueue").filter(q => q.eq(q.field("resolvedAt"), undefined)).collect(),
     ]);
     
@@ -27,7 +59,7 @@ export const getStats = query({
     const uniqueProductIds = new Set(inventory.map(i => i.productId.toString()));
     
     // Calculate price changes in last 24h
-    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+    const oneDayAgo = now - 24 * 60 * 60 * 1000;
     const recentPriceChanges = inventory.filter(
       i => i.priceChangedAt && i.priceChangedAt > oneDayAgo
     );
@@ -42,7 +74,7 @@ export const getStats = query({
     }, {} as Record<string, number>);
     
     return {
-      timestamp: Date.now(),
+      timestamp: now,
       retailers: {
         total: retailers.length,
         byRegion: regionCounts,
@@ -67,6 +99,7 @@ export const getStats = query({
       scrapeHealth: {
         unresolvedErrors: deadLetters.length,
       },
+      fromCache: false,
     };
   },
 });

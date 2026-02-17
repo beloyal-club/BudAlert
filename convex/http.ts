@@ -130,6 +130,65 @@ http.route({
 });
 
 // ============================================================
+// POST /cache/refresh (PERF-002)
+// Refresh the stats cache
+// ============================================================
+
+http.route({
+  path: "/cache/refresh",
+  method: "OPTIONS",
+  handler: httpAction(async () => {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders,
+    });
+  }),
+});
+
+http.route({
+  path: "/cache/refresh",
+  method: "POST",
+  handler: httpAction(async (ctx) => {
+    try {
+      const result = await ctx.runMutation(api.cache.refreshGlobalCache, {});
+      return corsResponse({
+        success: true,
+        ...result,
+        refreshedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Cache refresh error:", error);
+      return corsErrorResponse(
+        error instanceof Error ? error.message : "Internal server error",
+        500
+      );
+    }
+  }),
+});
+
+// ============================================================
+// GET /cache/info (PERF-002)
+// Get cache status
+// ============================================================
+
+http.route({
+  path: "/cache/info",
+  method: "GET",
+  handler: httpAction(async (ctx) => {
+    try {
+      const info = await ctx.runQuery(api.cache.getCacheInfo, {});
+      return corsResponse(info);
+    } catch (error) {
+      console.error("Cache info error:", error);
+      return corsErrorResponse(
+        error instanceof Error ? error.message : "Internal server error",
+        500
+      );
+    }
+  }),
+});
+
+// ============================================================
 // Catch-all for unmatched routes
 // ============================================================
 

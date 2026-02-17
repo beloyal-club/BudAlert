@@ -294,4 +294,36 @@ export default defineSchema({
     .index("by_error_type", ["errorType"])
     .index("by_platform", ["sourcePlatform"])
     .index("by_time", ["lastAttemptAt"]),
+
+  // ============================================================
+  // STATS CACHE (PERF-002)
+  // Precomputed aggregates for fast dashboard queries
+  // ============================================================
+
+  statsCache: defineTable({
+    key: v.string(),                    // "global" | "region:nyc" | etc.
+    retailers: v.object({
+      total: v.number(),
+      active: v.number(),
+      byRegion: v.any(),                // Record<string, number>
+    }),
+    brands: v.object({
+      total: v.number(),
+      verified: v.number(),
+    }),
+    inventory: v.object({
+      totalRecords: v.number(),
+      uniqueProducts: v.number(),
+      inStock: v.number(),
+      outOfStock: v.number(),
+    }),
+    scrapeHealth: v.object({
+      unresolvedErrors: v.number(),
+      totalJobs24h: v.number(),
+      successfulJobs24h: v.number(),
+    }),
+    computedAt: v.number(),
+    version: v.number(),                // Incremented on each refresh
+  })
+    .index("by_key", ["key"]),
 });
