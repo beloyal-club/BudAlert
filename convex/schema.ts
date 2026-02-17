@@ -264,4 +264,34 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_retailer_time", ["retailerId", "startedAt"])
     .index("by_batch", ["batchId"]),
+
+  // ============================================================
+  // DEAD LETTER QUEUE (REL-001)
+  // Failed scrapes that exceeded max retries for manual review
+  // ============================================================
+
+  deadLetterQueue: defineTable({
+    retailerId: v.id("retailers"),
+    retailerSlug: v.string(),
+    retailerName: v.string(),
+    sourcePlatform: v.string(),
+    sourceUrl: v.string(),
+    batchId: v.string(),
+    errorMessage: v.string(),
+    errorType: v.string(),              // "http_error" | "parse_error" | "timeout" | "rate_limit" | "unknown"
+    statusCode: v.optional(v.number()), // HTTP status code if applicable
+    totalRetries: v.number(),           // How many times we tried
+    firstAttemptAt: v.number(),         // When first attempt was made
+    lastAttemptAt: v.number(),          // When final attempt failed
+    resolvedAt: v.optional(v.number()), // When manually resolved/dismissed
+    resolvedBy: v.optional(v.string()), // Who resolved it
+    resolution: v.optional(v.string()), // "retry_success" | "skipped" | "fixed" | "permanent_failure"
+    notes: v.optional(v.string()),      // Manual notes
+    rawResponse: v.optional(v.string()),// First 1000 chars of failed response for debugging
+  })
+    .index("by_status", ["resolvedAt"])
+    .index("by_retailer", ["retailerId"])
+    .index("by_error_type", ["errorType"])
+    .index("by_platform", ["sourcePlatform"])
+    .index("by_time", ["lastAttemptAt"]),
 });
