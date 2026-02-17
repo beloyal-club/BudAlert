@@ -233,6 +233,18 @@ export function normalizeProductName(
     }
   }
   
+  // Infer category=flower from cannabis-specific weights when category still unknown
+  // Quarter ounce, eighth, half ounce, etc. are almost always flower
+  if (category === 'other' && weight) {
+    const lowerName = workingName.toLowerCase();
+    const hasCannaWeight = /\b(quarter|eighth|half|oz|ounce)\b/i.test(lowerName);
+    // Also check if weight is in typical flower range (1g-28g)
+    const typicalFlowerWeight = weight.unit === 'g' && weight.amount >= 1 && weight.amount <= 28;
+    if (hasCannaWeight || typicalFlowerWeight) {
+      category = 'flower';
+    }
+  }
+  
   // === STEP 7: Parse structured format "Brand | Description | Name" ===
   const pipeSegments = workingName.split('|').map(s => s.trim()).filter(Boolean);
   let cleanName = workingName;
