@@ -14,10 +14,10 @@ export function Retailers() {
   });
 
   const regions = [
-    { value: undefined, label: "All Regions" },
+    { value: undefined, label: "All" },
     { value: "nyc", label: "🏙️ NYC" },
-    { value: "long_island", label: "🏖️ Long Island" },
-    { value: "hudson_valley", label: "🏔️ Hudson Valley" },
+    { value: "long_island", label: "🏖️ LI" },
+    { value: "hudson_valley", label: "🏔️ Hudson" },
     { value: "upstate", label: "🌲 Upstate" },
   ];
 
@@ -51,17 +51,17 @@ export function Retailers() {
   }, [retailers, searchQuery, sortBy]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold mb-2">Retailer Directory</h1>
-        <p className="text-gray-400">
-          Licensed NYS cannabis dispensaries with menu tracking
+        <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Retailer Directory</h1>
+        <p className="text-gray-400 text-sm sm:text-base">
+          Licensed NYS cannabis dispensaries
         </p>
       </div>
 
       {/* Search + Region Filter */}
       <FilterBar 
-        searchPlaceholder="Search retailers by name, city, license..."
+        searchPlaceholder="Search by name, city, license..."
         onSearch={setSearchQuery}
         resultCount={filteredRetailers?.length}
         totalCount={retailers?.length}
@@ -78,8 +78,8 @@ export function Retailers() {
       </FilterBar>
 
       {/* Sort Options */}
-      <div className="flex items-center gap-2 text-sm text-gray-400">
-        <span>Sort by:</span>
+      <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-400">
+        <span>Sort:</span>
         <button
           onClick={() => setSortBy("name")}
           className={`px-2 py-1 rounded ${
@@ -94,16 +94,16 @@ export function Retailers() {
             sortBy === "lastScraped" ? "bg-gray-700 text-white" : "hover:text-white"
           }`}
         >
-          Recently Scraped
+          Recent
         </button>
       </div>
 
       {/* Retailer List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
         {filteredRetailers === undefined ? (
-          <div className="text-gray-500 col-span-full">Loading retailers...</div>
+          <div className="text-gray-500 col-span-full text-sm">Loading retailers...</div>
         ) : filteredRetailers.length === 0 ? (
-          <div className="text-gray-500 col-span-full text-center py-8">
+          <div className="text-gray-500 col-span-full text-center py-6 sm:py-8 text-sm">
             {searchQuery ? (
               <>No retailers match "{searchQuery}"</>
             ) : (
@@ -141,30 +141,30 @@ function RetailerCard({ retailer, searchQuery }: { retailer: any; searchQuery: s
   };
 
   return (
-    <div className="bg-gray-900 rounded-lg p-5 hover:bg-gray-800 transition">
-      <div className="flex justify-between items-start">
-        <div>
-          <h3 className="text-lg font-semibold">{highlight(retailer.name)}</h3>
-          <div className="text-sm text-gray-400 mt-1">
+    <div className="bg-gray-900 rounded-lg p-4 sm:p-5 hover:bg-gray-800 transition">
+      <div className="flex justify-between items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-base sm:text-lg font-semibold truncate">{highlight(retailer.name)}</h3>
+          <div className="text-xs sm:text-sm text-gray-400 mt-0.5 sm:mt-1">
             {highlight(retailer.address?.city || "")}, {retailer.address?.state}
           </div>
         </div>
-        <span className="text-xs px-2 py-1 bg-gray-800 rounded">
+        <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 bg-gray-800 rounded flex-shrink-0">
           {retailer.region?.toUpperCase() || "N/A"}
         </span>
       </div>
 
       {retailer.licenseNumber && (
-        <div className="mt-2 text-xs text-gray-500">
+        <div className="mt-2 text-[10px] sm:text-xs text-gray-500 truncate">
           License: {highlight(retailer.licenseNumber)}
         </div>
       )}
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-3 sm:mt-4 flex flex-wrap gap-1.5 sm:gap-2">
         {retailer.menuSources?.map((source: any, i: number) => (
           <span
             key={i}
-            className={`text-xs px-2 py-1 rounded ${
+            className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded ${
               platformColors[source.platform] || platformColors.custom
             }`}
           >
@@ -174,12 +174,12 @@ function RetailerCard({ retailer, searchQuery }: { retailer: any; searchQuery: s
         ))}
       </div>
 
-      <div className="mt-4 pt-4 border-t border-gray-800">
-        <div className="flex justify-between text-sm">
+      <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-800">
+        <div className="flex justify-between text-xs sm:text-sm">
           <span className="text-gray-400">Last scraped</span>
-          <span>
+          <span className="text-gray-300">
             {retailer.menuSources?.[0]?.lastScrapedAt
-              ? new Date(retailer.menuSources[0].lastScrapedAt).toLocaleString()
+              ? new Date(retailer.menuSources[0].lastScrapedAt).toLocaleDateString()
               : "Never"}
           </span>
         </div>

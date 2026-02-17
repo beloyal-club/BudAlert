@@ -14,12 +14,12 @@ export function Brands() {
   });
 
   const categories = [
-    { value: undefined, label: "All Categories" },
+    { value: undefined, label: "All" },
     { value: "flower", label: "🌸 Flower" },
-    { value: "pre_roll", label: "🚬 Pre-Rolls" },
-    { value: "vape", label: "💨 Vapes" },
-    { value: "edible", label: "🍬 Edibles" },
-    { value: "concentrate", label: "💎 Concentrates" },
+    { value: "pre_roll", label: "🚬 Pre-Roll" },
+    { value: "vape", label: "💨 Vape" },
+    { value: "edible", label: "🍬 Edible" },
+    { value: "concentrate", label: "💎 Conc." },
   ];
 
   // Filter and sort brands
@@ -49,17 +49,17 @@ export function Brands() {
   }, [brands, searchQuery, sortBy]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold mb-2">Brand Directory</h1>
-        <p className="text-gray-400">
-          Track brand distribution, pricing, and velocity across NYS dispensaries
+        <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Brand Directory</h1>
+        <p className="text-gray-400 text-sm sm:text-base">
+          Track brand distribution across NYS
         </p>
       </div>
 
       {/* Search + Category Filters */}
       <FilterBar 
-        searchPlaceholder="Search brands by name or alias..."
+        searchPlaceholder="Search brands..."
         onSearch={setSearchQuery}
         resultCount={filteredBrands?.length}
         totalCount={brands?.length}
@@ -76,8 +76,8 @@ export function Brands() {
       </FilterBar>
 
       {/* Sort Options */}
-      <div className="flex items-center gap-2 text-sm text-gray-400">
-        <span>Sort by:</span>
+      <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-400">
+        <span>Sort:</span>
         <button
           onClick={() => setSortBy("name")}
           className={`px-2 py-1 rounded ${
@@ -92,16 +92,16 @@ export function Brands() {
             sortBy === "recent" ? "bg-gray-700 text-white" : "hover:text-white"
           }`}
         >
-          Recently Added
+          Recent
         </button>
       </div>
 
       {/* Brand List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {filteredBrands === undefined ? (
-          <div className="text-gray-500 col-span-full">Loading brands...</div>
+          <div className="text-gray-500 col-span-full text-sm">Loading brands...</div>
         ) : filteredBrands.length === 0 ? (
-          <div className="text-gray-500 col-span-full text-center py-8">
+          <div className="text-gray-500 col-span-full text-center py-6 sm:py-8 text-sm">
             {searchQuery ? (
               <>No brands match "{searchQuery}"</>
             ) : (
@@ -132,35 +132,36 @@ function BrandCard({ brand, searchQuery }: { brand: any; searchQuery: string }) 
   };
 
   return (
-    <div className="bg-gray-900 rounded-lg p-5 hover:bg-gray-800 transition cursor-pointer">
-      <div className="flex items-start justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">{highlight(brand.name)}</h3>
-          <div className="text-sm text-gray-400 mt-1">
+    <div className="bg-gray-900 rounded-lg p-4 sm:p-5 hover:bg-gray-800 transition cursor-pointer">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-base sm:text-lg font-semibold truncate">{highlight(brand.name)}</h3>
+          <div className="text-xs sm:text-sm text-gray-400 mt-0.5 sm:mt-1">
             {brand.category || "Multi-category"}
           </div>
         </div>
         {brand.isVerified && (
-          <span className="text-green-400" title="Verified brand">
+          <span className="text-green-400 flex-shrink-0" title="Verified brand">
             ✓
           </span>
         )}
       </div>
       
       {brand.aliases && brand.aliases.length > 0 && (
-        <div className="mt-3 text-xs text-gray-500">
-          Also known as: {brand.aliases.map((a: string, i: number) => (
+        <div className="mt-2 sm:mt-3 text-[10px] sm:text-xs text-gray-500 truncate">
+          Also: {brand.aliases.slice(0, 3).map((a: string, i: number) => (
             <span key={i}>
               {i > 0 && ", "}
               {highlight(a)}
             </span>
           ))}
+          {brand.aliases.length > 3 && ` +${brand.aliases.length - 3}`}
         </div>
       )}
       
-      <div className="mt-4 pt-4 border-t border-gray-800 flex justify-between text-sm">
+      <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-800 flex justify-between text-xs sm:text-sm">
         <span className="text-gray-400">First seen</span>
-        <span>{new Date(brand.firstSeenAt).toLocaleDateString()}</span>
+        <span className="text-gray-300">{new Date(brand.firstSeenAt).toLocaleDateString()}</span>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 interface SearchFilterProps {
   placeholder?: string;
@@ -6,28 +6,23 @@ interface SearchFilterProps {
   debounceMs?: number;
 }
 
-export function SearchFilter({ 
-  placeholder = "Search...", 
+/**
+ * Debounced search input with clear button
+ */
+export function SearchFilter({
+  placeholder = "Search...",
   onSearch,
-  debounceMs = 200 
+  debounceMs = 200,
 }: SearchFilterProps) {
   const [value, setValue] = useState("");
-  const [timeoutId, setTimeoutId] = useState<number | null>(null);
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setValue(newValue);
-    
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-    
-    const id = window.setTimeout(() => {
-      onSearch(newValue);
+  // Debounce the search callback
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onSearch(value);
     }, debounceMs);
-    
-    setTimeoutId(id);
-  }, [onSearch, debounceMs, timeoutId]);
+    return () => clearTimeout(timer);
+  }, [value, onSearch, debounceMs]);
 
   const handleClear = useCallback(() => {
     setValue("");
@@ -35,45 +30,24 @@ export function SearchFilter({
   }, [onSearch]);
 
   return (
-    <div className="relative">
-      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-        <svg 
-          className="h-5 w-5 text-gray-400" 
-          fill="none" 
-          stroke="currentColor" 
-          viewBox="0 0 24 24"
-        >
-          <path 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            strokeWidth={2} 
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
-          />
-        </svg>
-      </div>
+    <div className="relative flex-1 min-w-0">
       <input
         type="text"
         value={value}
-        onChange={handleChange}
+        onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
-        className="w-full pl-10 pr-10 py-2 bg-gray-800 border border-gray-700 rounded-lg 
-                   text-white placeholder-gray-400 focus:outline-none focus:ring-2 
-                   focus:ring-green-500 focus:border-transparent transition"
+        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base 
+                   placeholder-gray-500 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500
+                   pr-8 sm:pr-10"
       />
       {value && (
         <button
           onClick={handleClear}
-          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 
-                     hover:text-white transition"
+          className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white 
+                     p-1 text-sm sm:text-base"
+          aria-label="Clear search"
         >
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M6 18L18 6M6 6l12 12" 
-            />
-          </svg>
+          ✕
         </button>
       )}
     </div>
@@ -81,33 +55,49 @@ export function SearchFilter({
 }
 
 interface FilterBarProps {
-  children: React.ReactNode;
   searchPlaceholder?: string;
   onSearch: (query: string) => void;
   resultCount?: number;
   totalCount?: number;
+  children?: React.ReactNode;
 }
 
-export function FilterBar({ 
-  children, 
-  searchPlaceholder, 
+/**
+ * Combined search + filter bar with result count
+ */
+export function FilterBar({
+  searchPlaceholder,
   onSearch,
   resultCount,
-  totalCount
+  totalCount,
+  children,
 }: FilterBarProps) {
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <SearchFilter placeholder={searchPlaceholder} onSearch={onSearch} />
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          {children}
-        </div>
+    <div className="space-y-3">
+      {/* Search Row */}
+      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+        <SearchFilter placeholder={searchPlaceholder} onSearch={onSearch} />
+        
+        {/* Result count - desktop inline, mobile below */}
+        {resultCount !== undefined && totalCount !== undefined && (
+          <div className="text-xs sm:text-sm text-gray-400 sm:whitespace-nowrap">
+            {resultCount === totalCount ? (
+              <span>{totalCount} total</span>
+            ) : (
+              <span>
+                <span className="text-white font-medium">{resultCount}</span> of {totalCount}
+              </span>
+            )}
+          </div>
+        )}
       </div>
-      {resultCount !== undefined && totalCount !== undefined && (
-        <div className="text-sm text-gray-500">
-          Showing {resultCount} of {totalCount} results
+
+      {/* Filter Buttons Row - horizontal scroll on mobile */}
+      {children && (
+        <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 pb-2 sm:pb-0">
+          <div className="flex gap-2 min-w-max sm:flex-wrap">
+            {children}
+          </div>
         </div>
       )}
     </div>
@@ -115,20 +105,24 @@ export function FilterBar({
 }
 
 interface FilterButtonProps {
-  active: boolean;
+  active?: boolean;
   onClick: () => void;
   children: React.ReactNode;
 }
 
+/**
+ * Filter button with active state
+ */
 export function FilterButton({ active, onClick, children }: FilterButtonProps) {
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-2 rounded-lg transition whitespace-nowrap ${
-        active
-          ? "bg-green-600 text-white"
-          : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-      }`}
+      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition whitespace-nowrap
+                  ${
+                    active
+                      ? "bg-green-600 text-white"
+                      : "bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white"
+                  }`}
     >
       {children}
     </button>
