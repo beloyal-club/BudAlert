@@ -1,0 +1,24 @@
+[
+  {
+    "url": "https://dutchie.com/dispensary/housing-works-cannabis-co",
+    "timestamp": "2026-02-17T01:08:12.483Z",
+    "success": false,
+    "blocked": false,
+    "blockReason": null,
+    "products": [],
+    "pageTitle": null,
+    "error": "page.goto: Timeout 60000ms exceeded.\nCall log:\n  - navigating to \"https://dutchie.com/dispensary/housing-works-cannabis-co\", waiting until \"networkidle\"\n",
+    "screenshotPath": "/root/clawd/cannasignal/data/stealth-test/error-1771290554519.png"
+  },
+  {
+    "url": "https://conbud.com/stores/conbud-les/products/flower",
+    "timestamp": "2026-02-17T01:09:24.029Z",
+    "success": false,
+    "blocked": false,
+    "blockReason": null,
+    "products": [],
+    "pageTitle": null,
+    "error": "page.goto: Timeout 60000ms exceeded.\nCall log:\n  - navigating to \"https://conbud.com/stores/conbud-les/products/flower\", waiting until \"networkidle\"\n",
+    "screenshotPath": "/root/clawd/cannasignal/data/stealth-test/error-1771290627067.png"
+  }
+]

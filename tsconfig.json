@@ -1,36 +1,15 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "strict": true,
-    "skipLibCheck": true,
+    "moduleResolution": "Node",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx",
-    "types": ["node"],
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./*"],
-      "@convex/*": ["./convex/*"],
-      "@workers/*": ["./workers/*"],
-      "@dashboard/*": ["./dashboard/src/*"]
-    }
+    "strict": true,
+    "skipLibCheck": true,
+    "outDir": "./dist",
+    "rootDir": "./scripts"
   },
-  "include": [
-    "convex/**/*.ts",
-    "workers/**/*.ts",
-    "dashboard/src/**/*.ts",
-    "dashboard/src/**/*.tsx"
-  ],
-  "exclude": ["node_modules", "**/node_modules", "dashboard/dist"],
-  "references": [
-    { "path": "./convex" },
-    { "path": "./dashboard" }
-  ]
+  "include": ["scripts/**/*.ts"],
+  "exclude": ["node_modules"]
 }

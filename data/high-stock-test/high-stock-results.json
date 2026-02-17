@@ -1,0 +1,102 @@
+[
+  {
+    "product": "bouket-4g-flower-jar-paztelito",
+    "url": "https://conbud.com/stores/conbud-les/product/bouket-4g-flower-jar-paztelito",
+    "hasVisibleInventory": false,
+    "visibleInventoryCount": null,
+    "cartOverflowAttempted": true,
+    "cartOverflowResult": "success_or_high_stock",
+    "finalInventory": null,
+    "method": null
+  },
+  {
+    "product": "weekenders-1g-pre-roll-dream",
+    "url": "https://conbud.com/stores/conbud-les/product/weekenders-1g-pre-roll-dream",
+    "hasVisibleInventory": true,
+    "visibleInventoryCount": 3,
+    "cartOverflowAttempted": false,
+    "cartOverflowResult": null,
+    "finalInventory": 3,
+    "method": "page_display"
+  },
+  {
+    "product": "banzzy-1305-3-5-flower-jar-purple-prince",
+    "url": "https://conbud.com/stores/conbud-les/product/banzzy-1305-3-5-flower-jar-purple-prince",
+    "hasVisibleInventory": true,
+    "visibleInventoryCount": 7,
+    "cartOverflowAttempted": false,
+    "cartOverflowResult": null,
+    "finalInventory": 7,
+    "method": "page_display"
+  },
+  {
+    "product": "soze-2pk-75g-live-resin-infused-ceramic-tip-joints-sangria-slushie-h",
+    "url": "https://conbud.com/stores/conbud-les/product/soze-2pk-75g-live-resin-infused-ceramic-tip-joints-sangria-slushie-h",
+    "hasVisibleInventory": false,
+    "visibleInventoryCount": null,
+    "cartOverflowAttempted": true,
+    "cartOverflowResult": "success_or_high_stock",
+    "finalInventory": null,
+    "method": null
+  },
+  {
+    "product": "banzzy-1305-3-5-flower-jar-blood-bath",
+    "url": "https://conbud.com/stores/conbud-les/product/banzzy-1305-3-5-flower-jar-blood-bath",
+    "hasVisibleInventory": true,
+    "visibleInventoryCount": 7,
+    "cartOverflowAttempted": false,
+    "cartOverflowResult": null,
+    "finalInventory": 7,
+    "method": "page_display"
+  },
+  {
+    "product": "soze-single-75g-live-resin-infused-ceramic-tip-joint-forbidden-fruit-i",
+    "url": "https://conbud.com/stores/conbud-les/product/soze-single-75g-live-resin-infused-ceramic-tip-joint-forbidden-fruit-i",
+    "hasVisibleInventory": false,
+    "visibleInventoryCount": null,
+    "cartOverflowAttempted": true,
+    "cartOverflowResult": "success_or_high_stock",
+    "finalInventory": null,
+    "method": null
+  },
+  {
+    "product": "banzzy-1305-3-5-flower-jar-velvet-glove",
+    "url": "https://conbud.com/stores/conbud-les/product/banzzy-1305-3-5-flower-jar-velvet-glove",
+    "hasVisibleInventory": true,
+    "visibleInventoryCount": 5,
+    "cartOverflowAttempted": false,
+    "cartOverflowResult": null,
+    "finalInventory": 5,
+    "method": "page_display"
+  },
+  {
+    "product": "weekenders-14g-whole-flower-lift",
+    "url": "https://conbud.com/stores/conbud-les/product/weekenders-14g-whole-flower-lift",
+    "hasVisibleInventory": true,
+    "visibleInventoryCount": 6,
+    "cartOverflowAttempted": false,
+    "cartOverflowResult": null,
+    "finalInventory": 6,
+    "method": "page_display"
+  },
+  {
+    "product": "jeeter-x-highsman-infused-jeeter-xl-2g-preroll-sticky-ricky",
+    "url": "https://conbud.com/stores/conbud-les/product/jeeter-x-highsman-infused-jeeter-xl-2g-preroll-sticky-ricky",
+    "hasVisibleInventory": true,
+    "visibleInventoryCount": 5,
+    "cartOverflowAttempted": false,
+    "cartOverflowResult": null,
+    "finalInventory": 5,
+    "method": "page_display"
+  },
+  {
+    "product": "pure-beauty-10pk-35g-joints-3-5g-sativa",
+    "url": "https://conbud.com/stores/conbud-les/product/pure-beauty-10pk-35g-joints-3-5g-sativa",
+    "hasVisibleInventory": false,
+    "visibleInventoryCount": null,
+    "cartOverflowAttempted": true,
+    "cartOverflowResult": "success_or_high_stock",
+    "finalInventory": null,
+    "method": null
+  }
+]

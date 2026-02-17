@@ -1,0 +1,35 @@
+[
+  {
+    "product": "grocery-28g-flower-sativa-black-diesel",
+    "url": "https://conbud.com/stores/conbud-les/product/grocery-28g-flower-sativa-black-diesel",
+    "displayedInventory": 5,
+    "inventoryText": "5 left in stock",
+    "cartOverflowWorked": false,
+    "cartError": null,
+    "quantityOptions": [],
+    "price": "$160.00",
+    "screenshot": "/root/clawd/cannasignal/data/cart-overflow-test/final-grocery-28g-flower-sativa-blac-1771293894218.png"
+  },
+  {
+    "product": "splash-3-5g-flower-chem-91",
+    "url": "https://conbud.com/stores/conbud-les/product/splash-3-5g-flower-chem-91",
+    "displayedInventory": 5,
+    "inventoryText": "5 left in stock",
+    "cartOverflowWorked": false,
+    "cartError": null,
+    "quantityOptions": [],
+    "price": "$24.00",
+    "screenshot": "/root/clawd/cannasignal/data/cart-overflow-test/final-splash-3-5g-flower-chem-91-1771293904951.png"
+  },
+  {
+    "product": "flwr-city-5g-millies-pre-ground-sativa",
+    "url": "https://conbud.com/stores/conbud-les/product/flwr-city-5g-millies-pre-ground-sativa",
+    "displayedInventory": 1,
+    "inventoryText": "1 left in stock",
+    "cartOverflowWorked": false,
+    "cartError": null,
+    "quantityOptions": [],
+    "price": "$35.00",
+    "screenshot": "/root/clawd/cannasignal/data/cart-overflow-test/final-flwr-city-5g-millies-pre-groun-1771293916885.png"
+  }
+]

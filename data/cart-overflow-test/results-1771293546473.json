@@ -1,0 +1,35 @@
+[
+  {
+    "productUrl": "https://conbud.com/stores/conbud-les/products/flower?weight=1g&sortby=relevance",
+    "productName": "All Flower",
+    "technique": "single_high",
+    "quantityAttempted": 0,
+    "errorMessage": null,
+    "inventoryRevealed": null,
+    "success": false,
+    "screenshotPath": "/root/clawd/cannasignal/data/cart-overflow-test/final-single_high-1771293541372.png",
+    "timestamp": "2026-02-17T01:58:56.952Z",
+    "notes": [
+      "Initial screenshot: /root/clawd/cannasignal/data/cart-overflow-test/initial-1771293541073.png",
+      "Page state: {\n  \"inputs\": [],\n  \"buttons\": [\n    {\n      \"text\": \"All Flower\",\n      \"class\": \"content-header__ClickableBackHeader-sc-1lq3aaw-16 \"\n    },\n    {\n      \"text\": \"Sort: Black Sparkle IconReleva\",\n      \"class\": \"menu-sort-v2__SortTypeButton-sc-t3amov-0 elHFnY\"\n    },\n    {\n      \"text\": \"list\",\n      \"class\": \"menu-layout-selector-v2__LayoutTypeButton-sc-1nb0y\"\n    }\n  ]\n}",
+      "HTML saved: /root/clawd/cannasignal/data/cart-overflow-test/page-single_high-1771293541657.html"
+    ]
+  },
+  {
+    "productUrl": "https://conbud.com/stores/conbud-les/products/flower?weight=1-8oz&sortby=relevance",
+    "productName": "All Flower",
+    "technique": "repeated_add",
+    "quantityAttempted": 0,
+    "errorMessage": null,
+    "inventoryRevealed": null,
+    "success": false,
+    "screenshotPath": "/root/clawd/cannasignal/data/cart-overflow-test/final-repeated_add-1771293546199.png",
+    "timestamp": "2026-02-17T01:59:01.657Z",
+    "notes": [
+      "Initial screenshot: /root/clawd/cannasignal/data/cart-overflow-test/initial-1771293545944.png",
+      "Page state: {\n  \"inputs\": [],\n  \"buttons\": [\n    {\n      \"text\": \"All Flower\",\n      \"class\": \"content-header__ClickableBackHeader-sc-1lq3aaw-16 \"\n    },\n    {\n      \"text\": \"Sort: Black Sparkle IconReleva\",\n      \"class\": \"menu-sort-v2__SortTypeButton-sc-t3amov-0 elHFnY\"\n    },\n    {\n      \"text\": \"list\",\n      \"class\": \"menu-layout-selector-v2__LayoutTypeButton-sc-1nb0y\"\n    }\n  ]\n}",
+      "No add to cart button found for repeated add",
+      "HTML saved: /root/clawd/cannasignal/data/cart-overflow-test/page-repeated_add-1771293546413.html"
+    ]
+  }
+]
