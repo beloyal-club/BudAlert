@@ -1,0 +1,497 @@
+{
+  "timestamp": "2026-02-17T01:49:07.027Z",
+  "url": "https://conbud.com/stores/conbud-les/products/flower",
+  "totalProducts": 54,
+  "withExactInventory": 0,
+  "withLowStockSignal": 0,
+  "unknownInventory": 54,
+  "lowStockProducts": [],
+  "products": [
+    {
+      "name": "Grocery | 28g Flower - Sativa | Black DieselGrocerySativaTHC: 29.21%",
+      "brand": "Grocery",
+      "price": "$160.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Revert Cannabis | Homie Pack + Rolling Accessories 14g Infused Ground Flower | King LouisRevert CannabisIndicaTHC: 27.8%",
+      "brand": "Revert Cannabis",
+      "price": "$85.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "FLWR City | 5g Millies Pre-Ground | SativaFLWR CITYSativaTHC: 34%",
+      "brand": "FLWR CITY",
+      "price": "$35.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Splash | 3.5g Flower | Chem 91SplashHybridTAC: 33.23%THC: 25.9%",
+      "brand": "Splash",
+      "price": "$24.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Cheevo | Whole Flower 28g | RS11CheevoHybridTAC: 28.79%THC: 24.3%",
+      "brand": "Cheevo",
+      "price": "$160.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Grocery | 28g Flower - Hybrid | Lemon Cherry GelatoGroceryHybridTHC: 28.7%",
+      "brand": "Grocery",
+      "price": "$160.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Grocery | 28g Flower - Indica | Grape CandiesGroceryIndicaTHC: 26%",
+      "brand": "Grocery",
+      "price": "$160.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Untitled | 28g Flower (Smalls) | SUPER BOOFUntitledSativaTHC: 21.03%",
+      "brand": "Untitled",
+      "price": "$155.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Cheevo | 3.5g Whole Flower | Blue DreamCheevoSativaTAC: 31.856%THC: 27.494%",
+      "brand": "Cheevo",
+      "price": "$30.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Zizzle | Flower Jar 3.5g | Bubble BathZizzleIndicaTHC: 30%",
+      "brand": "Zizzle",
+      "price": "$50.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Weekenders | 14g Whole Flower | LIFTWeekendersSativaTHC: 17.64%",
+      "brand": "Weekenders",
+      "price": "$120.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Mini MART | Flower | 3.5g | Guava | SativaMini MARTSativaTHC: 27.62%",
+      "brand": "Mini MART",
+      "price": "$30.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "RUNTZ | 3.5g Flower | Trump RuntzRuntzIndica-HybridTHC: 25%",
+      "brand": "Runtz",
+      "price": "$55.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Dada Daily | 3.5g Flower | Candy ZeclairDadaSativaTAC: 27.34%THC: 24.04%",
+      "brand": "Dada",
+      "price": "$33.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "FLWR CITY | Millies - Hybrid - 10g Preground FlowerFLWR CITYHybridTHC: 31.3%",
+      "brand": "FLWR CITY",
+      "price": "$85.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Dragonfly | Flower | 3.5g | Pandora's BoxDragonflyHybridTHC: 25.1%",
+      "brand": "Dragonfly",
+      "price": "$28.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Cheevo | 7g Ground Flower | Sour DieselCheevoSativa-HybridTHC: 19%",
+      "brand": "Cheevo",
+      "price": "$40.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "La Bomba | Quarter OunceFlorist FarmsHybridTHC: 28%",
+      "brand": "Florist Farms",
+      "price": "$65.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Rebel Grown | 3.5g Flower | Double OG ChemRebel GrownHybridTAC: 23.5%THC: 22.8%",
+      "brand": "Rebel Grown",
+      "price": "$30.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "1937 | Flower 3.5g | Motor Breath1937IndicaTHC: 25.7%",
+      "brand": "1937",
+      "price": "$30.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "RUNTZ | 3.5g Flower | White Cherry RuntzRuntzSativaTHC: 25%",
+      "brand": "Runtz",
+      "price": "$55.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "GELATO SKITTLEZDank By Definition.IndicaTHC: 26.34%",
+      "brand": "Dank By Definition.",
+      "price": "$53.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Dank | Flower 3.5g | Master KushDank By Definition.HybridTHC: 27.02%",
+      "brand": "Dank By Definition.",
+      "price": "$53.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Zizzle | Flower Jar 3.5g | Silver HazeZizzleSativaTHC: 21.2%Staff Pick",
+      "brand": "Zizzle",
+      "price": "$50.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Banzzy 1305 | 3.5 | Flower Jar | Purple PrinceBanzzy 1305Indica-HybridTAC: 27.8%THC: 24.7%CBD: 0.1%",
+      "brand": "Banzzy 1305",
+      "price": "$44.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "FLAMER | 3.5g | REVELATIONFLAMERSativa-HybridTHC: 30%",
+      "brand": "FLAMER",
+      "price": "$44.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Zizzle | Flower Jar 3.5g | LemonattiZizzleSativa-HybridTHC: 28%",
+      "brand": "Zizzle",
+      "price": "$50.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Florette | 3.5g Flower | Grease MonkeyFloretteHybridTAC: 33.398%THC: 28.73%",
+      "brand": "Florette",
+      "price": "$40.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Florette | 3.5g Whole Flower | Gary PaytonFloretteHybridTAC: 30.826%THC: 26.926%",
+      "brand": "Florette",
+      "price": "$40.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Cheech & Chong | 3.5g Flower | LowriderCheech & ChongIndicaTHC: 28.7 mg",
+      "brand": "Cheech & Chong",
+      "price": "$35.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Cheech & Chong | Flower 3.5g | AhhberryCheech & ChongSativaTHC: 26%",
+      "brand": "Cheech & Chong",
+      "price": "$35.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Noizey | 4g Indoor Flower Jar | Dumbo GumboNoizeyHybridTAC: 21.32%THC: 19%",
+      "brand": "Noizey",
+      "price": "$40.0013",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Cheevo | 3.5g Flower | Death StarCheevoIndicaTHC: 25.61%",
+      "brand": "Cheevo",
+      "price": "$30.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "1937 Flower Indica- 3.5g Wedding Cake1937IndicaTHC: 23.41%",
+      "brand": "1937",
+      "price": "$30.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Mini MART | Flower | 3.5g | WiFi OG | HybridMini MARTHybridTHC: 26.82%",
+      "brand": "Mini MART",
+      "price": "$30.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Cheevo | 3.5g Whole Flower | Albany Sour DieselCheevoSativaTAC: 32.769%THC: 27.816%",
+      "brand": "Cheevo",
+      "price": "$30.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Permanent Marker - Premium Smalls - 1gTo The MoonHybridTHC: 29.22%",
+      "brand": "To The Moon",
+      "price": "$13.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "FLWR CITY- Flower 1G Dime Bag- Gummi BearsFLWR CITYSativaTHC: 22%",
+      "brand": "FLWR CITY",
+      "price": "$10.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "FLWR CITY | Dime Bag | Motor BreathFLWR CITYIndicaTHC: 23.66%",
+      "brand": "FLWR CITY",
+      "price": "$10.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "SuperFire | 28g Flower | PistachioSuperFireIndicaTHC: 16.16%",
+      "brand": "SuperFire",
+      "price": "$200.0013",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "S.T.A Exotics | 3.5g Flower | OreozS.T.A ExoticsHybridTHC: 20.3%",
+      "brand": "S.T.A Exotics",
+      "price": "$44.0013",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Mechanics Farm - Juicy FruitMechanics FarmHybridTHC: 25%",
+      "brand": "Mechanics Farm",
+      "price": "$60.0013",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "High Mart | 3.5g Flower | Life Of ScottiHigh MartHybridTHC: 21.83%",
+      "brand": "High Mart",
+      "price": "$52.0013",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Guavatron - Premium Flower - 3.5gTo The MoonHybridTHC: 22.87%",
+      "brand": "To The Moon",
+      "price": "$50.0010",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Florette | 3.5g Flower | Lemonade GMOFloretteHybridTAC: 32.592%THC: 28.233%",
+      "brand": "Florette",
+      "price": "$40.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "FLAMER | 3.5g | HEHE / HAHAFLAMERSativaTHC: 23%",
+      "brand": "FLAMER",
+      "price": "$44.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Cyber Diesel - Premium Smalls - 1gTo The MoonSativaTHC: 25.63%",
+      "brand": "To The Moon",
+      "price": "$13.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Cheevo | 7g Ground Flower | Blue DreamCheevoHybridTHC: 24.9%",
+      "brand": "Cheevo",
+      "price": "$40.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Cheevo | 3.5g Flower | RS-11CheevoHybridTHC: 25.89%",
+      "brand": "Cheevo",
+      "price": "$30.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Bouket | 4g Flower Jar | Pina LocaBouketSativa-HybridTHC: 25.06%",
+      "brand": "Bouket",
+      "price": "$55.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Bouket | 4g Flower Jar | PaztelitoBouketHybridTHC: 25.9%Bouquet of Bouket",
+      "brand": "Bouket",
+      "price": "$39.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Big Applato - Premium Flower - 3.5gTo The MoonHybridTHC: 29%",
+      "brand": "To The Moon",
+      "price": "$50.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "Banzzy 1305 3.5 Flower Jar Beautiful MintzBanzzy 1305HybridTAC: 27%THC: 23.8 mgCBD: 0.1%",
+      "brand": "Banzzy 1305",
+      "price": "$45.00",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    },
+    {
+      "name": "1slice | 3.5g Premium Indoor | Eastsider1SliceIndica-HybridTHC: 21.8%",
+      "brand": "1Slice",
+      "price": "$50.0013",
+      "inventoryCount": null,
+      "inventoryText": null,
+      "isLowStock": false,
+      "stockConfidence": "unknown"
+    }
+  ]
+}
