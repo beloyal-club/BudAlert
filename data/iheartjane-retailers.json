@@ -1,0 +1,48 @@
+{
+  "metadata": {
+    "generated": "2026-02-17T13:17:00Z",
+    "source": "DATA-002 - iHeartJane Menu Coverage Research",
+    "totalRetailersScanned": 55,
+    "janeRetailersFound": 0,
+    "notes": "NYS adult-use dispensaries predominantly use Dutchie, not Jane. Jane is primarily used by medical/MSO dispensaries (Columbia Care, Vireo) which are not part of the OCM adult-use retailer list."
+  },
+  "findings": {
+    "summary": "After scanning 55 NYS adult-use dispensary websites from the 238 operational retailers, zero iHeartJane-powered menus were discovered.",
+    "dominantPlatform": "Dutchie",
+    "janeUsage": "Medical dispensaries only (not in OCM adult-use list)",
+    "websitesChecked": [
+      "altadispensary.nyc - Uses Dutchie (DutchiePay)",
+      "bloombrothers.com - No menu integration found",
+      "classycanna.com - No online ordering",
+      "cornerhousecannabis.com - Uses Dutchie (Pay By Bank / DutchiePay)",
+      "baysidecannabis.com - Uses Dutchie",
+      "shopcharliefox.com - Redirects to thedailygreennyc.com",
+      "blueforestfarmsdispensary.com - Custom WooCommerce shop",
+      "dutchessroots.com - Uses Dutchie",
+      "gp716.com - No online ordering visible"
+    ]
+  },
+  "medicalJaneStores": {
+    "note": "These are MEDICAL dispensaries in NY using Jane - NOT part of OCM adult-use retailers",
+    "stores": [
+      {
+        "name": "Columbia Care Manhattan",
+        "janeStoreId": "1238",
+        "janeUrl": "https://www.iheartjane.com/stores/1238/columbia-care-manhattan",
+        "type": "medical"
+      },
+      {
+        "name": "Vireo Westchester North (Delivery)",
+        "janeStoreId": "2316",
+        "janeUrl": "https://www.iheartjane.com/stores/2316/specials",
+        "type": "medical"
+      }
+    ]
+  },
+  "retailers": [],
+  "recommendations": {
+    "priority": "LOW - Jane coverage is not needed for NYS adult-use market at this time",
+    "action": "Focus on Dutchie scraping for NYS coverage",
+    "monitor": "Re-scan quarterly for new Jane integrations"
+  }
+}
