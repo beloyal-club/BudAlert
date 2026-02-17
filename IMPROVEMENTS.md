@@ -52,7 +52,7 @@
 
 | ID | Description | Impact | Completed |
 |----|-------------|--------|-----------|
-| — | — | — | — |
+| DATA-005 | Product name parsing/normalization | Clean product names, THC/strain/weight extraction | 2026-02-17 |
 
 ---
 
@@ -118,6 +118,23 @@
 ---
 
 ## 📝 Improvement Log
+
+### 2026-02-17 — DATA-005: Product Normalization Complete
+**Worker:** Subagent (cannasignal-worker-data005)
+
+Created `convex/lib/productNormalizer.ts`:
+- Parses concatenated DOM-scraped names like `"Grocery | 28g Flower - Sativa | Black DieselGrocerySativaTHC: 29.21%"`
+- Extracts: clean name, brand, category, strain, THC/CBD/TAC percentages, weight, tags
+- Handles edge cases: duplicate brand names, "Staff Pick" badges, various weight formats
+- Returns confidence score for parsing quality
+
+Integrated into `convex/ingestion.ts`:
+- Products now store clean names and structured THC/CBD ranges
+- Better strain type and category detection
+
+Test results: **10/10 real scrape samples pass**
+
+---
 
 ### 2026-02-17 — Baseline Evaluation Complete
 **Evaluator:** Subagent (cannasignal-evaluator-baseline)
