@@ -1,6 +1,7 @@
 import { mutation, action, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
+import { normalizeProductName, extractStrainName, type NormalizedProduct } from "./lib/productNormalizer";
 
 // ============================================================
 // HTTP ENDPOINT FOR SCRAPER CALLBACK
@@ -84,11 +85,19 @@ export const ingestScrapedBatch = mutation({
             brand = await ctx.db.get(brandId);
           }
           
-          // Normalize product name
-          const normalizedProductName = normalizeProductName(
+          // Parse product name using DATA-005 normalizer
+          const parsed = normalizeProductName(
             item.rawProductName,
-            item.rawBrandName
+            item.rawBrandName,
+            item.rawCategory,
+            item.thcFormatted,
+            item.cbdFormatted
           );
+          const normalizedProductName = parsed.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/-+/g, "-")
+            .replace(/^-|-$/g, "");
           
           // Find or create product
           const existingProducts = await ctx.db
@@ -99,14 +108,17 @@ export const ingestScrapedBatch = mutation({
           let product = existingProducts.find((p) => p.normalizedName === normalizedProductName);
           
           if (!product) {
+            // Use DATA-005 parsed data for clean product records
             const productId = await ctx.db.insert("products", {
               brandId: brand!._id,
-              name: item.rawProductName,
+              name: parsed.name,                                    // Clean name from normalizer
               normalizedName: normalizedProductName,
-              category: mapCategory(item.rawCategory) || "other",
+              category: parsed.category || mapCategory(item.rawCategory) || "other",
               subcategory: item.subcategory,
-              strain: item.strainType,
-              weight: extractWeight(item.rawProductName),
+              strain: parsed.strain || item.strainType,             // Parsed strain type
+              weight: parsed.weight || extractWeight(item.rawProductName),
+              thcRange: parsed.thc ? { min: parsed.thc, max: parsed.thc, unit: "%" } : undefined,
+              cbdRange: parsed.cbd ? { min: parsed.cbd, max: parsed.cbd, unit: "%" } : undefined,
               imageUrl: item.imageUrl,
               isActive: true,
               firstSeenAt: Date.now(),
@@ -240,28 +252,10 @@ async function updateCurrentInventory(
 }
 
 // ============================================================
-// NORMALIZATION HELPERS
+// NORMALIZATION HELPERS (legacy - kept for mapCategory/extractWeight)
 // ============================================================
 
-function normalizeProductName(rawName: string, brandName: string): string {
-  let name = rawName.toLowerCase().trim();
-  
-  // Remove brand name prefix
-  const brandLower = brandName.toLowerCase();
-  if (name.startsWith(brandLower)) {
-    name = name.slice(brandLower.length).trim();
-  }
-  if (name.startsWith("-") || name.startsWith("—")) {
-    name = name.slice(1).trim();
-  }
-  
-  // Normalize separators
-  name = name.replace(/[^a-z0-9]+/g, "-");
-  name = name.replace(/-+/g, "-");
-  name = name.replace(/^-|-$/g, "");
-  
-  return name;
-}
+// NOTE: normalizeProductName is now imported from ./lib/productNormalizer (DATA-005)
 
 function mapCategory(rawCategory?: string): string {
   if (!rawCategory) return "other";
