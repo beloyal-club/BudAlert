@@ -28,7 +28,7 @@
 - [ ] **UX-001**: Dashboard real-time updates via Convex subscriptions
 
 ### Medium Priority → ELEVATED
-- [ ] **DATA-005**: Product normalization (THC%, strain matching) ⭐ *CRITICAL* - Names have concatenated metadata
+- [x] **DATA-005**: Product normalization (THC%, strain matching) ✅ *DONE* 2026-02-17
 - [ ] **DATA-004**: Cross-reference OCM API for license validation
 - [ ] **PERF-002**: Cache frequently-accessed brand/retailer data
 - [ ] **UX-002**: Add filtering/search to dashboard tables
