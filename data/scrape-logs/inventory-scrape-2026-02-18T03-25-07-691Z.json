@@ -1,0 +1,41 @@
+{
+  "timestamp": "2026-02-18T03:25:07.691Z",
+  "totalStores": 1,
+  "totalProducts": 2,
+  "withInventory": 1,
+  "results": [
+    {
+      "storeSlug": "conbud-les",
+      "retailerName": "CONBUD LES",
+      "status": "ok",
+      "items": [
+        {
+          "rawProductName": "Clayton x CONBUD Mermaid Varsity Jacket XLClayton X CONBUDStaff Pick",
+          "rawBrandName": "Clayton X CONBUD",
+          "rawCategory": "other",
+          "price": 0,
+          "inStock": true,
+          "imageUrl": "https://images.dutchie.com/1e624c01e9fe3cfcd5e127ca5158822c?auto=format%2Ccompress&cs=srgb&fit=max&fill=solid&fillColor=%23fff&ixlib=react-9.8.1&h=104&w=104",
+          "inventoryCount": 9,
+          "sourceUrl": "https://conbud.com/stores/conbud-les/products",
+          "sourcePlatform": "dutchie-embedded",
+          "scrapedAt": 1771385101185
+        },
+        {
+          "rawProductName": "Clayton x CONBUD Mermaid Varsity Jacket SClayton X CONBUDStaff Pick",
+          "rawBrandName": "Clayton X CONBUD",
+          "rawCategory": "other",
+          "price": 0,
+          "inStock": false,
+          "imageUrl": "https://images.dutchie.com/1e624c01e9fe3cfcd5e127ca5158822c?auto=format%2Ccompress&cs=srgb&fit=max&fill=solid&fillColor=%23fff&ixlib=react-9.8.1&h=104&w=104",
+          "thcFormatted": "90.02%",
+          "sourceUrl": "https://conbud.com/stores/conbud-les/products",
+          "sourcePlatform": "dutchie-embedded",
+          "scrapedAt": 1771385106953
+        }
+      ],
+      "duration": 29227,
+      "timestamp": "2026-02-18T03:25:07.691Z"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-02-18T02:49:32.895Z",
+  "url": "https://conbud.com/stores/conbud-les/products/flower",
+  "status": "connection_failed",
+  "methods_tried": [],
+  "inventory_found": [],
+  "errors": [
+    "browserType.connectOverCDP: Target page, context or browser has been closed\nCall log:\n  - <ws connecting> wss://connect.usw2.browserbase.com/\n  - <ws connected> wss://connect.usw2.browserbase.com/\n  - <ws disconnected> wss://connect.usw2.browserbase.com/ code=1006 reason=\n"
+  ],
+  "observations": []
+}

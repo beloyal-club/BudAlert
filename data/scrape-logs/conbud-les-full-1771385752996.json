@@ -1,0 +1,31 @@
+{
+  "retailer": "conbud-les",
+  "timestamp": "2026-02-18T03:35:52.996Z",
+  "metrics": {
+    "startTime": 1771385720288,
+    "productsScraped": 1,
+    "pagesLoaded": 1,
+    "modalsOpened": 1,
+    "browserTimeMs": 32706,
+    "estimatedDataMB": 0.00020599365234375,
+    "endTime": 1771385752995
+  },
+  "costs": {
+    "browserHours": 0.009085000000000001,
+    "browserCost": 0.0005451000000000001,
+    "proxyCost": 0.0000020599365234375,
+    "totalCost": 0.0005471599365234375,
+    "costPerProduct": 0.0005471599365234375
+  },
+  "products": [
+    {
+      "name": "Clayton x CONBUD Mermaid Varsity Jacket XL",
+      "brand": "Skip Navigation\nreturn to dispensary home page\n\nBack home",
+      "price": 200,
+      "thc": null,
+      "inventory": 9,
+      "weight": null,
+      "scrapedAt": "2026-02-18T03:35:42.004Z"
+    }
+  ]
+}

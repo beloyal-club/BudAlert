@@ -28,6 +28,7 @@
 - [x] **REL-001**: Add retry logic + dead letter queue to scraper ✅ *DONE* 2026-02-17
 - [x] **UX-001**: Dashboard real-time updates via Convex subscriptions ✅ *DONE* 2026-02-17
 - [x] **DATA-004**: Cross-reference OCM API for license validation ✅ *DONE* 2026-02-17
+- [x] **DATA-008**: Inventory count scraper with modal extraction ✅ *DONE* 2026-02-18
 
 ### 🔬 Research Track (Parallel)
 - [x] **RESEARCH-001**: Stealth scraping techniques ✅ *DONE* 2026-02-17 → `docs/STEALTH-RESEARCH.md`
@@ -56,6 +57,7 @@
 
 | ID | Description | Impact | Completed |
 |----|-------------|--------|-----------|
+| DATA-008 | Inventory count scraper | Modular BrowserBase+Playwright scraper extracts "X left in stock" from product modals | 2026-02-18 |
 | DATA-002 | iHeartJane research | NYS adult-use uses Dutchie; Jane scraper ready for future use | 2026-02-17 |
 | DATA-006 | Historical price tracking | priceHistory module, 6 queries, 3 HTTP endpoints, dashboard page | 2026-02-17 |
 | REL-002 | Scraper alerting system | Discord webhooks, alert conditions, dashboard panel, HTTP endpoints | 2026-02-17 |

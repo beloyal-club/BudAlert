@@ -1,0 +1,87 @@
+{
+  "timestamp": "2026-02-18T03:23:22.108Z",
+  "totalStores": 1,
+  "totalProducts": 5,
+  "withInventory": 5,
+  "results": [
+    {
+      "storeSlug": "conbud-bronx",
+      "retailerName": "CONBUD Bronx",
+      "status": "ok",
+      "items": [
+        {
+          "rawProductName": "Ayrloom | Vanilla Cola | 2:1 | 10MG THC : 5MG CBD| Singlesayrloom2 to 1THC: 10 mgCBD: 5 mg",
+          "rawBrandName": "ayrloom",
+          "rawCategory": "other",
+          "price": 0,
+          "inStock": true,
+          "imageUrl": "https://images.dutchie.com/593747ffa2483ccb8e2d52c5672dadf1?auto=format%2Ccompress&cs=srgb&fit=max&fill=solid&fillColor=%23fff&ixlib=react-9.8.1&h=104&w=104",
+          "thcFormatted": "5%",
+          "cbdFormatted": "5%",
+          "inventoryCount": 8,
+          "sourceUrl": "https://conbud.com/stores/conbud-bronx/products",
+          "sourcePlatform": "dutchie-embedded",
+          "scrapedAt": 1771384975592
+        },
+        {
+          "rawProductName": "Rescue THC BalmayrloomTHCTHC: 1000 mgCBD: 1000 mg",
+          "rawBrandName": "ayrloom",
+          "rawCategory": "other",
+          "price": 0,
+          "inStock": true,
+          "imageUrl": "https://images.dutchie.com/dcac9ae3b8c53946b53f83843da24b34?auto=format%2Ccompress&cs=srgb&fit=max&fill=solid&fillColor=%23fff&ixlib=react-9.8.1&h=104&w=104",
+          "thcFormatted": "10%",
+          "cbdFormatted": "5%",
+          "inventoryCount": 8,
+          "sourceUrl": "https://conbud.com/stores/conbud-bronx/products",
+          "sourcePlatform": "dutchie-embedded",
+          "scrapedAt": 1771384981452
+        },
+        {
+          "rawProductName": "Ayrloom- Infused Beverage 2:1 10mg THC 5mg CBD V,GF- Pineapple MangoayrloomTHCTAC: 10 mgTHC: 5 mgCBD: 5 mg",
+          "rawBrandName": "ayrloom",
+          "rawCategory": "other",
+          "price": 0,
+          "inStock": true,
+          "imageUrl": "https://images.dutchie.com/ca3a3b2152b323b587e0306f28d052cc?auto=format%2Ccompress&cs=srgb&fit=max&fill=solid&fillColor=%23fff&ixlib=react-9.8.1&h=104&w=104",
+          "thcFormatted": "10%",
+          "cbdFormatted": "5%",
+          "inventoryCount": 8,
+          "sourceUrl": "https://conbud.com/stores/conbud-bronx/products",
+          "sourcePlatform": "dutchie-embedded",
+          "scrapedAt": 1771384989578
+        },
+        {
+          "rawProductName": "Ayrloom | Low Dose Everyday Drops | 1:3 | 150MG THC : 450MG CBDayrloom2 to 1THC: 150 mgCBD: 450 mg",
+          "rawBrandName": "ayrloom",
+          "rawCategory": "other",
+          "price": 0,
+          "inStock": true,
+          "imageUrl": "https://images.dutchie.com/321801d63fcbacb1f6321c3704aacae6?auto=format%2Ccompress&cs=srgb&fit=max&fill=solid&fillColor=%23fff&ixlib=react-9.8.1&h=104&w=104",
+          "thcFormatted": "5%",
+          "cbdFormatted": "5%",
+          "inventoryCount": 5,
+          "sourceUrl": "https://conbud.com/stores/conbud-bronx/products",
+          "sourcePlatform": "dutchie-embedded",
+          "scrapedAt": 1771384995727
+        },
+        {
+          "rawProductName": "CONBUD Silicone Ashtray WhiteCONBUD (accessories)",
+          "rawBrandName": "CONBUD (accessories)",
+          "rawCategory": "other",
+          "price": 0,
+          "inStock": true,
+          "imageUrl": "https://images.dutchie.com/e0100b6078717b16fa6db79efb6bfe97?auto=format%2Ccompress&cs=srgb&fit=max&fill=solid&fillColor=%23fff&ixlib=react-9.8.1&h=104&w=104",
+          "thcFormatted": "5%",
+          "cbdFormatted": "5%",
+          "inventoryCount": 5,
+          "sourceUrl": "https://conbud.com/stores/conbud-bronx/products",
+          "sourcePlatform": "dutchie-embedded",
+          "scrapedAt": 1771385001382
+        }
+      ],
+      "duration": 46807,
+      "timestamp": "2026-02-18T03:23:22.108Z"
+    }
+  ]
+}

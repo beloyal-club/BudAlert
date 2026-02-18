@@ -1,0 +1,81 @@
+{
+  "timestamp": "2026-02-18T02:47:16.514Z",
+  "testUrl": "https://conbud.com/stores/conbud-les/products/flower",
+  "workerUrl": "https://cannasignal-browser.prtl.workers.dev",
+  
+  "overall_status": "FAILED",
+  "verdict": "CF Browser Rendering is NOT suitable for inventory extraction from Dutchie menus",
+  
+  "approaches": {
+    "workerEndpoint": {
+      "approach": "Call existing /menu endpoint",
+      "status": "failed",
+      "durationMs": 46237,
+      "productsFound": 0,
+      "products": [],
+      "error": "TimeoutError: Navigation timeout of 45000 ms exceeded",
+      "analysis": "Page failed to load within 45s - likely blocked or too slow"
+    },
+    "directCDP": {
+      "approach": "Connect via CDP WebSocket (wss://...cdp?secret=...)",
+      "status": "failed",
+      "durationMs": 80,
+      "error": "404 Not Found",
+      "analysis": "CF Browser Rendering does NOT expose CDP externally. The puppeteer binding is internal to the worker only - you cannot connect from outside.",
+      "limitation": "Architectural limitation - CDP is not exposed"
+    },
+    "dutchieDirectTest": {
+      "approach": "Hit Dutchie embedded menu directly via worker",
+      "status": "blocked",
+      "response": {
+        "success": true,
+        "url": "https://dutchie.com/embedded-menu/conbud-les/products/flower",
+        "retailer": "Attention Required! | Cloudflare",
+        "productCount": 0
+      },
+      "analysis": "Dutchie returned Cloudflare challenge page - CF Browser Rendering was detected and blocked"
+    }
+  },
+  
+  "limitations": [
+    {
+      "issue": "No external CDP access",
+      "description": "CF Browser Rendering binding (env.BROWSER) is internal to worker only. Cannot connect from external clients via CDP WebSocket.",
+      "impact": "Cannot use Playwright/Puppeteer from outside the worker"
+    },
+    {
+      "issue": "Cloudflare blocking Cloudflare",
+      "description": "Dutchie uses Cloudflare protection. CF Browser Rendering IPs are detected and challenged.",
+      "impact": "Cannot scrape Dutchie menus at all - returns challenge page"
+    },
+    {
+      "issue": "Navigation timeouts",
+      "description": "External sites (like conbud.com) timeout or fail to load",
+      "impact": "Unreliable for scraping sites you don't control"
+    },
+    {
+      "issue": "No interactive sessions",
+      "description": "Worker model is stateless request-response. Cannot do multi-step interactions like add-to-cart flows.",
+      "impact": "Cannot implement the inventory probing technique (add quantity > error message)"
+    }
+  ],
+  
+  "inventory_extraction_feasibility": {
+    "productListScraping": false,
+    "inventoryWarnings": false,
+    "addToCartApproach": false,
+    "reason": "Site blocked by Cloudflare protection before any scraping possible"
+  },
+  
+  "recommendations": [
+    "Use BrowserBase or similar residential proxy browser service (confirmed working)",
+    "CF Browser Rendering is designed for your OWN sites, not bypassing protection on external sites",
+    "For inventory extraction, need: (1) Residential IP to bypass Cloudflare (2) Interactive session for add-to-cart probing"
+  ],
+  
+  "cost_analysis": {
+    "cfBrowserRendering": "$0 (included in Workers plan)",
+    "browserBase": "~$0.10 per session",
+    "recommendation": "Worth paying for BrowserBase since CF doesn't work for this use case"
+  }
+}
