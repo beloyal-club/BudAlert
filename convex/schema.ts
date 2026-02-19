@@ -395,4 +395,87 @@ export default defineSchema({
     .index("by_type", ["eventType", "timestamp"])
     .index("by_notified", ["notified", "timestamp"])
     .index("by_batch", ["batchId"]),
+
+  // ============================================================
+  // SUBSCRIPTIONS & MONETIZATION (Phase 6)
+  // ============================================================
+
+  subscriptions: defineTable({
+    email: v.string(),                      // User identifier (matches productWatches.email)
+    tier: v.string(),                       // "free" | "premium" | "pro"
+    status: v.string(),                     // "active" | "canceled" | "past_due" | "trialing"
+    stripeCustomerId: v.optional(v.string()),
+    stripeSubscriptionId: v.optional(v.string()),
+    stripePriceId: v.optional(v.string()),
+    currentPeriodStart: v.optional(v.number()),
+    currentPeriodEnd: v.optional(v.number()),
+    cancelAtPeriodEnd: v.boolean(),
+    features: v.object({
+      maxWatches: v.number(),               // 3 for free, unlimited (-1) for premium
+      smsAlerts: v.boolean(),
+      priorityAlerts: v.boolean(),          // Faster notification delivery
+      predictions: v.boolean(),             // Access to restock predictions
+      exportData: v.boolean(),
+      apiAccess: v.boolean(),
+    }),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_email", ["email"])
+    .index("by_stripe_customer", ["stripeCustomerId"])
+    .index("by_stripe_subscription", ["stripeSubscriptionId"])
+    .index("by_tier", ["tier", "status"]),
+
+  // ============================================================
+  // RETAILER ACCOUNTS (B2B - Phase 6)
+  // ============================================================
+
+  retailerAccounts: defineTable({
+    retailerId: v.id("retailers"),          // Links to retailers table
+    email: v.string(),                      // Primary contact
+    companyName: v.string(),
+    tier: v.string(),                       // "starter" | "growth" | "enterprise"
+    status: v.string(),                     // "active" | "canceled" | "past_due" | "trialing"
+    stripeCustomerId: v.optional(v.string()),
+    stripeSubscriptionId: v.optional(v.string()),
+    currentPeriodEnd: v.optional(v.number()),
+    features: v.object({
+      competitorPricing: v.boolean(),       // See competitor prices
+      demandSignals: v.boolean(),           // Customer watch/interest data
+      stockAlerts: v.boolean(),             // Alerts for their own inventory
+      analyticsDepth: v.string(),           // "basic" | "advanced" | "enterprise"
+      apiAccess: v.boolean(),
+      whiteLabel: v.boolean(),              // Remove CannaSignal branding
+    }),
+    teamMembers: v.array(v.object({
+      email: v.string(),
+      role: v.string(),                     // "admin" | "viewer"
+      addedAt: v.number(),
+    })),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_retailer", ["retailerId"])
+    .index("by_email", ["email"])
+    .index("by_stripe_customer", ["stripeCustomerId"]),
+
+  // ============================================================
+  // PAYMENT EVENTS (Audit Trail)
+  // ============================================================
+
+  paymentEvents: defineTable({
+    email: v.string(),
+    eventType: v.string(),                  // "checkout_started" | "checkout_completed" | "subscription_updated" | "payment_failed" | "canceled"
+    stripeEventId: v.optional(v.string()),
+    tier: v.optional(v.string()),
+    amount: v.optional(v.number()),         // In cents
+    currency: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+  })
+    .index("by_email", ["email", "createdAt"])
+    .index("by_type", ["eventType", "createdAt"])
+    .index("by_stripe_event", ["stripeEventId"]),
 });

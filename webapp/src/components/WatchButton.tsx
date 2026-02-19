@@ -6,6 +6,7 @@ import type { Id } from "../../../convex/_generated/dataModel";
 interface WatchButtonProps {
   productId: Id<"products">;
   productName?: string;
+  onUpgradeNeeded?: () => void;
 }
 
 // Get stored email from localStorage
@@ -25,12 +26,13 @@ const setStoredEmail = (email: string): void => {
   }
 };
 
-export function WatchButton({ productId, productName }: WatchButtonProps) {
+export function WatchButton({ productId, productName, onUpgradeNeeded }: WatchButtonProps) {
   const [email, setEmail] = useState(getStoredEmail() || "");
   const [showEmailInput, setShowEmailInput] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [showLimitWarning, setShowLimitWarning] = useState(false);
 
   const storedEmail = getStoredEmail();
   const isWatching = useQuery(
@@ -38,6 +40,12 @@ export function WatchButton({ productId, productName }: WatchButtonProps) {
     storedEmail ? { email: storedEmail, productId } : "skip"
   );
   const watcherCount = useQuery(api.alerts.getWatcherCount, { productId });
+  
+  // Check watch limits for subscription tier
+  const canAddWatch = useQuery(
+    api.subscriptions.canAddWatch,
+    storedEmail ? { email: storedEmail } : "skip"
+  );
 
   const watchProduct = useMutation(api.alerts.watchProduct);
   const unwatchProduct = useMutation(api.alerts.unwatchProduct);
@@ -50,8 +58,14 @@ export function WatchButton({ productId, productName }: WatchButtonProps) {
   }, [productId]);
 
   const handleWatch = async () => {
-    // If we have a stored email and not watching, just subscribe
+    // If we have a stored email and not watching, check limits first
     if (storedEmail && !isWatching) {
+      // Check if user can add more watches
+      if (canAddWatch && !canAddWatch.canAdd) {
+        setShowLimitWarning(true);
+        return;
+      }
+      
       setIsLoading(true);
       setError(null);
       try {
@@ -112,6 +126,43 @@ export function WatchButton({ productId, productName }: WatchButtonProps) {
       setIsLoading(false);
     }
   };
+
+  // Watch limit warning
+  if (showLimitWarning) {
+    return (
+      <div className="mt-4 p-4 bg-gradient-to-b from-amber-900/30 to-neutral-800/50 rounded-lg border border-amber-700/30">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-lg">⚠️</span>
+          <p className="text-sm font-medium text-white">
+            Watch Limit Reached
+          </p>
+        </div>
+        <p className="text-xs text-neutral-400 mb-3">
+          Free accounts can watch up to {canAddWatch?.limit || 3} products. Upgrade to Premium for unlimited watches!
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              setShowLimitWarning(false);
+              onUpgradeNeeded?.();
+            }}
+            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-cannabis-600 to-cannabis-500 text-white rounded-lg text-sm font-semibold hover:from-cannabis-500 hover:to-cannabis-400 transition-all"
+          >
+            Upgrade to Premium
+          </button>
+          <button
+            onClick={() => setShowLimitWarning(false)}
+            className="px-4 py-2.5 bg-neutral-800 text-neutral-300 rounded-lg text-sm hover:bg-neutral-700"
+          >
+            Maybe Later
+          </button>
+        </div>
+        <p className="text-center text-xs text-neutral-500 mt-3">
+          Currently watching {canAddWatch?.currentCount || 0} / {canAddWatch?.limit || 3} products
+        </p>
+      </div>
+    );
+  }
 
   // Email input form
   if (showEmailInput) {

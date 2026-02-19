@@ -19,6 +19,7 @@ import type * as ingestion from "../ingestion.js";
 import type * as inventory from "../inventory.js";
 import type * as inventoryEvents from "../inventoryEvents.js";
 import type * as lib_productNormalizer from "../lib/productNormalizer.js";
+import type * as notificationQueue from "../notificationQueue.js";
 import type * as ocmSync from "../ocmSync.js";
 import type * as priceHistory from "../priceHistory.js";
 import type * as products from "../products.js";
@@ -26,6 +27,8 @@ import type * as retailers from "../retailers.js";
 import type * as scraperAlerts from "../scraperAlerts.js";
 import type * as search from "../search.js";
 import type * as smartAnalytics from "../smartAnalytics.js";
+import type * as stripe from "../stripe.js";
+import type * as subscriptions from "../subscriptions.js";
 
 import type {
   ApiFromModules,
@@ -45,6 +48,7 @@ declare const fullApi: ApiFromModules<{
   inventory: typeof inventory;
   inventoryEvents: typeof inventoryEvents;
   "lib/productNormalizer": typeof lib_productNormalizer;
+  notificationQueue: typeof notificationQueue;
   ocmSync: typeof ocmSync;
   priceHistory: typeof priceHistory;
   products: typeof products;
@@ -52,6 +56,8 @@ declare const fullApi: ApiFromModules<{
   scraperAlerts: typeof scraperAlerts;
   search: typeof search;
   smartAnalytics: typeof smartAnalytics;
+  stripe: typeof stripe;
+  subscriptions: typeof subscriptions;
 }>;
 
 /**

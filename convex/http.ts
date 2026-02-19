@@ -1,6 +1,6 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 
 const http = httpRouter();
 
@@ -503,6 +503,166 @@ http.route({
       console.error("Process watches error:", error);
       return corsErrorResponse(
         error instanceof Error ? error.message : "Internal server error",
+        500
+      );
+    }
+  }),
+});
+
+// ============================================================
+// STRIPE WEBHOOK (Phase 6 - Monetization)
+// ============================================================
+
+http.route({
+  path: "/stripe/webhook",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const signature = request.headers.get("stripe-signature");
+      if (!signature) {
+        return corsErrorResponse("Missing Stripe signature", 400);
+      }
+      
+      const payload = await request.text();
+      
+      // Process webhook (handles signature verification internally)
+      const result = await ctx.runAction(internal.stripe.processWebhook, {
+        payload,
+        signature,
+      });
+      
+      return corsResponse(result);
+    } catch (error) {
+      console.error("Stripe webhook error:", error);
+      return corsErrorResponse(
+        error instanceof Error ? error.message : "Webhook processing failed",
+        500
+      );
+    }
+  }),
+});
+
+// ============================================================
+// SUBSCRIPTION ENDPOINTS (Phase 6)
+// ============================================================
+
+http.route({
+  path: "/subscription/checkout",
+  method: "OPTIONS",
+  handler: httpAction(async () => {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders,
+    });
+  }),
+});
+
+http.route({
+  path: "/subscription/checkout",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const body = await request.json();
+      
+      if (!body.email || !body.tier) {
+        return corsErrorResponse("Missing email or tier", 400);
+      }
+      
+      const origin = request.headers.get("origin") || "https://cannasignal.pages.dev";
+      
+      const result = await ctx.runAction(api.stripe.createCheckoutSession, {
+        email: body.email,
+        tier: body.tier,
+        successUrl: body.successUrl || `${origin}/?checkout=success`,
+        cancelUrl: body.cancelUrl || `${origin}/?checkout=canceled`,
+      });
+      
+      return corsResponse(result);
+    } catch (error) {
+      console.error("Checkout error:", error);
+      return corsErrorResponse(
+        error instanceof Error ? error.message : "Checkout creation failed",
+        500
+      );
+    }
+  }),
+});
+
+http.route({
+  path: "/subscription/portal",
+  method: "OPTIONS",
+  handler: httpAction(async () => {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders,
+    });
+  }),
+});
+
+http.route({
+  path: "/subscription/portal",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const body = await request.json();
+      
+      if (!body.email) {
+        return corsErrorResponse("Missing email", 400);
+      }
+      
+      const origin = request.headers.get("origin") || "https://cannasignal.pages.dev";
+      
+      const result = await ctx.runAction(api.stripe.createPortalSession, {
+        email: body.email,
+        returnUrl: body.returnUrl || `${origin}/`,
+      });
+      
+      return corsResponse(result);
+    } catch (error) {
+      console.error("Portal error:", error);
+      return corsErrorResponse(
+        error instanceof Error ? error.message : "Portal creation failed",
+        500
+      );
+    }
+  }),
+});
+
+http.route({
+  path: "/subscription/status",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const url = new URL(request.url);
+      const email = url.searchParams.get("email");
+      
+      if (!email) {
+        return corsErrorResponse("Missing email parameter", 400);
+      }
+      
+      const subscription = await ctx.runQuery(api.subscriptions.getSubscription, { email });
+      return corsResponse(subscription);
+    } catch (error) {
+      console.error("Subscription status error:", error);
+      return corsErrorResponse(
+        error instanceof Error ? error.message : "Status check failed",
+        500
+      );
+    }
+  }),
+});
+
+http.route({
+  path: "/pricing",
+  method: "GET",
+  handler: httpAction(async (ctx) => {
+    try {
+      const tiers = await ctx.runQuery(api.subscriptions.getPricingTiers, {});
+      return corsResponse(tiers);
+    } catch (error) {
+      console.error("Pricing error:", error);
+      return corsErrorResponse(
+        error instanceof Error ? error.message : "Pricing fetch failed",
         500
       );
     }

@@ -8,11 +8,18 @@
  * 4. Trigger delta detection
  * 5. Send Discord notifications for inventory changes
  * 
+ * RESILIENCE IMPROVEMENTS (workflow-qa):
+ * - Per-location retry with exponential backoff
+ * - Circuit breaker for BrowserBase connection
+ * - Retry logic for Convex ingestion
+ * - Discord webhook retry with backoff
+ * 
  * Deployed at: cannasignal-cron.prtl.workers.dev
  * Cron schedule: */15 * * * * (every 15 minutes)
  */
 
 import { chromium, Browser, Page } from 'playwright-core';
+import { withRetry, fetchWithRetry, withCircuitBreaker, sleep } from '../lib/retry';
 
 interface Env {
   BROWSERBASE_API_KEY: string;
@@ -84,14 +91,39 @@ const EMBEDDED_LOCATIONS: Location[] = [
 ];
 
 // ============================================================
-// BROWSERBASE SCRAPER (Playwright over CDP)
+// BROWSERBASE CONNECTION (with circuit breaker + retry - CRIT-005)
 // ============================================================
 
 async function connectBrowserBase(env: Env): Promise<Browser> {
-  return await chromium.connectOverCDP(
-    `wss://connect.browserbase.com?apiKey=${env.BROWSERBASE_API_KEY}&projectId=${env.BROWSERBASE_PROJECT_ID}`
-  );
+  return withCircuitBreaker('browserbase', async () => {
+    return withRetry(
+      async () => {
+        console.log('[Cron] Connecting to BrowserBase...');
+        const browser = await chromium.connectOverCDP(
+          `wss://connect.browserbase.com?apiKey=${env.BROWSERBASE_API_KEY}&projectId=${env.BROWSERBASE_PROJECT_ID}`,
+          { timeout: 30000 }
+        );
+        console.log('[Cron] Connected to BrowserBase');
+        return browser;
+      },
+      {
+        maxRetries: 3,
+        baseDelayMs: 2000,
+        onRetry: (attempt, error, delay) => {
+          console.log(`[Cron] BrowserBase retry ${attempt}: ${error.message}, waiting ${delay}ms`);
+        }
+      }
+    );
+  }, {
+    failureThreshold: 3,
+    resetTimeMs: 120000, // 2 minutes before retry after circuit opens
+    halfOpenRequests: 1,
+  });
 }
+
+// ============================================================
+// SCRAPER (with navigation retry - HIGH-002)
+// ============================================================
 
 async function scrapeLocation(
   page: Page,
@@ -100,8 +132,19 @@ async function scrapeLocation(
   const scrapedAt = Date.now();
   
   try {
-    // Navigate to menu
-    await page.goto(location.menuUrl, { waitUntil: 'load', timeout: 30000 });
+    // Navigate with retry
+    await withRetry(
+      async () => {
+        await page.goto(location.menuUrl, { waitUntil: 'load', timeout: 30000 });
+      },
+      {
+        maxRetries: 2,
+        baseDelayMs: 2000,
+        onRetry: (attempt, error) => {
+          console.log(`[Cron] Navigation retry ${attempt} for ${location.name}: ${error.message}`);
+        }
+      }
+    );
     
     // Wait for content to render
     await page.waitForTimeout(5000);
@@ -232,33 +275,57 @@ async function scrapeLocation(
 }
 
 // ============================================================
-// CONVEX API
+// CONVEX API (with retry - CRIT-002)
 // ============================================================
 
 async function postToConvex(
   convexUrl: string,
   batchId: string,
   results: any[]
-) {
-  const response = await fetch(`${convexUrl}/ingest/scraped-batch`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ batchId, results }),
-  });
+): Promise<any> {
+  const response = await fetchWithRetry(
+    `${convexUrl}/ingest/scraped-batch`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ batchId, results }),
+      timeoutMs: 60000, // 60s timeout for large batches
+    },
+    {
+      maxRetries: 3,
+      baseDelayMs: 2000,
+      onRetry: (attempt, error, delay) => {
+        console.log(`[Cron] Convex retry ${attempt}: ${error.message}, waiting ${delay}ms`);
+      }
+    }
+  );
   
   if (!response.ok) {
-    throw new Error(`Convex ingestion failed: ${response.status}`);
+    const text = await response.text();
+    throw new Error(`Convex ingestion failed: ${response.status} - ${text}`);
   }
   
   return response.json();
 }
 
+// ============================================================
+// DISCORD NOTIFICATIONS (with retry - CRIT-004)
+// ============================================================
+
 async function triggerDiscordNotifications(convexUrl: string, webhookUrl: string) {
-  const response = await fetch(`${convexUrl}/events/notify`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ webhookUrl, maxEvents: 25 }),
-  });
+  const response = await fetchWithRetry(
+    `${convexUrl}/events/notify`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ webhookUrl, maxEvents: 25 }),
+      timeoutMs: 30000,
+    },
+    {
+      maxRetries: 2,
+      baseDelayMs: 1000,
+    }
+  );
   
   if (!response.ok) {
     console.error(`Discord notification trigger failed: ${response.status}`);
@@ -268,16 +335,30 @@ async function triggerDiscordNotifications(convexUrl: string, webhookUrl: string
   return response.json();
 }
 
-async function sendDiscordSummary(webhookUrl: string, embed: any) {
-  await fetch(webhookUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ embeds: [embed] }),
-  });
+async function sendDiscordSummary(webhookUrl: string, embed: any): Promise<boolean> {
+  try {
+    const response = await fetchWithRetry(
+      webhookUrl,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ embeds: [embed] }),
+        timeoutMs: 10000,
+      },
+      {
+        maxRetries: 3,
+        baseDelayMs: 1000,
+      }
+    );
+    return response.ok;
+  } catch (error) {
+    console.error('[Cron] Discord summary failed after retries:', error);
+    return false;
+  }
 }
 
 // ============================================================
-// MAIN CRON HANDLER
+// MAIN CRON HANDLER (with per-location retry - CRIT-001)
 // ============================================================
 
 export default {
@@ -295,62 +376,90 @@ export default {
     let totalProducts = 0;
     
     try {
-      // Connect to BrowserBase
+      // Connect to BrowserBase (with circuit breaker + retry)
       browser = await connectBrowserBase(env);
       const context = browser.contexts()[0] || await browser.newContext();
       const page = await context.newPage();
       await page.setViewportSize({ width: 1280, height: 800 });
       
-      // Scrape each location (reuse browser session)
+      // Scrape each location with per-location retry (CRIT-001)
       for (const location of EMBEDDED_LOCATIONS) {
-        console.log(`[Cron] Scraping ${location.name}...`);
+        let attempts = 0;
+        let success = false;
+        let lastError: string | undefined;
         
-        const { products, error } = await scrapeLocation(page, location);
+        // Try up to 3 times per location
+        for (let attempt = 1; attempt <= 3 && !success; attempt++) {
+          attempts = attempt;
+          console.log(`[Cron] Scraping ${location.name} (attempt ${attempt}/3)...`);
+          
+          const { products, error } = await scrapeLocation(page, location);
+          
+          if (error) {
+            lastError = error;
+            console.error(`[Cron] ✗ ${location.name} attempt ${attempt}: ${error}`);
+            
+            if (attempt < 3) {
+              // Wait before retry with exponential backoff
+              const delay = 2000 * attempt;
+              await sleep(delay);
+            }
+          } else {
+            console.log(`[Cron] ✓ ${location.name}: ${products.length} products`);
+            totalProducts += products.length;
+            results.push({
+              retailerId: location.retailerSlug,
+              items: products,
+              status: "ok",
+              attempts,
+            });
+            success = true;
+          }
+        }
         
-        if (error) {
-          console.error(`[Cron] ✗ ${location.name}: ${error}`);
-          errors.push(`${location.name}: ${error}`);
+        // If all retries failed, record error
+        if (!success && lastError) {
+          errors.push(`${location.name}: ${lastError}`);
           results.push({
             retailerId: location.retailerSlug,
             items: [],
             status: "error",
-            error,
-          });
-        } else {
-          console.log(`[Cron] ✓ ${location.name}: ${products.length} products`);
-          totalProducts += products.length;
-          results.push({
-            retailerId: location.retailerSlug,
-            items: products,
-            status: "ok",
+            error: lastError,
+            attempts,
           });
         }
         
         // Rate limit: 2 second delay between locations
-        await page.waitForTimeout(2000);
+        await sleep(2000);
       }
     } catch (error) {
-      console.error(`[Cron] Browser connection failed:`, error);
-      errors.push(`BrowserBase: ${error}`);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error(`[Cron] Browser connection failed:`, errorMsg);
+      errors.push(`BrowserBase: ${errorMsg}`);
     } finally {
       if (browser) {
-        await browser.close();
+        try {
+          await browser.close();
+        } catch (e) {
+          // Ignore close errors
+        }
       }
     }
     
     const duration = Math.round((Date.now() - startTime) / 1000);
     
-    // Post results to Convex
+    // Post results to Convex (with retry)
     let ingestionResult = null;
     try {
       ingestionResult = await postToConvex(env.CONVEX_URL, batchId, results);
       console.log(`[Cron] Posted ${results.length} results to Convex:`, ingestionResult);
     } catch (error) {
-      console.error(`[Cron] Convex ingestion failed:`, error);
-      errors.push(`Convex ingestion: ${error}`);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error(`[Cron] Convex ingestion failed after retries:`, errorMsg);
+      errors.push(`Convex ingestion: ${errorMsg}`);
     }
     
-    // Trigger inventory event notifications
+    // Trigger inventory event notifications (with retry)
     try {
       const notifyResult = await triggerDiscordNotifications(env.CONVEX_URL, env.DISCORD_WEBHOOK_URL);
       if (notifyResult) {
@@ -360,7 +469,7 @@ export default {
       console.error(`[Cron] Discord notification trigger failed:`, e);
     }
     
-    // Send summary to Discord
+    // Send summary to Discord (with retry)
     const successCount = results.filter((r) => r.status === "ok").length;
     const failCount = results.filter((r) => r.status === "error").length;
     
@@ -375,6 +484,7 @@ export default {
         { name: "Events", value: ingestionResult?.totalEventsDetected?.toString() || "N/A", inline: true },
         { name: "Errors", value: failCount.toString(), inline: true },
       ],
+      footer: { text: "workflow-qa resilience v2.0" },
       timestamp: new Date().toISOString(),
     };
     
@@ -386,10 +496,10 @@ export default {
       });
     }
     
-    try {
-      await sendDiscordSummary(env.DISCORD_WEBHOOK_URL, summaryEmbed);
-    } catch (e) {
-      console.error(`[Cron] Discord summary failed:`, e);
+    // Retry summary notification
+    const summarySuccess = await sendDiscordSummary(env.DISCORD_WEBHOOK_URL, summaryEmbed);
+    if (!summarySuccess) {
+      console.error('[Cron] Failed to send Discord summary after all retries');
     }
     
     console.log(`[Cron] Batch ${batchId} complete: ${successCount}/${EMBEDDED_LOCATIONS.length} locations, ${totalProducts} products, ${duration}s`);
@@ -403,9 +513,16 @@ export default {
       return Response.json({
         status: "ok",
         service: "cannasignal-cron",
+        version: "2.0.0-resilient",
         locations: EMBEDDED_LOCATIONS.length,
         schedule: "*/15 * * * *",
         convexUrl: env.CONVEX_URL,
+        features: [
+          "per-location-retry",
+          "circuit-breaker",
+          "exponential-backoff",
+          "webhook-retry",
+        ],
       });
     }
     

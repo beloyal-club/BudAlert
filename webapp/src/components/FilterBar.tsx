@@ -23,12 +23,12 @@ interface FilterBarProps {
 
 export function FilterBar({ options, filters, onChange, onClear }: FilterBarProps) {
   return (
-    <div className="bg-neutral-900 border-t border-neutral-800 px-4 py-4">
+    <div className="bg-neutral-900 border-t border-neutral-800 px-4 py-4" role="region" aria-label="Product filters">
       <div className="max-w-3xl mx-auto space-y-3">
         {/* Category Pills */}
-        <div>
-          <p className="text-xs text-neutral-500 mb-2 font-medium">Category</p>
-          <div className="flex flex-wrap gap-2">
+        <fieldset>
+          <legend className="text-xs text-neutral-500 mb-2 font-medium">Category</legend>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by category">
             <button
               onClick={() => onChange("category", null)}
               className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
@@ -36,6 +36,7 @@ export function FilterBar({ options, filters, onChange, onClear }: FilterBarProp
                   ? "bg-cannabis-600 text-white"
                   : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
               }`}
+              aria-pressed={!filters.category}
             >
               All
             </button>
@@ -48,17 +49,18 @@ export function FilterBar({ options, filters, onChange, onClear }: FilterBarProp
                     ? "bg-cannabis-600 text-white"
                     : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
                 }`}
+                aria-pressed={filters.category === cat}
               >
                 {formatCategory(cat)}
               </button>
             ))}
           </div>
-        </div>
+        </fieldset>
 
         {/* Strain Type Pills */}
-        <div>
-          <p className="text-xs text-neutral-500 mb-2 font-medium">Strain Type</p>
-          <div className="flex flex-wrap gap-2">
+        <fieldset>
+          <legend className="text-xs text-neutral-500 mb-2 font-medium">Strain Type</legend>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by strain type">
             <button
               onClick={() => onChange("strain", null)}
               className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
@@ -66,6 +68,7 @@ export function FilterBar({ options, filters, onChange, onClear }: FilterBarProp
                   ? "bg-cannabis-600 text-white"
                   : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
               }`}
+              aria-pressed={!filters.strain}
             >
               All
             </button>
@@ -78,17 +81,19 @@ export function FilterBar({ options, filters, onChange, onClear }: FilterBarProp
                     ? "bg-cannabis-600 text-white"
                     : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
                 }`}
+                aria-pressed={filters.strain === strain}
               >
                 {strain}
               </button>
             ))}
           </div>
-        </div>
+        </fieldset>
 
         {/* Dispensary Select */}
         <div>
-          <p className="text-xs text-neutral-500 mb-2 font-medium">Dispensary</p>
+          <label htmlFor="dispensary-filter" className="text-xs text-neutral-500 mb-2 font-medium block">Dispensary</label>
           <select
+            id="dispensary-filter"
             value={filters.retailerId || ""}
             onChange={(e) => onChange("retailerId", e.target.value || null)}
             className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cannabis-500"

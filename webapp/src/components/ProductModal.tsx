@@ -1,4 +1,5 @@
 import { useQuery } from "convex/react";
+import { useEffect, useRef } from "react";
 import { api } from "../../../convex/_generated/api";
 import { StockBadge } from "./StockBadge";
 import { WatchButton } from "./WatchButton";
@@ -12,11 +13,31 @@ interface ProductModalProps {
 }
 
 export function ProductModal({ productId, userLocation, onClose }: ProductModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  
   // Get product details
   const product = useQuery(api.products.getById, { id: productId });
   
   // Get inventory data
   const inventory = useQuery(api.inventory.getByProduct, { productId });
+
+  // Keyboard handling - Escape to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    
+    document.addEventListener("keydown", handleKeyDown);
+    modalRef.current?.focus();
+    document.body.style.overflow = "hidden";
+    
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
 
   // Close on backdrop click
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -49,9 +70,13 @@ export function ProductModal({ productId, userLocation, onClose }: ProductModalP
 
   return (
     <div
+      ref={modalRef}
       className="fixed inset-0 z-50 bg-black/80 flex items-end sm:items-center justify-center"
       onClick={handleBackdropClick}
       tabIndex={-1}
+      role="dialog"
+      aria-modal="true"
+      aria-label={product ? `${product.name} product details` : "Loading product details"}
     >
       <div className="w-full max-w-lg bg-neutral-900 rounded-t-2xl sm:rounded-2xl max-h-[85vh] overflow-hidden flex flex-col animate-slide-up">
         {/* Header */}
@@ -86,8 +111,9 @@ export function ProductModal({ productId, userLocation, onClose }: ProductModalP
           <button
             onClick={onClose}
             className="p-2 -mr-2 -mt-2 rounded-full hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors"
+            aria-label="Close product details"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -197,7 +223,8 @@ export function ProductModal({ productId, userLocation, onClose }: ProductModalP
                             </span>
                           )}
                         </div>
-                        <span className="text-xs text-neutral-500">
+                        <span className={`text-xs ${isStale(item.lastUpdatedAt) ? "text-amber-500" : "text-neutral-500"}`}>
+                          {isStale(item.lastUpdatedAt) && "⚠️ "}
                           Updated {formatTimeAgo(item.lastUpdatedAt)}
                         </span>
                       </div>
@@ -238,6 +265,12 @@ function formatTimeAgo(timestamp: number): string {
   if (hours > 0) return `${hours}h ago`;
   if (minutes > 0) return `${minutes}m ago`;
   return "just now";
+}
+
+// Data older than 24h is considered stale
+function isStale(timestamp: number): boolean {
+  const hours = (Date.now() - timestamp) / (1000 * 60 * 60);
+  return hours > 24;
 }
 
 function haversineDistance(

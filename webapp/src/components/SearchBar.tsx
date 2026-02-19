@@ -35,11 +35,15 @@ export function SearchBar({ value, onChange }: SearchBarProps) {
   return (
     <div className="relative">
       <input
-        type="text"
+        type="search"
         value={localValue}
         onChange={(e) => handleChange(e.target.value)}
         placeholder="Search products, brands, strains..."
         className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 pl-11 text-white placeholder-neutral-500 focus:outline-none focus:border-cannabis-500 focus:ring-1 focus:ring-cannabis-500 transition-colors"
+        aria-label="Search products, brands, and strains"
+        autoComplete="off"
+        autoCorrect="off"
+        spellCheck="false"
       />
       <svg
         className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500"
@@ -58,8 +62,10 @@ export function SearchBar({ value, onChange }: SearchBarProps) {
         <button
           onClick={handleClear}
           className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-neutral-700 text-neutral-400 hover:text-neutral-200 transition-colors"
+          aria-label="Clear search"
+          type="button"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
