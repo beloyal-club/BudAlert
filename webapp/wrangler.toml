@@ -1,0 +1,6 @@
+name = "cannasignal"
+pages_build_output_dir = "dist"
+
+# Production Environment
+[env.production]
+name = "cannasignal"

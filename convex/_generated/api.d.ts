@@ -21,12 +21,14 @@ import type * as deadLetterQueue from "../deadLetterQueue.js";
 import type * as http from "../http.js";
 import type * as ingestion from "../ingestion.js";
 import type * as inventory from "../inventory.js";
+import type * as inventoryEvents from "../inventoryEvents.js";
 import type * as lib_productNormalizer from "../lib/productNormalizer.js";
 import type * as ocmSync from "../ocmSync.js";
 import type * as priceHistory from "../priceHistory.js";
 import type * as products from "../products.js";
 import type * as retailers from "../retailers.js";
 import type * as scraperAlerts from "../scraperAlerts.js";
+import type * as search from "../search.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -45,12 +47,14 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   ingestion: typeof ingestion;
   inventory: typeof inventory;
+  inventoryEvents: typeof inventoryEvents;
   "lib/productNormalizer": typeof lib_productNormalizer;
   ocmSync: typeof ocmSync;
   priceHistory: typeof priceHistory;
   products: typeof products;
   retailers: typeof retailers;
   scraperAlerts: typeof scraperAlerts;
+  search: typeof search;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

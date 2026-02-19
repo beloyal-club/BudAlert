@@ -328,14 +328,25 @@ export const detectDeltas = mutation({
 // DISCORD NOTIFICATION ACTION
 // ============================================================
 
+interface EnrichedEvent {
+  _id: any;
+  eventType: string;
+  brand?: { name?: string } | null;
+  product?: { name?: string } | null;
+  retailer?: { name?: string } | null;
+  metadata?: { rawName?: string; changePercent?: number } | null;
+  previousValue?: { price?: number } | null;
+  newValue?: { price?: number } | null;
+}
+
 export const sendDiscordNotifications = action({
   args: {
     webhookUrl: v.string(),
     maxEvents: v.optional(v.number()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<{ sent: number; message?: string; remaining?: number; breakdown?: Record<string, number> }> => {
     // Get unnotified events
-    const events = await ctx.runQuery(internal.inventoryEvents.getUnnotifiedEvents, {});
+    const events: EnrichedEvent[] = await ctx.runQuery(internal.inventoryEvents.getUnnotifiedEvents, {});
     
     if (events.length === 0) {
       return { sent: 0, message: "No new events to notify" };
@@ -343,10 +354,10 @@ export const sendDiscordNotifications = action({
     
     // Limit events per notification
     const maxEvents = args.maxEvents || 25;
-    const eventsToSend = events.slice(0, maxEvents);
+    const eventsToSend: EnrichedEvent[] = events.slice(0, maxEvents);
     
     // Group events by type for better formatting
-    const grouped: Record<string, typeof eventsToSend> = {};
+    const grouped: Record<string, EnrichedEvent[]> = {};
     for (const event of eventsToSend) {
       const type = event.eventType;
       if (!grouped[type]) grouped[type] = [];
@@ -354,7 +365,7 @@ export const sendDiscordNotifications = action({
     }
     
     // Build Discord embeds
-    const embeds: any[] = [];
+    const embeds: Array<{ title: string; description: string; color: number; timestamp: string }> = [];
     
     // Event type emojis and colors
     const typeConfig: Record<string, { emoji: string; color: number }> = {
@@ -370,7 +381,7 @@ export const sendDiscordNotifications = action({
     for (const [eventType, typeEvents] of Object.entries(grouped)) {
       const config = typeConfig[eventType] || { emoji: "📝", color: 0x5865f2 };
       
-      const lines = typeEvents.slice(0, 10).map(event => {
+      const lines = typeEvents.slice(0, 10).map((event: EnrichedEvent) => {
         const brandName = event.brand?.name || "Unknown Brand";
         const productName = event.product?.name || event.metadata?.rawName || "Unknown Product";
         const retailerName = event.retailer?.name || "Unknown Retailer";
@@ -418,7 +429,7 @@ export const sendDiscordNotifications = action({
       
       // Mark events as notified
       await ctx.runMutation(internal.inventoryEvents.markEventsNotified, {
-        eventIds: eventsToSend.map(e => e._id),
+        eventIds: eventsToSend.map((e: EnrichedEvent) => e._id),
       });
       
       return {
