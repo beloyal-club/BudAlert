@@ -473,4 +473,200 @@ All changes on `b2b-pivot` branch.
 
 ---
 
-*Last updated: 2026-02-19 16:20 UTC (dashboard-filters branch merged)*
+## Phase 8: Authentication 🔐 IN PROGRESS
+
+### [auth-agent]: Decision - Clerk + Convex Integration
+
+**Chosen Solution:** Clerk with `ConvexProviderWithClerk`
+
+**Rationale:**
+1. Official integration via `@clerk/clerk-react` and `convex/react-clerk`
+2. Free tier (10k MAU) sufficient for MVP
+3. Magic links, Google, email/password built-in
+4. User management dashboard included
+5. The schema already had `externalAuthId` field - this was planned
+6. Convex Auth is still beta and less mature
+
+### [auth-agent]: Implementation Status
+
+**Completed ✅**
+
+- [x] **Convex Auth Config** (`convex/auth.config.ts`)
+  - Clerk JWT validation configuration
+  - Requires `CLERK_JWT_ISSUER_DOMAIN` env var in Convex Dashboard
+
+- [x] **Clerk Provider Setup** (`webapp/src/main.tsx`)
+  - `ClerkProvider` wrapping app
+  - `ConvexProviderWithClerk` for auth-aware Convex
+  - Graceful fallback when Clerk not configured
+  - Requires `VITE_CLERK_PUBLISHABLE_KEY` env var
+
+- [x] **Auth Utilities** (`webapp/src/lib/auth.ts`)
+  - `useAuthUser()` - unified hook for user info
+  - `useUserEmail()` - get email from auth or legacy localStorage
+  - `useNeedsSignup()` - detect users needing migration
+  - Backward compatibility with localStorage email
+
+- [x] **Auth Components** (`webapp/src/components/AuthButton.tsx`)
+  - Header sign-in/sign-up buttons
+  - User avatar/menu when signed in
+  - Loading states
+
+- [x] **Protected Routes** (`webapp/src/components/ProtectedRoute.tsx`)
+  - `<ProtectedRoute>` - generic auth wrapper
+  - `<B2BProtectedRoute>` - B2B-specific variant
+  - Sign-in prompts with branding
+
+- [x] **WatchButton.tsx Updates**
+  - Uses `useAuthUser()` for authenticated users
+  - Falls back to email input for guests (legacy)
+  - Sign-in prompt in watch limit warning
+
+- [x] **WatchlistPage.tsx Updates**
+  - Sign-in prompt for new users
+  - Backward compatible with localStorage email
+  - "Or continue with email" option
+
+- [x] **App.tsx Updates**
+  - `<AuthButton>` in header
+
+- [x] **Backend Auth Helper** (`convex/authHelpers.ts`)
+  - `getAuthUser()` - get identity from context
+  - `requireAuth()` - throw if not authenticated
+  - `getUserEmail()` - email with fallback
+  - `verifyEmailAccess()` - prevent cross-user access
+  - `getOrCreateAuthUser()` - sync user to database
+
+- [x] **Dependency Installation**
+  - `@clerk/clerk-react` added to webapp
+
+- [x] **Environment Template** (`webapp/.env.example`)
+  - Documents required env vars
+
+### [auth-agent]: Setup Required (Human Action)
+
+To complete the auth setup, the human needs to:
+
+1. **Create Clerk Account**
+   - Go to https://clerk.com
+   - Sign up / Sign in
+   - Create new application
+
+2. **Create JWT Template**
+   - Clerk Dashboard → JWT Templates
+   - Click "New template"
+   - Select "Convex" template
+   - **Important:** Keep the name as "convex" (don't rename)
+   - Copy the "Issuer URL" (format: `https://verb-noun-00.clerk.accounts.dev`)
+
+3. **Configure Convex**
+   - Convex Dashboard → Settings → Environment Variables
+   - Add: `CLERK_JWT_ISSUER_DOMAIN` = the Issuer URL from step 2
+   - Run `npx convex deploy` to sync
+
+4. **Configure Webapp**
+   - Create `webapp/.env.local`:
+     ```
+     VITE_CLERK_PUBLISHABLE_KEY=pk_test_xxxxx
+     ```
+   - Get the Publishable Key from Clerk Dashboard → API Keys
+   - Restart dev server
+
+5. **Test Auth Flow**
+   - Visit webapp
+   - Click "Sign In" in header
+   - Try email magic link or Google sign-in
+   - Verify user appears in Clerk dashboard
+   - Test watch functionality with authenticated user
+
+### [auth-agent]: Files Changed
+
+```
+convex/
+├── auth.config.ts         # NEW - Clerk JWT config
+└── authHelpers.ts         # NEW - Auth utilities for backend
+
+webapp/
+├── .env.example           # NEW - Env template
+├── package.json           # UPDATED - Added @clerk/clerk-react
+├── src/
+│   ├── main.tsx           # UPDATED - ClerkProvider + ConvexProviderWithClerk
+│   ├── App.tsx            # UPDATED - Added AuthButton
+│   ├── lib/
+│   │   └── auth.ts        # NEW - Auth hooks/utilities
+│   └── components/
+│       ├── AuthButton.tsx     # NEW - Header auth button
+│       ├── ProtectedRoute.tsx # NEW - Auth wrappers
+│       ├── WatchButton.tsx    # UPDATED - Auth-aware
+│       └── WatchlistPage.tsx  # UPDATED - Auth-aware
+```
+
+### [auth-agent]: Notes
+
+- **Backward Compatibility:** Existing localStorage-based email users will continue to work
+- **Migration Path:** When user signs up, we can migrate their watches from localStorage email
+- **B2B Dashboard:** Use `<B2BProtectedRoute>` wrapper for full dashboard protection
+- **Consumer App:** Public routes work without auth, auth optional for enhanced features
+
+---
+
+*Last updated: 2026-02-19 19:17 UTC (auth-agent implementation)*
+
+## [pipeline-deploy]: 2026-02-19 - Pipeline Deployment Complete ✅
+
+### Status: OPERATIONAL
+
+The cron worker and browser scraping pipeline are now deployed and working.
+
+### Deployments
+1. **cannasignal-browser** (v2.0.0) - https://cannasignal-browser.prtl.workers.dev
+   - Cloudflare Browser Rendering worker
+   - Handles age gate bypassing
+   - DOM inspection for debugging
+
+2. **cannasignal-cron** (v3.0.0) - https://cannasignal-cron.prtl.workers.dev  
+   - Direct Browser binding (no Worker-to-Worker calls)
+   - Cron schedule: */15 * * * *
+   - Convex URL: https://quick-weasel-225.convex.site
+
+### Test Results
+- **CONBUD LES**: ✅ 101 products scraped successfully
+  - Product names, brands, prices, THC%, strains
+  - Images from Dutchie CDN
+  
+### Architecture Changes
+- Removed BrowserBase dependency (incompatible with Workers)
+- Added @cloudflare/puppeteer directly to cron worker
+- Fixed wrangler.toml compatibility flags (nodejs_compat)
+- Updated selectors for styled-components DOM
+
+### Remaining Work
+1. Set DISCORD_WEBHOOK_URL secret for notifications
+2. Test all 16 locations (currently limited to 3)
+3. Verify Convex ingestion endpoint exists
+4. Enable full cron schedule
+
+### Endpoints
+- GET /health - Status check
+- GET /test-single - Test single location scrape
+- POST /trigger - Manual scrape trigger
+- GET /locations - List all 16 configured locations
+
+
+
+---
+
+## [branch-cleanup]: Git Branch Audit (2026-02-19)
+
+All remote branches audited and cleaned up:
+
+| Branch | Last Commit | Status | Action |
+|--------|-------------|--------|--------|
+| b2b-pivot | 2026-02-19 | ✅ Merged | Deleted |
+| dashboard-filters | 2026-02-19 | ✅ Merged | Deleted |
+| discord-webhook-setup | 2026-02-19 | ✅ Merged | Deleted |
+| region-filter | 2026-02-19 | ✅ Merged | Deleted |
+| site-polish-improvements | 2026-02-19 | ✅ Merged | Deleted |
+| workflow-qa-improvements | 2026-02-19 | ✅ Merged | Deleted |
+
+**Result:** All 6 feature branches were already merged to main. Deleted remote branches to keep repo clean.
