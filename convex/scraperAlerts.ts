@@ -144,7 +144,7 @@ export const checkAlertConditions = query({
       triggered: staleRetailers.length >= 3,
       value: staleRetailers.length,
       threshold: 3,
-      details: `${staleRetailers.length} retailer(s) not scraped in ${ALERT_CONFIG.staleHoursThreshold}+ hours`,
+      details: `${staleRetailers.length} retailer(s) not scraped in ${ALERT_CONFIG.staleMinutesThreshold}+ minutes`,
     });
     
     // Rate limit spike alert

@@ -478,4 +478,25 @@ export default defineSchema({
     .index("by_email", ["email", "createdAt"])
     .index("by_type", ["eventType", "createdAt"])
     .index("by_stripe_event", ["stripeEventId"]),
+
+  // ============================================================
+  // NOTIFICATION QUEUE (CRIT-004)
+  // Retry queue for failed Discord webhook deliveries
+  // ============================================================
+
+  notificationQueue: defineTable({
+    webhookUrl: v.string(),               // Discord webhook URL
+    payload: v.any(),                     // The message payload to send
+    eventIds: v.optional(v.array(v.id("inventoryEvents"))), // Related events
+    notificationType: v.string(),         // "product_alert" | "scraper_alert" | etc.
+    errorMessage: v.string(),             // Last error message
+    attemptNumber: v.number(),            // Current retry attempt
+    status: v.string(),                   // "pending" | "delivered" | "failed"
+    createdAt: v.number(),
+    lastAttemptAt: v.number(),
+    nextRetryAt: v.number(),              // When to retry next
+    deliveredAt: v.optional(v.number()),  // When successfully delivered
+  })
+    .index("by_status", ["status", "nextRetryAt"])
+    .index("by_webhook", ["webhookUrl", "status"]),
 });
