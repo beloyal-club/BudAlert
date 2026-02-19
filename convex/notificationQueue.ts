@@ -1,5 +1,5 @@
 /**
- * Notification Queue (CRIT-004)
+ * Notification Queue (CRIT-004 - workflow-qa)
  * 
  * Handles retry logic for failed Discord webhook deliveries.
  * Stores failed notifications for later retry.
@@ -9,35 +9,23 @@ import { mutation, query, action, internalMutation, internalQuery } from "./_gen
 import { v } from "convex/values";
 import { internal, api } from "./_generated/api";
 
-// ============================================================
-// CONFIGURATION
-// ============================================================
-
 const RETRY_CONFIG = {
   maxRetries: 5,
-  baseDelayMs: 5000,        // 5 seconds
-  maxDelayMs: 300000,       // 5 minutes
+  baseDelayMs: 5000,
+  maxDelayMs: 300000,
   backoffMultiplier: 2,
 };
 
-// ============================================================
-// MUTATIONS
-// ============================================================
-
-/**
- * Add a failed notification to the retry queue
- */
 export const addToQueue = mutation({
   args: {
     webhookUrl: v.string(),
     payload: v.any(),
     eventIds: v.optional(v.array(v.id("inventoryEvents"))),
-    notificationType: v.string(),  // "inventory" | "alert" | "watch"
+    notificationType: v.string(),
     errorMessage: v.string(),
     attemptNumber: v.number(),
   },
   handler: async (ctx, args) => {
-    // Check if there's already a pending retry for this webhook + type
     const existing = await ctx.db
       .query("notificationQueue")
       .filter(q => 
@@ -49,7 +37,6 @@ export const addToQueue = mutation({
       .first();
     
     if (existing) {
-      // Update existing entry
       await ctx.db.patch(existing._id, {
         payload: args.payload,
         errorMessage: args.errorMessage,
@@ -59,7 +46,6 @@ export const addToQueue = mutation({
       return existing._id;
     }
     
-    // Calculate next retry time with exponential backoff
     const delay = Math.min(
       RETRY_CONFIG.baseDelayMs * Math.pow(RETRY_CONFIG.backoffMultiplier, args.attemptNumber - 1),
       RETRY_CONFIG.maxDelayMs
@@ -80,13 +66,8 @@ export const addToQueue = mutation({
   },
 });
 
-/**
- * Mark a queued notification as succeeded
- */
 export const markSuccess = mutation({
-  args: {
-    id: v.id("notificationQueue"),
-  },
+  args: { id: v.id("notificationQueue") },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.id, {
       status: "delivered",
@@ -95,9 +76,6 @@ export const markSuccess = mutation({
   },
 });
 
-/**
- * Mark a queued notification as permanently failed
- */
 export const markFailed = mutation({
   args: {
     id: v.id("notificationQueue"),
@@ -111,9 +89,6 @@ export const markFailed = mutation({
   },
 });
 
-/**
- * Update retry attempt
- */
 export const updateRetryAttempt = internalMutation({
   args: {
     id: v.id("notificationQueue"),
@@ -131,19 +106,11 @@ export const updateRetryAttempt = internalMutation({
   },
 });
 
-// ============================================================
-// QUERIES
-// ============================================================
-
-/**
- * Get pending notifications ready for retry
- */
 export const getPendingRetries = internalQuery({
   args: {},
   handler: async (ctx) => {
     const now = Date.now();
-    
-    const pending = await ctx.db
+    return await ctx.db
       .query("notificationQueue")
       .filter(q => 
         q.and(
@@ -152,40 +119,21 @@ export const getPendingRetries = internalQuery({
         )
       )
       .take(10);
-    
-    return pending;
   },
 });
 
-/**
- * Get queue stats
- */
 export const getQueueStats = query({
   args: {},
   handler: async (ctx) => {
     const all = await ctx.db.query("notificationQueue").collect();
-    
-    const pending = all.filter(n => n.status === "pending").length;
-    const delivered = all.filter(n => n.status === "delivered").length;
-    const failed = all.filter(n => n.status === "failed").length;
-    
-    const oldestPending = all
-      .filter(n => n.status === "pending")
-      .sort((a, b) => a.createdAt - b.createdAt)[0];
-    
     return {
-      pending,
-      delivered,
-      failed,
+      pending: all.filter(n => n.status === "pending").length,
+      delivered: all.filter(n => n.status === "delivered").length,
+      failed: all.filter(n => n.status === "failed").length,
       total: all.length,
-      oldestPending: oldestPending?.createdAt || null,
     };
   },
 });
-
-// ============================================================
-// RETRY ACTION
-// ============================================================
 
 interface QueuedNotification {
   _id: any;
@@ -196,9 +144,6 @@ interface QueuedNotification {
   attemptNumber: number;
 }
 
-/**
- * Process pending retries
- */
 export const processRetries = action({
   args: {},
   handler: async (ctx) => {
@@ -226,13 +171,11 @@ export const processRetries = action({
         });
         
         if (response.ok) {
-          // Success!
           await ctx.runMutation(api.notificationQueue.markSuccess, {
             id: notification._id,
           });
           succeeded++;
           
-          // Mark events as notified if this was an inventory notification
           if (notification.eventIds && notification.eventIds.length > 0) {
             await ctx.runMutation(internal.inventoryEvents.markEventsNotified, {
               eventIds: notification.eventIds,
@@ -245,14 +188,12 @@ export const processRetries = action({
         const errorMsg = error instanceof Error ? error.message : String(error);
         
         if (attemptNumber >= RETRY_CONFIG.maxRetries) {
-          // Exhausted retries
           await ctx.runMutation(api.notificationQueue.markFailed, {
             id: notification._id,
             errorMessage: `Exhausted ${RETRY_CONFIG.maxRetries} retries. Last error: ${errorMsg}`,
           });
           exhausted++;
         } else {
-          // Schedule next retry
           const delay = Math.min(
             RETRY_CONFIG.baseDelayMs * Math.pow(RETRY_CONFIG.backoffMultiplier, attemptNumber - 1),
             RETRY_CONFIG.maxDelayMs
@@ -269,11 +210,6 @@ export const processRetries = action({
       }
     }
     
-    return {
-      processed: pending.length,
-      succeeded,
-      failed,
-      exhausted,
-    };
+    return { processed: pending.length, succeeded, failed, exhausted };
   },
 });

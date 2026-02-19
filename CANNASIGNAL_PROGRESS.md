@@ -1,6 +1,6 @@
 # CannaSignal Progress Tracker
 
-## Current Status: Phase 6 ✅ COMPLETE (Monetization)
+## Current Status: Phase 5 ✅ COMPLETE (Smart Features)
 
 ---
 
@@ -278,139 +278,15 @@ npx wrangler pages deploy dist --project-name=cannasignal
 
 ---
 
-## Phase 6: Monetization ✅ COMPLETE
-
-### Overview
-Implemented subscription tiers, Stripe integration scaffolding, and retailer dashboard concept.
-
-### Completed ✅
-
-- [x] **Consumer Subscription Tiers**
-  - Free: 3 product watches, Discord alerts
-  - Premium ($7.99/mo): Unlimited watches, SMS, priority alerts, predictions
-  - Pro ($14.99/mo): Everything + API access, webhooks
-
-- [x] **Convex Schema Extensions**
-  - `subscriptions` table: Consumer subscription state
-  - `retailerAccounts` table: B2B dispensary accounts
-  - `paymentEvents` table: Payment audit trail
-
-- [x] **Stripe Integration Scaffolding**
-  - `convex/stripe.ts`: Checkout session creation, portal management
-  - `convex/http.ts`: Webhook endpoints for Stripe events
-  - Production-ready structure (replace placeholder price IDs)
-
-- [x] **Subscription Queries & Mutations**
-  - `getSubscription`: Get user's current subscription
-  - `canAddWatch`: Check if user can add more watches
-  - `getWatchUsage`: Usage stats for UI
-  - `createOrUpdateSubscription`: Subscription lifecycle
-  - `handleStripeWebhook`: Process Stripe events
-
-- [x] **UI Components**
-  - `PricingPage.tsx`: Full pricing display with tier comparison
-  - `UpgradePrompt.tsx`: Contextual upgrade prompts
-  - `SubscriptionBadge.tsx`: Current plan indicator
-  - `WatchUsageBar`: Visual progress bar for watch limits
-
-- [x] **Watch Limit Enforcement**
-  - `WatchButton.tsx` updated to check limits
-  - Shows upgrade prompt when limit reached
-
-- [x] **Business Documentation**
-  - `docs/MONETIZATION.md`: Full strategy document
-  - Retailer dashboard concept
-  - Path to $1K MRR outlined
-
-### HTTP Endpoints Added
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/stripe/webhook` | POST | Stripe webhook handler |
-| `/subscription/checkout` | POST | Create checkout session |
-| `/subscription/portal` | POST | Create customer portal |
-| `/subscription/status` | GET | Get subscription status |
-| `/pricing` | GET | Get pricing tier info |
-
-### Retailer Dashboard Concept
-
-**Starter ($49/mo):**
-- Competitor pricing (5 competitors)
-- Stock-out alerts for own inventory
-
-**Growth ($149/mo):**
-- Competitor pricing (15 competitors)
-- Demand signals (watch counts, search trends)
-- API access
-
-**Enterprise ($499/mo):**
-- Unlimited competitor tracking
-- White-label options
-- Custom integrations
-
-### File Structure (Phase 6)
-```
-convex/
-├── subscriptions.ts     # NEW - Subscription queries/mutations
-├── stripe.ts            # NEW - Stripe integration
-├── http.ts              # UPDATED - Webhook & checkout endpoints
-├── schema.ts            # UPDATED - Added subscription tables
-
-webapp/src/components/
-├── PricingPage.tsx      # NEW - Pricing tiers display
-├── UpgradePrompt.tsx    # NEW - Contextual upgrade prompts
-├── SubscriptionBadge.tsx # NEW - Plan indicator
-├── WatchButton.tsx      # UPDATED - Limit enforcement
-
-docs/
-└── MONETIZATION.md      # NEW - Business strategy doc
-```
-
-### Deployment Instructions
-
-```bash
-# 1. Deploy Convex (will regenerate types)
-cd /root/BudAlert
-CONVEX_DEPLOY_KEY=<key> npx convex deploy
-
-# 2. Add Stripe environment variables in Convex dashboard:
-#    - STRIPE_SECRET_KEY
-#    - STRIPE_WEBHOOK_SECRET
-
-# 3. Create Stripe products/prices and update:
-#    - convex/subscriptions.ts: TIERS.*.stripePriceId
-#    - convex/stripe.ts: PRICE_IDS
-
-# 4. Build and deploy webapp
-cd /root/BudAlert/webapp
-npm run build
-npx wrangler pages deploy dist --project-name=cannasignal
-```
-
-### Success Criteria Status
-
-| Criteria | Status | Notes |
-|----------|--------|-------|
-| Free vs Premium feature matrix | ✅ | 3 tiers defined |
-| Stripe checkout scaffolded | ✅ | Ready for price IDs |
-| Retailer value prop documented | ✅ | In MONETIZATION.md |
-| Subscription management UI | ✅ | PricingPage + Badge |
-| Upgrade prompts at limits | ✅ | WatchButton integrated |
-| Path to $1K MRR | ✅ | Documented in strategy |
-
----
-
-## Phase 7: Future Work
+## Phase 6: Future Work
 - [ ] Email notifications (in addition to Discord)
 - [ ] Push notifications (web/PWA)
 - [ ] Per-retailer watch filters
 - [ ] Price threshold alerts ("notify me when <$50")
-- [ ] SMS notifications (Twilio integration)
+- [ ] SMS notifications
 - [ ] Weekly digest emails
 - [ ] Alpine IQ adapter (for New Amsterdam, Verdi)
 - [ ] Expand to remaining 44 NYC retailers
-- [ ] Retailer dashboard implementation
-- [ ] Annual subscription discounts
 
 ---
 
@@ -462,54 +338,62 @@ node -e "console.log(require('./data/nyc-retailers-expanded.json').summary)"
 
 ---
 
-## UX Audit: Site Polish (2026-02-19)
+## Phase 7: Pipeline Reliability (workflow-qa) 🔧 IN PROGRESS
 
-### Issues Found & Fixed
+### Overview
+Audit and improvements to pipeline resilience by workflow-qa subagent.
 
-| Severity | Issue | Fix Applied |
-|----------|-------|-------------|
-| **Major** | No keyboard support for modals | Added Escape key to close ProductModal, WatchlistPage |
-| **Major** | Modals missing ARIA attributes | Added role="dialog", aria-modal, aria-label |
-| **Major** | No stale data warning | Added ⚠️ indicator + amber text for data >24h old |
-| **Major** | Poor email validation UX | Added inline error messages, validation feedback |
-| **Minor** | Confusing "Check" badge | Changed to "View" badge with 👁️ emoji |
-| **Minor** | Hardcoded "NYC" location | Changed to "Near you" when location enabled |
-| **Minor** | No skip-to-content link | Added hidden skip link for screen readers |
-| **Minor** | Filter pills lack keyboard context | Added aria-pressed states |
-| **Minor** | Search input missing aria-label | Added proper labeling |
-| **Minor** | Close buttons missing aria-label | Added accessibility labels |
-| **Minor** | Footer shows "18 locations" | Updated to "30+ dispensaries" |
-| **Minor** | Empty state not helpful | Added context-aware messaging + "See trending" link |
+### Completed ✅
 
-### Improvements Made
+- [x] **Audit Report** (`WORKFLOW_QA_AUDIT.md`)
+  - 5 critical vulnerabilities identified
+  - 4 high-severity issues documented
+  - 3 medium issues catalogued
 
-1. **Accessibility (a11y)**
-   - All modals now support Escape key to close
-   - Added ARIA labels, roles, and modal attributes
-   - Filter buttons have aria-pressed state
-   - Skip-to-content link for keyboard users
-   - Screen reader text hidden visually but accessible
+- [x] **Retry Utility Module** (`workers/lib/retry.ts`)
+  - `withRetry()` - Exponential backoff wrapper
+  - `fetchWithRetry()` - HTTP fetch with timeout and retry
+  - `withCircuitBreaker()` - Circuit breaker pattern
+  - `sleep()` - Utility function
 
-2. **User Experience**
-   - Stale data indicator warns users about outdated prices
-   - Email validation shows inline errors immediately
-   - Empty search state suggests alternatives
-   - Location indicator is dynamic, not hardcoded
+- [x] **Notification Retry Queue** (`convex/notificationQueue.ts`)
+  - Failed Discord webhooks queued for retry
+  - 5 retries with exponential backoff
+  - Automatic event marking on success
 
-3. **Code Quality**
-   - Created shared `utils.ts` for formatting functions
-   - Prevented body scroll when modals open
-   - Modal refs for proper focus management
+### Pending Code Changes (documented in audit)
 
-### Branch
-`site-polish-improvements` - ready for review/merge
+- [ ] Update `workers/cron/index.ts` - Add import and use retry utilities
+- [ ] Update `convex/scraperAlerts.ts` - Change staleHoursThreshold to staleMinutesThreshold (45)
+- [ ] Update `convex/schema.ts` - Add notificationQueue table
+- [ ] Update `convex/http.ts` - Add /notifications/*, /dlq/*, /pipeline/health endpoints
+- [ ] Update `convex/inventoryEvents.ts` - Queue failed notifications
+
+### Blockers / Questions
+
+- [workflow-qa]: Should we add SMS/email fallback when Discord is down for extended periods?
+- [workflow-qa]: BrowserBase fallback to BrowserUse - worth the complexity for ~0.5% failure rate?
+- [workflow-qa]: Event TTL - auto-cleanup inventoryEvents older than 30 days?
+- [workflow-qa]: Should notification queue process via cron or on-demand HTTP calls?
+
+### New API Endpoints (to be added)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/notifications/retry` | POST | Process notification retry queue |
+| `/notifications/queue-stats` | GET | Get queue statistics |
+| `/dlq/stats` | GET | Dead letter queue stats |
+| `/dlq/unresolved` | GET | List unresolved errors |
+| `/pipeline/health` | GET | Comprehensive health check |
+
+### Files on Branch `workflow-qa-improvements`
+
+```
+workers/lib/retry.ts           # NEW - Retry utilities
+convex/notificationQueue.ts    # NEW - Retry queue
+WORKFLOW_QA_AUDIT.md           # NEW - Full audit report
+```
 
 ---
 
-## Blockers / Questions
-
-*None at this time*
-
----
-
-*Last updated: 2026-02-19 06:45 UTC*
+*Last updated: 2026-02-19 04:36 UTC (workflow-qa audit)*
