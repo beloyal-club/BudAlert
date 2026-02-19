@@ -1,6 +1,6 @@
 # CannaSignal Progress Tracker
 
-## Current Status: Phase 5 ✅ COMPLETE (Smart Features)
+## Current Status: Phase 6 ✅ COMPLETE (Monetization)
 
 ---
 
@@ -278,15 +278,139 @@ npx wrangler pages deploy dist --project-name=cannasignal
 
 ---
 
-## Phase 6: Future Work
+## Phase 6: Monetization ✅ COMPLETE
+
+### Overview
+Implemented subscription tiers, Stripe integration scaffolding, and retailer dashboard concept.
+
+### Completed ✅
+
+- [x] **Consumer Subscription Tiers**
+  - Free: 3 product watches, Discord alerts
+  - Premium ($7.99/mo): Unlimited watches, SMS, priority alerts, predictions
+  - Pro ($14.99/mo): Everything + API access, webhooks
+
+- [x] **Convex Schema Extensions**
+  - `subscriptions` table: Consumer subscription state
+  - `retailerAccounts` table: B2B dispensary accounts
+  - `paymentEvents` table: Payment audit trail
+
+- [x] **Stripe Integration Scaffolding**
+  - `convex/stripe.ts`: Checkout session creation, portal management
+  - `convex/http.ts`: Webhook endpoints for Stripe events
+  - Production-ready structure (replace placeholder price IDs)
+
+- [x] **Subscription Queries & Mutations**
+  - `getSubscription`: Get user's current subscription
+  - `canAddWatch`: Check if user can add more watches
+  - `getWatchUsage`: Usage stats for UI
+  - `createOrUpdateSubscription`: Subscription lifecycle
+  - `handleStripeWebhook`: Process Stripe events
+
+- [x] **UI Components**
+  - `PricingPage.tsx`: Full pricing display with tier comparison
+  - `UpgradePrompt.tsx`: Contextual upgrade prompts
+  - `SubscriptionBadge.tsx`: Current plan indicator
+  - `WatchUsageBar`: Visual progress bar for watch limits
+
+- [x] **Watch Limit Enforcement**
+  - `WatchButton.tsx` updated to check limits
+  - Shows upgrade prompt when limit reached
+
+- [x] **Business Documentation**
+  - `docs/MONETIZATION.md`: Full strategy document
+  - Retailer dashboard concept
+  - Path to $1K MRR outlined
+
+### HTTP Endpoints Added
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/stripe/webhook` | POST | Stripe webhook handler |
+| `/subscription/checkout` | POST | Create checkout session |
+| `/subscription/portal` | POST | Create customer portal |
+| `/subscription/status` | GET | Get subscription status |
+| `/pricing` | GET | Get pricing tier info |
+
+### Retailer Dashboard Concept
+
+**Starter ($49/mo):**
+- Competitor pricing (5 competitors)
+- Stock-out alerts for own inventory
+
+**Growth ($149/mo):**
+- Competitor pricing (15 competitors)
+- Demand signals (watch counts, search trends)
+- API access
+
+**Enterprise ($499/mo):**
+- Unlimited competitor tracking
+- White-label options
+- Custom integrations
+
+### File Structure (Phase 6)
+```
+convex/
+├── subscriptions.ts     # NEW - Subscription queries/mutations
+├── stripe.ts            # NEW - Stripe integration
+├── http.ts              # UPDATED - Webhook & checkout endpoints
+├── schema.ts            # UPDATED - Added subscription tables
+
+webapp/src/components/
+├── PricingPage.tsx      # NEW - Pricing tiers display
+├── UpgradePrompt.tsx    # NEW - Contextual upgrade prompts
+├── SubscriptionBadge.tsx # NEW - Plan indicator
+├── WatchButton.tsx      # UPDATED - Limit enforcement
+
+docs/
+└── MONETIZATION.md      # NEW - Business strategy doc
+```
+
+### Deployment Instructions
+
+```bash
+# 1. Deploy Convex (will regenerate types)
+cd /root/BudAlert
+CONVEX_DEPLOY_KEY=<key> npx convex deploy
+
+# 2. Add Stripe environment variables in Convex dashboard:
+#    - STRIPE_SECRET_KEY
+#    - STRIPE_WEBHOOK_SECRET
+
+# 3. Create Stripe products/prices and update:
+#    - convex/subscriptions.ts: TIERS.*.stripePriceId
+#    - convex/stripe.ts: PRICE_IDS
+
+# 4. Build and deploy webapp
+cd /root/BudAlert/webapp
+npm run build
+npx wrangler pages deploy dist --project-name=cannasignal
+```
+
+### Success Criteria Status
+
+| Criteria | Status | Notes |
+|----------|--------|-------|
+| Free vs Premium feature matrix | ✅ | 3 tiers defined |
+| Stripe checkout scaffolded | ✅ | Ready for price IDs |
+| Retailer value prop documented | ✅ | In MONETIZATION.md |
+| Subscription management UI | ✅ | PricingPage + Badge |
+| Upgrade prompts at limits | ✅ | WatchButton integrated |
+| Path to $1K MRR | ✅ | Documented in strategy |
+
+---
+
+## Phase 7: Future Work
 - [ ] Email notifications (in addition to Discord)
 - [ ] Push notifications (web/PWA)
 - [ ] Per-retailer watch filters
 - [ ] Price threshold alerts ("notify me when <$50")
-- [ ] SMS notifications
+- [ ] SMS notifications (Twilio integration)
 - [ ] Weekly digest emails
 - [ ] Alpine IQ adapter (for New Amsterdam, Verdi)
 - [ ] Expand to remaining 44 NYC retailers
+- [ ] Retailer dashboard implementation
+- [ ] Annual subscription discounts
 
 ---
 
@@ -338,4 +462,4 @@ node -e "console.log(require('./data/nyc-retailers-expanded.json').summary)"
 
 ---
 
-*Last updated: 2026-02-19 04:45 UTC*
+*Last updated: 2026-02-19 06:15 UTC*

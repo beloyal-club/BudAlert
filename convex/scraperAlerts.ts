@@ -25,14 +25,15 @@ export const ALERT_CONFIG = {
   // Failure rate threshold (% of scrapes that failed)
   failureRateThreshold: 20,
   
-  // Stale scraper alert (hours since last successful scrape)
-  staleHoursThreshold: 6,
+  // Stale scraper alert (minutes since last successful scrape)
+  // Changed from 6 hours to 45 minutes for 15-min scrape cycles (HIGH-001)
+  staleMinutesThreshold: 45,
   
   // Rate limit spike (number of 429s in last hour)
   rateLimitThreshold: 5,
   
   // Minimum time between alerts for same issue (minutes)
-  alertCooldownMinutes: 30,
+  alertCooldownMinutes: 15, // Reduced from 30 for faster alerting
   
   // Alert severity levels
   SEVERITY: {
@@ -66,7 +67,7 @@ export const checkAlertConditions = query({
   handler: async (ctx) => {
     const now = Date.now();
     const hourAgo = now - 60 * 60 * 1000;
-    const sixHoursAgo = now - 6 * 60 * 60 * 1000;
+    const staleThresholdAgo = now - ALERT_CONFIG.staleMinutesThreshold * 60 * 1000;
     
     // Get dead letter stats
     const unresolved = await ctx.db
@@ -98,7 +99,7 @@ export const checkAlertConditions = query({
     const activeRetailers = retailers.filter(r => r.isActive);
     const staleRetailers = activeRetailers.filter(r => {
       const lastScraped = r.menuSources?.[0]?.lastScrapedAt;
-      return !lastScraped || lastScraped < sixHoursAgo;
+      return !lastScraped || lastScraped < staleThresholdAgo;
     });
     
     // Build alert conditions
