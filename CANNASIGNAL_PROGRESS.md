@@ -462,4 +462,54 @@ node -e "console.log(require('./data/nyc-retailers-expanded.json').summary)"
 
 ---
 
-*Last updated: 2026-02-19 06:15 UTC*
+## UX Audit: Site Polish (2026-02-19)
+
+### Issues Found & Fixed
+
+| Severity | Issue | Fix Applied |
+|----------|-------|-------------|
+| **Major** | No keyboard support for modals | Added Escape key to close ProductModal, WatchlistPage |
+| **Major** | Modals missing ARIA attributes | Added role="dialog", aria-modal, aria-label |
+| **Major** | No stale data warning | Added ⚠️ indicator + amber text for data >24h old |
+| **Major** | Poor email validation UX | Added inline error messages, validation feedback |
+| **Minor** | Confusing "Check" badge | Changed to "View" badge with 👁️ emoji |
+| **Minor** | Hardcoded "NYC" location | Changed to "Near you" when location enabled |
+| **Minor** | No skip-to-content link | Added hidden skip link for screen readers |
+| **Minor** | Filter pills lack keyboard context | Added aria-pressed states |
+| **Minor** | Search input missing aria-label | Added proper labeling |
+| **Minor** | Close buttons missing aria-label | Added accessibility labels |
+| **Minor** | Footer shows "18 locations" | Updated to "30+ dispensaries" |
+| **Minor** | Empty state not helpful | Added context-aware messaging + "See trending" link |
+
+### Improvements Made
+
+1. **Accessibility (a11y)**
+   - All modals now support Escape key to close
+   - Added ARIA labels, roles, and modal attributes
+   - Filter buttons have aria-pressed state
+   - Skip-to-content link for keyboard users
+   - Screen reader text hidden visually but accessible
+
+2. **User Experience**
+   - Stale data indicator warns users about outdated prices
+   - Email validation shows inline errors immediately
+   - Empty search state suggests alternatives
+   - Location indicator is dynamic, not hardcoded
+
+3. **Code Quality**
+   - Created shared `utils.ts` for formatting functions
+   - Prevented body scroll when modals open
+   - Modal refs for proper focus management
+
+### Branch
+`site-polish-improvements` - ready for review/merge
+
+---
+
+## Blockers / Questions
+
+*None at this time*
+
+---
+
+*Last updated: 2026-02-19 06:45 UTC*
