@@ -499,4 +499,71 @@ export default defineSchema({
   })
     .index("by_status", ["status", "nextRetryAt"])
     .index("by_webhook", ["webhookUrl", "status"]),
+
+  // ============================================================
+  // B2B: COMPETITOR MONITORING (Phase 7 - B2B Pivot)
+  // Tracks which competitors a retailer account is monitoring
+  // ============================================================
+
+  competitorMonitors: defineTable({
+    accountId: v.id("retailerAccounts"),    // The retailer account doing the monitoring
+    competitorId: v.id("retailers"),        // The competitor being monitored
+    alertsEnabled: v.boolean(),             // Whether to send alerts for this competitor
+    alertTypes: v.array(v.string()),        // ["new_product", "price_drop", "stock_out", "restock"]
+    customNotes: v.optional(v.string()),    // User notes about this competitor
+    isActive: v.boolean(),                  // Soft delete
+    addedAt: v.number(),
+  })
+    .index("by_account", ["accountId"])
+    .index("by_competitor", ["competitorId"])
+    .index("by_account_competitor", ["accountId", "competitorId"]),
+
+  // ============================================================
+  // B2B: ALERTS (Phase 7 - B2B Pivot)
+  // Alerts generated for retailer accounts
+  // ============================================================
+
+  b2bAlerts: defineTable({
+    accountId: v.id("retailerAccounts"),    // The retailer account receiving the alert
+    type: v.string(),                       // "new_product" | "price_drop" | "price_increase" | "stock_out" | "restock" | "trending" | "opportunity"
+    severity: v.string(),                   // "low" | "medium" | "high" | "critical"
+    competitorId: v.optional(v.id("retailers")),   // Which competitor triggered this
+    productId: v.optional(v.id("products")),       // Related product
+    brandId: v.optional(v.id("brands")),           // Related brand
+    title: v.string(),
+    message: v.string(),
+    actionHint: v.optional(v.string()),            // Suggested action
+    data: v.optional(v.any()),                     // Additional context (prices, changes, etc.)
+    isRead: v.boolean(),
+    readAt: v.optional(v.number()),
+    deliveredVia: v.array(v.string()),             // ["email", "slack", "dashboard"]
+    createdAt: v.number(),
+  })
+    .index("by_account_time", ["accountId", "createdAt"])
+    .index("by_account_unread", ["accountId", "isRead"])
+    .index("by_type", ["type", "createdAt"])
+    .index("by_severity", ["severity", "createdAt"]),
+
+  // ============================================================
+  // B2B: PRICE HISTORY CACHE (Phase 7 - B2B Pivot)
+  // Pre-computed price comparisons for fast dashboard loads
+  // ============================================================
+
+  b2bPriceCache: defineTable({
+    accountId: v.id("retailerAccounts"),
+    productId: v.id("products"),
+    yourPrice: v.optional(v.number()),
+    yourInStock: v.boolean(),
+    marketLow: v.number(),
+    marketHigh: v.number(),
+    marketAvg: v.number(),
+    competitorPrices: v.array(v.object({
+      competitorId: v.id("retailers"),
+      price: v.number(),
+      inStock: v.boolean(),
+    })),
+    computedAt: v.number(),
+  })
+    .index("by_account", ["accountId"])
+    .index("by_account_product", ["accountId", "productId"]),
 });

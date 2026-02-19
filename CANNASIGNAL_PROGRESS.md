@@ -396,4 +396,72 @@ WORKFLOW_QA_AUDIT.md           # NEW - Full audit report
 
 ---
 
-*Last updated: 2026-02-19 04:36 UTC (workflow-qa audit)*
+## Phase 7: B2B Pivot 🚀 IN PROGRESS
+
+### Strategic Direction
+- **Primary customer:** Dispensaries monitoring competitor inventory
+- **Price point:** $500-1000/mo for retailers
+- **MVP market:** NYC, then expand
+- **First feature:** Competitor inventory monitoring alerts
+- **Consumer tier:** Maybe $5/mo later, but not priority
+
+### Completed ✅
+
+- [x] **B2B Landing Page** (`webapp/src/components/B2BLandingPage.tsx`)
+  - Hero with value prop: "Know What Your Competitors Are Stocking Before Your Customers Do"
+  - 4 key value props (competitive intel, price intelligence, trends, stock-out capture)
+  - Alert examples showing actionable insights
+  - B2B pricing tiers (Starter $499, Growth $799, Enterprise custom)
+  - Testimonials section
+  - CTA for 14-day free trial
+
+- [x] **B2B Dashboard** (`webapp/src/components/B2BDashboard.tsx`)
+  - Quick stats: competitors monitored, unread alerts, price position, stock-out opportunities
+  - **Alerts Tab**: Competitive alerts with severity, action hints, price change visualizations
+  - **Price Intel Tab**: Price comparisons with market range visualization, competitor breakdown
+  - **Trends Tab**: Trending products with demand signals, "you don't carry" indicators
+  - **Competitors Tab**: Managed competitor list with status, add/remove functionality
+
+- [x] **B2B Pricing Page** (`webapp/src/components/B2BPricingPage.tsx`)
+  - Three tiers: Starter ($499), Growth ($799), Enterprise (custom)
+  - Monthly/annual toggle (17% annual discount)
+  - ROI calculator section
+  - FAQ section
+  - Feature comparison
+
+- [x] **Convex Schema Updates** (`convex/schema.ts`)
+  - `competitorMonitors` table - tracks which competitors each retailer monitors
+  - `b2bAlerts` table - B2B-specific alerts with severity, action hints
+  - `b2bPriceCache` table - pre-computed price comparisons
+
+- [x] **B2B API Module** (`convex/b2b.ts`)
+  - `getCompetitors` - list monitored competitors with stats
+  - `addCompetitor` / `removeCompetitor` - manage competitor list
+  - `getAlerts` - fetch B2B alerts with enrichment
+  - `markAlertRead` / `markAllAlertsRead` - alert management
+  - `getPriceComparisons` - price intel across competitors
+  - `getMarketTrends` - trending products from consumer demand signals
+  - `getStockOutOpportunities` - find products where you can capture competitor sales
+  - `getAccountByEmail` / `updateAccountSettings` - account management
+
+### Branch
+All changes on `b2b-pivot` branch.
+
+### Pending
+
+- [ ] **Onboarding Flow**: B2B signup, retailer selection, competitor setup wizard
+- [ ] **Alert Generation**: Background job to generate B2B alerts from inventory events
+- [ ] **Slack Integration**: Webhook setup for B2B alerts
+- [ ] **Billing Integration**: Stripe setup for B2B tiers
+- [ ] **Multi-location Support**: Dashboard for MSOs with multiple stores
+
+### [b2b-pivot] Questions
+
+- [b2b-pivot]: Should we allow non-retailer businesses (brands, investors) to sign up?
+- [b2b-pivot]: Alert frequency limits? Some retailers might get hundreds of alerts/day
+- [b2b-pivot]: Historical data retention - how far back for price history?
+- [b2b-pivot]: Should "demand signals" (consumer watches) be anonymized or aggregated?
+
+---
+
+*Last updated: 2026-02-19 15:29 UTC (b2b-pivot branch created)*
