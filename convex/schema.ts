@@ -305,6 +305,27 @@ export default defineSchema({
   // Alert history for scraper monitoring
   // ============================================================
 
+  // ============================================================
+  // PRODUCT WATCHES (Consumer MVP - Phase 3)
+  // Simple email-based product watch subscriptions
+  // ============================================================
+
+  productWatches: defineTable({
+    email: v.string(),                  // User identifier (no auth needed)
+    productId: v.id("products"),
+    brandId: v.id("brands"),
+    alertTypes: v.array(v.string()),    // ["restock", "price_drop", "new_drop"]
+    retailerIds: v.optional(v.array(v.id("retailers"))), // Optional: only these locations
+    discordWebhook: v.optional(v.string()), // Optional: personal webhook
+    isActive: v.boolean(),
+    createdAt: v.number(),
+    lastNotifiedAt: v.optional(v.number()),
+  })
+    .index("by_email", ["email"])
+    .index("by_product", ["productId"])
+    .index("by_email_product", ["email", "productId"])
+    .index("by_active", ["isActive"]),
+
   scraperAlerts: defineTable({
     type: v.string(),                   // "new_failures" | "high_failure_rate" | "stale_scraper" | "rate_limit_spike"
     severity: v.string(),               // "low" | "medium" | "high" | "critical"

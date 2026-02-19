@@ -466,6 +466,50 @@ http.route({
 });
 
 // ============================================================
+// CONSUMER ALERTS (Phase 3)
+// Process watched product alerts
+// ============================================================
+
+http.route({
+  path: "/alerts/process-watches",
+  method: "OPTIONS",
+  handler: httpAction(async () => {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders,
+    });
+  }),
+});
+
+http.route({
+  path: "/alerts/process-watches",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const body = await request.json().catch(() => ({}));
+      const webhookUrl = body.webhookUrl || ((globalThis as any).process?.env?.DISCORD_WEBHOOK_URL);
+      
+      if (!webhookUrl) {
+        return corsErrorResponse("Missing webhookUrl - set DISCORD_WEBHOOK_URL or pass in body", 400);
+      }
+      
+      const result = await ctx.runAction(api.alerts.processWatchedAlerts, {
+        defaultWebhookUrl: webhookUrl,
+        maxEvents: body.maxEvents || 50,
+      });
+      
+      return corsResponse(result);
+    } catch (error) {
+      console.error("Process watches error:", error);
+      return corsErrorResponse(
+        error instanceof Error ? error.message : "Internal server error",
+        500
+      );
+    }
+  }),
+});
+
+// ============================================================
 // Catch-all for unmatched routes
 // ============================================================
 

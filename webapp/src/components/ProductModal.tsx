@@ -1,6 +1,7 @@
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { StockBadge } from "./StockBadge";
+import { WatchButton } from "./WatchButton";
 import type { Id } from "../../../convex/_generated/dataModel";
 
 interface ProductModalProps {
@@ -114,6 +115,12 @@ export function ProductModal({ productId, userLocation, onClose }: ProductModalP
                 <p className="text-xs text-neutral-500">Lowest Price</p>
               </div>
             </div>
+            
+            {/* Watch Button */}
+            <WatchButton 
+              productId={productId} 
+              productName={product?.name}
+            />
           </div>
         )}
 

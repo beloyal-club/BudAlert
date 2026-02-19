@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as alerts from "../alerts.js";
 import type * as analytics from "../analytics.js";
 import type * as brands from "../brands.js";
 import type * as cache from "../cache.js";
@@ -39,6 +40,7 @@ import type * as search from "../search.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  alerts: typeof alerts;
   analytics: typeof analytics;
   brands: typeof brands;
   cache: typeof cache;

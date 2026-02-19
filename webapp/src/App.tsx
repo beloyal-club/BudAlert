@@ -5,6 +5,7 @@ import { SearchBar } from "./components/SearchBar";
 import { FilterBar } from "./components/FilterBar";
 import { ProductCard } from "./components/ProductCard";
 import { ProductModal } from "./components/ProductModal";
+import { WatchlistPage } from "./components/WatchlistPage";
 import { LoadingSkeleton } from "./components/LoadingSkeleton";
 import type { Id } from "../../convex/_generated/dataModel";
 
@@ -27,6 +28,7 @@ function App() {
   const [selectedProductId, setSelectedProductId] = useState<Id<"products"> | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [showWatchlist, setShowWatchlist] = useState(false);
 
   // Request user location on mount
   useEffect(() => {
@@ -118,19 +120,28 @@ function App() {
               <span>🌿</span>
               <span>CannaSignal</span>
             </h1>
-            <span className="text-xs text-neutral-500 flex items-center gap-1">
-              {userLocation ? (
-                <>
-                  <span className="w-2 h-2 rounded-full bg-cannabis-500"></span>
-                  <span>📍 NYC</span>
-                </>
-              ) : (
-                <>
-                  <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span>
-                  <span>Finding you...</span>
-                </>
-              )}
-            </span>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowWatchlist(true)}
+                className="text-sm px-3 py-1.5 rounded-full bg-neutral-800 text-neutral-300 hover:bg-neutral-700 flex items-center gap-1"
+              >
+                <span>🔔</span>
+                <span>Alerts</span>
+              </button>
+              <span className="text-xs text-neutral-500 flex items-center gap-1">
+                {userLocation ? (
+                  <>
+                    <span className="w-2 h-2 rounded-full bg-cannabis-500"></span>
+                    <span>📍 NYC</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span>
+                    <span>...</span>
+                  </>
+                )}
+              </span>
+            </div>
           </div>
           
           <SearchBar 
@@ -237,6 +248,17 @@ function App() {
           productId={selectedProductId}
           userLocation={userLocation}
           onClose={() => setSelectedProductId(null)}
+        />
+      )}
+
+      {/* Watchlist Page */}
+      {showWatchlist && (
+        <WatchlistPage
+          onClose={() => setShowWatchlist(false)}
+          onProductClick={(productId) => {
+            setShowWatchlist(false);
+            setSelectedProductId(productId);
+          }}
         />
       )}
 
