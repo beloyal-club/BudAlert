@@ -386,6 +386,86 @@ http.route({
 });
 
 // ============================================================
+// INVENTORY EVENTS ENDPOINTS (Phase 1)
+// ============================================================
+
+http.route({
+  path: "/events/recent",
+  method: "OPTIONS",
+  handler: httpAction(async () => {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders,
+    });
+  }),
+});
+
+http.route({
+  path: "/events/recent",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const url = new URL(request.url);
+      const limit = parseInt(url.searchParams.get("limit") || "50", 10);
+      const eventTypes = url.searchParams.get("types")?.split(",").filter(Boolean);
+      const region = url.searchParams.get("region") || undefined;
+      
+      const events = await ctx.runQuery(api.inventoryEvents.getRecentEvents, {
+        limit,
+        eventTypes,
+        region,
+      });
+      return corsResponse({ events, count: events.length });
+    } catch (error) {
+      console.error("Get events error:", error);
+      return corsErrorResponse(
+        error instanceof Error ? error.message : "Internal server error",
+        500
+      );
+    }
+  }),
+});
+
+http.route({
+  path: "/events/notify",
+  method: "OPTIONS",
+  handler: httpAction(async () => {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders,
+    });
+  }),
+});
+
+http.route({
+  path: "/events/notify",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const body = await request.json().catch(() => ({}));
+      const webhookUrl = body.webhookUrl || ((globalThis as any).process?.env?.DISCORD_WEBHOOK_URL);
+      
+      if (!webhookUrl) {
+        return corsErrorResponse("Missing webhookUrl", 400);
+      }
+      
+      const result = await ctx.runAction(api.inventoryEvents.sendDiscordNotifications, {
+        webhookUrl,
+        maxEvents: body.maxEvents || 25,
+      });
+      
+      return corsResponse(result);
+    } catch (error) {
+      console.error("Notify error:", error);
+      return corsErrorResponse(
+        error instanceof Error ? error.message : "Internal server error",
+        500
+      );
+    }
+  }),
+});
+
+// ============================================================
 // Catch-all for unmatched routes
 // ============================================================
 

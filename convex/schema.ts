@@ -349,4 +349,29 @@ export default defineSchema({
     version: v.number(),                // Incremented on each refresh
   })
     .index("by_key", ["key"]),
+
+  // ============================================================
+  // INVENTORY EVENTS (Delta Detection - Phase 1)
+  // Tracks changes between scrape snapshots
+  // ============================================================
+
+  inventoryEvents: defineTable({
+    retailerId: v.id("retailers"),
+    productId: v.optional(v.id("products")),
+    brandId: v.optional(v.id("brands")),
+    eventType: v.string(),              // "new_product" | "restock" | "sold_out" | "price_drop" | "price_increase" | "removed"
+    previousValue: v.optional(v.any()), // Previous state (price, inStock, etc.)
+    newValue: v.optional(v.any()),      // New state
+    metadata: v.optional(v.any()),      // Additional context (rawName, changePercent, etc.)
+    batchId: v.string(),                // Links to scrape batch
+    timestamp: v.number(),              // When the change was detected
+    notified: v.boolean(),              // Has notification been sent?
+    notifiedAt: v.optional(v.number()), // When notification was sent
+  })
+    .index("by_time", ["timestamp"])
+    .index("by_retailer", ["retailerId", "timestamp"])
+    .index("by_product", ["productId", "timestamp"])
+    .index("by_type", ["eventType", "timestamp"])
+    .index("by_notified", ["notified", "timestamp"])
+    .index("by_batch", ["batchId"]),
 });

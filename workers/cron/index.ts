@@ -1,0 +1,446 @@
+/**
+ * CannaSignal Cron Orchestrator Worker
+ * 
+ * Triggers every 15 minutes to:
+ * 1. Fetch all active embedded-dutchie retailers
+ * 2. Scrape each location via BrowserBase (Playwright over CDP)
+ * 3. Post results to Convex ingestion
+ * 4. Trigger delta detection
+ * 5. Send Discord notifications for inventory changes
+ * 
+ * Deployed at: cannasignal-cron.prtl.workers.dev
+ * Cron schedule: */15 * * * * (every 15 minutes)
+ */
+
+import { chromium, Browser, Page } from 'playwright-core';
+
+interface Env {
+  BROWSERBASE_API_KEY: string;
+  BROWSERBASE_PROJECT_ID: string;
+  CONVEX_URL: string;
+  DISCORD_WEBHOOK_URL: string;
+}
+
+interface Location {
+  name: string;
+  menuUrl: string;
+  retailerSlug: string;
+  retailerName: string;
+  address: { city: string; state: string; street?: string };
+  region: string;
+}
+
+interface ScrapedProduct {
+  rawProductName: string;
+  rawBrandName: string;
+  rawCategory?: string;
+  price: number;
+  originalPrice?: number;
+  inStock: boolean;
+  imageUrl?: string;
+  thcFormatted?: string;
+  cbdFormatted?: string;
+  sourceUrl: string;
+  sourcePlatform: string;
+  scrapedAt: number;
+}
+
+// ============================================================
+// EMBEDDED DUTCHIE LOCATIONS (18 total)
+// ============================================================
+
+const EMBEDDED_LOCATIONS: Location[] = [
+  // CONBUD (3 locations)
+  { name: "CONBUD LES", menuUrl: "https://conbud.com/stores/conbud-les/products", retailerSlug: "conbud-les", retailerName: "CONBUD", address: { city: "New York", state: "NY" }, region: "nyc" },
+  { name: "CONBUD Bronx", menuUrl: "https://conbud.com/stores/conbud-bronx/products", retailerSlug: "conbud-bronx", retailerName: "CONBUD", address: { city: "Bronx", state: "NY" }, region: "nyc" },
+  { name: "CONBUD Yankee Stadium", menuUrl: "https://conbud.com/stores/conbud-yankee-stadium/products", retailerSlug: "conbud-yankee-stadium", retailerName: "CONBUD", address: { city: "Bronx", state: "NY" }, region: "nyc" },
+  
+  // Gotham (4 locations - shared menu URL, location selector needed)
+  { name: "Gotham CAURD", menuUrl: "https://gotham.nyc/menu/", retailerSlug: "gotham-caurd", retailerName: "Gotham", address: { street: "3 E 3rd St", city: "New York", state: "NY" }, region: "nyc" },
+  { name: "Gotham Hudson", menuUrl: "https://gotham.nyc/menu/", retailerSlug: "gotham-hudson", retailerName: "Gotham", address: { street: "260 Warren St", city: "Hudson", state: "NY" }, region: "hudson_valley" },
+  { name: "Gotham Williamsburg", menuUrl: "https://gotham.nyc/menu/", retailerSlug: "gotham-williamsburg", retailerName: "Gotham", address: { street: "300 Kent Ave", city: "Brooklyn", state: "NY" }, region: "nyc" },
+  { name: "Gotham Chelsea", menuUrl: "https://gotham.nyc/menu/", retailerSlug: "gotham-chelsea", retailerName: "Gotham", address: { street: "146 10th Ave", city: "New York", state: "NY" }, region: "nyc" },
+  
+  // Housing Works (1 location)
+  { name: "Housing Works Cannabis", menuUrl: "https://hwcannabis.co/", retailerSlug: "housing-works-cannabis", retailerName: "Housing Works Cannabis", address: { street: "750 Broadway", city: "New York", state: "NY" }, region: "nyc" },
+  
+  // Travel Agency (1 location)
+  { name: "Travel Agency Union Square", menuUrl: "https://www.thetravelagency.co/menu/", retailerSlug: "travel-agency-union-square", retailerName: "The Travel Agency", address: { street: "835 Broadway", city: "New York", state: "NY" }, region: "nyc" },
+  
+  // Strain Stars (2 locations)
+  { name: "Strain Stars Farmingdale", menuUrl: "https://strainstarsny.com/menu/", retailerSlug: "strain-stars-farmingdale", retailerName: "Strain Stars", address: { street: "1815 Broadhollow Rd", city: "Farmingdale", state: "NY" }, region: "long_island" },
+  { name: "Strain Stars Riverhead", menuUrl: "https://strainstarsny.com/menu/", retailerSlug: "strain-stars-riverhead", retailerName: "Strain Stars", address: { street: "1871 Old Country Rd", city: "Riverhead", state: "NY" }, region: "long_island" },
+  
+  // Dagmar (1 location)
+  { name: "Dagmar Cannabis SoHo", menuUrl: "https://dagmarcannabis.com/menu/", retailerSlug: "dagmar-cannabis-soho", retailerName: "Dagmar Cannabis", address: { street: "412 W Broadway", city: "New York", state: "NY" }, region: "nyc" },
+  
+  // Smacked (1 location)
+  { name: "Smacked Village", menuUrl: "https://getsmacked.online/menu/", retailerSlug: "smacked-village", retailerName: "Get Smacked", address: { street: "144 Bleecker St", city: "New York", state: "NY" }, region: "nyc" },
+  
+  // Just Breathe (3 locations)
+  { name: "Just Breathe Syracuse", menuUrl: "https://justbreathelife.org/menu/", retailerSlug: "just-breathe-syracuse", retailerName: "Just Breathe", address: { street: "185 W Seneca St", city: "Manlius", state: "NY" }, region: "upstate" },
+  { name: "Just Breathe Binghamton", menuUrl: "https://justbreathelife.org/menu/", retailerSlug: "just-breathe-binghamton", retailerName: "Just Breathe", address: { street: "75 Court St", city: "Binghamton", state: "NY" }, region: "upstate" },
+  { name: "Just Breathe Finger Lakes", menuUrl: "https://justbreatheflx.com/", retailerSlug: "just-breathe-finger-lakes", retailerName: "Just Breathe", address: { street: "2988 US Route 20", city: "Seneca Falls", state: "NY" }, region: "upstate" },
+];
+
+// ============================================================
+// BROWSERBASE SCRAPER (Playwright over CDP)
+// ============================================================
+
+async function connectBrowserBase(env: Env): Promise<Browser> {
+  return await chromium.connectOverCDP(
+    `wss://connect.browserbase.com?apiKey=${env.BROWSERBASE_API_KEY}&projectId=${env.BROWSERBASE_PROJECT_ID}`
+  );
+}
+
+async function scrapeLocation(
+  page: Page,
+  location: Location
+): Promise<{ products: ScrapedProduct[]; error?: string }> {
+  const scrapedAt = Date.now();
+  
+  try {
+    // Navigate to menu
+    await page.goto(location.menuUrl, { waitUntil: 'load', timeout: 30000 });
+    
+    // Wait for content to render
+    await page.waitForTimeout(5000);
+    
+    // Handle age verification if present
+    await page.evaluate(() => {
+      const buttons = document.querySelectorAll('button');
+      buttons.forEach(btn => {
+        const text = btn.textContent?.trim().toLowerCase() || '';
+        if (text === 'yes' || text === 'i am 21' || text.includes('21+')) {
+          btn.click();
+        }
+      });
+    });
+    
+    // Wait more for menu to load after age gate
+    await page.waitForTimeout(3000);
+    
+    // Extract products
+    const products = await page.evaluate((sourceUrl: string, timestamp: number) => {
+      const items: any[] = [];
+      
+      // Multiple selector patterns for different Dutchie embed types
+      const selectors = [
+        '[data-testid="product-card"]',
+        '.product-card',
+        '[class*="ProductCard"]',
+        '[class*="product-card"]',
+        'div[class*="styles_productCard"]',
+      ];
+      
+      let productCards: Element[] = [];
+      for (const selector of selectors) {
+        const found = document.querySelectorAll(selector);
+        if (found.length > 0) {
+          productCards = Array.from(found);
+          break;
+        }
+      }
+      
+      // Fallback: find via price elements
+      if (productCards.length === 0) {
+        const priceEls = document.querySelectorAll('[class*="price"], [class*="Price"]');
+        const seen = new Set<Element>();
+        priceEls.forEach(priceEl => {
+          const card = priceEl.closest('a') || priceEl.closest('div[class*="product"]') || priceEl.parentElement?.parentElement;
+          if (card && !seen.has(card)) {
+            seen.add(card);
+            productCards.push(card);
+          }
+        });
+      }
+      
+      productCards.forEach((card) => {
+        try {
+          // Product name
+          const nameEl = card.querySelector('h2, h3, [class*="productName"], [class*="ProductName"], [class*="name"]');
+          const name = nameEl?.textContent?.trim();
+          if (!name || name.length < 3) return;
+          
+          // Brand
+          const brandEl = card.querySelector('[class*="brandName"], [class*="BrandName"], [class*="brand"]');
+          const brand = brandEl?.textContent?.trim() || "Unknown";
+          
+          // Price
+          const priceEl = card.querySelector('[class*="price"], .price');
+          const priceText = priceEl?.textContent || "";
+          const priceMatch = priceText.match(/\$(\d+(?:\.\d{2})?)/);
+          const price = priceMatch ? parseFloat(priceMatch[1]) : 0;
+          
+          // Original price (for sales)
+          const origPriceEl = card.querySelector('[class*="original"], [class*="strikethrough"], del');
+          let originalPrice: number | undefined;
+          if (origPriceEl) {
+            const origMatch = origPriceEl.textContent?.match(/\$?(\d+(?:\.\d{2})?)/);
+            if (origMatch) originalPrice = parseFloat(origMatch[1]);
+          }
+          
+          // Category
+          const categoryEl = card.querySelector('[class*="category"]');
+          const category = categoryEl?.textContent?.trim();
+          
+          // Image
+          const imgEl = card.querySelector('img');
+          const imageUrl = imgEl?.src;
+          
+          // Stock status
+          const stockEl = card.querySelector('[class*="outOfStock"], [class*="soldOut"]');
+          const inStock = !stockEl;
+          
+          // THC/CBD
+          const thcEl = card.querySelector('[class*="thc"], [class*="THC"]');
+          const cbdEl = card.querySelector('[class*="cbd"], [class*="CBD"]');
+          const thcFormatted = thcEl?.textContent?.trim();
+          const cbdFormatted = cbdEl?.textContent?.trim();
+          
+          if (price > 0) {
+            items.push({
+              rawProductName: name,
+              rawBrandName: brand,
+              rawCategory: category,
+              price,
+              originalPrice,
+              inStock,
+              imageUrl,
+              thcFormatted,
+              cbdFormatted,
+              sourceUrl,
+              sourcePlatform: "dutchie-embedded",
+              scrapedAt: timestamp,
+            });
+          }
+        } catch (e) {
+          // Skip malformed cards
+        }
+      });
+      
+      return items;
+    }, location.menuUrl, scrapedAt);
+    
+    return { products };
+  } catch (error) {
+    return {
+      products: [],
+      error: error instanceof Error ? error.message : "Unknown scraping error",
+    };
+  }
+}
+
+// ============================================================
+// CONVEX API
+// ============================================================
+
+async function postToConvex(
+  convexUrl: string,
+  batchId: string,
+  results: any[]
+) {
+  const response = await fetch(`${convexUrl}/ingest/scraped-batch`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ batchId, results }),
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Convex ingestion failed: ${response.status}`);
+  }
+  
+  return response.json();
+}
+
+async function triggerDiscordNotifications(convexUrl: string, webhookUrl: string) {
+  const response = await fetch(`${convexUrl}/events/notify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ webhookUrl, maxEvents: 25 }),
+  });
+  
+  if (!response.ok) {
+    console.error(`Discord notification trigger failed: ${response.status}`);
+    return null;
+  }
+  
+  return response.json();
+}
+
+async function sendDiscordSummary(webhookUrl: string, embed: any) {
+  await fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ embeds: [embed] }),
+  });
+}
+
+// ============================================================
+// MAIN CRON HANDLER
+// ============================================================
+
+export default {
+  // Scheduled handler - runs every 15 minutes
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+    const batchId = `batch-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const startTime = Date.now();
+    
+    console.log(`[Cron] Starting scrape batch ${batchId}`);
+    console.log(`[Cron] Scraping ${EMBEDDED_LOCATIONS.length} locations`);
+    
+    let browser: Browser | null = null;
+    const results: any[] = [];
+    const errors: string[] = [];
+    let totalProducts = 0;
+    
+    try {
+      // Connect to BrowserBase
+      browser = await connectBrowserBase(env);
+      const context = browser.contexts()[0] || await browser.newContext();
+      const page = await context.newPage();
+      await page.setViewportSize({ width: 1280, height: 800 });
+      
+      // Scrape each location (reuse browser session)
+      for (const location of EMBEDDED_LOCATIONS) {
+        console.log(`[Cron] Scraping ${location.name}...`);
+        
+        const { products, error } = await scrapeLocation(page, location);
+        
+        if (error) {
+          console.error(`[Cron] ✗ ${location.name}: ${error}`);
+          errors.push(`${location.name}: ${error}`);
+          results.push({
+            retailerId: location.retailerSlug,
+            items: [],
+            status: "error",
+            error,
+          });
+        } else {
+          console.log(`[Cron] ✓ ${location.name}: ${products.length} products`);
+          totalProducts += products.length;
+          results.push({
+            retailerId: location.retailerSlug,
+            items: products,
+            status: "ok",
+          });
+        }
+        
+        // Rate limit: 2 second delay between locations
+        await page.waitForTimeout(2000);
+      }
+    } catch (error) {
+      console.error(`[Cron] Browser connection failed:`, error);
+      errors.push(`BrowserBase: ${error}`);
+    } finally {
+      if (browser) {
+        await browser.close();
+      }
+    }
+    
+    const duration = Math.round((Date.now() - startTime) / 1000);
+    
+    // Post results to Convex
+    let ingestionResult = null;
+    try {
+      ingestionResult = await postToConvex(env.CONVEX_URL, batchId, results);
+      console.log(`[Cron] Posted ${results.length} results to Convex:`, ingestionResult);
+    } catch (error) {
+      console.error(`[Cron] Convex ingestion failed:`, error);
+      errors.push(`Convex ingestion: ${error}`);
+    }
+    
+    // Trigger inventory event notifications
+    try {
+      const notifyResult = await triggerDiscordNotifications(env.CONVEX_URL, env.DISCORD_WEBHOOK_URL);
+      if (notifyResult) {
+        console.log(`[Cron] Discord notifications:`, notifyResult);
+      }
+    } catch (e) {
+      console.error(`[Cron] Discord notification trigger failed:`, e);
+    }
+    
+    // Send summary to Discord
+    const successCount = results.filter((r) => r.status === "ok").length;
+    const failCount = results.filter((r) => r.status === "error").length;
+    
+    const summaryEmbed = {
+      title: "🌿 CannaSignal Scrape Complete",
+      color: failCount === 0 ? 0x00ff00 : failCount < successCount ? 0xffaa00 : 0xff0000,
+      fields: [
+        { name: "Batch ID", value: batchId, inline: true },
+        { name: "Duration", value: `${duration}s`, inline: true },
+        { name: "Locations", value: `${successCount}/${EMBEDDED_LOCATIONS.length}`, inline: true },
+        { name: "Products", value: totalProducts.toString(), inline: true },
+        { name: "Events", value: ingestionResult?.totalEventsDetected?.toString() || "N/A", inline: true },
+        { name: "Errors", value: failCount.toString(), inline: true },
+      ],
+      timestamp: new Date().toISOString(),
+    };
+    
+    if (errors.length > 0) {
+      summaryEmbed.fields.push({
+        name: "Error Details",
+        value: errors.slice(0, 5).join("\n").slice(0, 1000),
+        inline: false,
+      });
+    }
+    
+    try {
+      await sendDiscordSummary(env.DISCORD_WEBHOOK_URL, summaryEmbed);
+    } catch (e) {
+      console.error(`[Cron] Discord summary failed:`, e);
+    }
+    
+    console.log(`[Cron] Batch ${batchId} complete: ${successCount}/${EMBEDDED_LOCATIONS.length} locations, ${totalProducts} products, ${duration}s`);
+  },
+  
+  // HTTP handler for manual triggers and status
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+    
+    if (url.pathname === "/health") {
+      return Response.json({
+        status: "ok",
+        service: "cannasignal-cron",
+        locations: EMBEDDED_LOCATIONS.length,
+        schedule: "*/15 * * * *",
+        convexUrl: env.CONVEX_URL,
+      });
+    }
+    
+    if (url.pathname === "/trigger" && request.method === "POST") {
+      // Manual trigger - run scrape
+      const event = { cron: "manual", scheduledTime: Date.now() } as ScheduledEvent;
+      
+      // @ts-ignore - We're manually triggering
+      this.scheduled(event, env, {
+        waitUntil: (p: Promise<any>) => p,
+        passThroughOnException: () => {},
+      });
+      
+      return Response.json({
+        triggered: true,
+        timestamp: new Date().toISOString(),
+        message: "Scrape triggered, check Discord for results",
+      });
+    }
+    
+    if (url.pathname === "/locations") {
+      return Response.json({
+        count: EMBEDDED_LOCATIONS.length,
+        locations: EMBEDDED_LOCATIONS.map((l) => ({
+          name: l.name,
+          retailer: l.retailerName,
+          url: l.menuUrl,
+          region: l.region,
+        })),
+      });
+    }
+    
+    return Response.json({
+      service: "cannasignal-cron",
+      endpoints: ["/health", "/trigger (POST)", "/locations"],
+    });
+  },
+};

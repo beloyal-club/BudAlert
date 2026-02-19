@@ -35,6 +35,7 @@ export const ingestScrapedBatch = mutation({
   handler: async (ctx, args) => {
     let totalProcessed = 0;
     let totalFailed = 0;
+    let totalEventsDetected = 0;
     
     for (const result of args.results) {
       if (result.status !== "ok") {
@@ -149,16 +150,19 @@ export const ingestScrapedBatch = mutation({
             rawCategory: item.rawCategory,
           });
           
-          // Update current inventory
-          await updateCurrentInventory(ctx, {
+          // Update current inventory (with delta detection)
+          const eventsGenerated = await updateCurrentInventory(ctx, {
             retailerId: result.retailerId,
             productId: product!._id,
             brandId: brand!._id,
             snapshotId,
             price: item.price,
             inStock: item.inStock,
+            rawProductName: item.rawProductName,
+            batchId: args.batchId,
           });
           
+          totalEventsDetected += eventsGenerated;
           totalProcessed += 1;
         } catch (error) {
           console.error("Failed to process item:", error);
@@ -181,11 +185,11 @@ export const ingestScrapedBatch = mutation({
       });
     }
     
-    return { totalProcessed, totalFailed, batchId: args.batchId };
+    return { totalProcessed, totalFailed, totalEventsDetected, batchId: args.batchId };
   },
 });
 
-// Helper to update current inventory
+// Helper to update current inventory with delta detection
 async function updateCurrentInventory(
   ctx: any,
   args: {
@@ -195,6 +199,8 @@ async function updateCurrentInventory(
     snapshotId: any;
     price: number;
     inStock: boolean;
+    rawProductName: string;
+    batchId: string;
   }
 ) {
   const existing = await ctx.db
@@ -205,6 +211,12 @@ async function updateCurrentInventory(
     .first();
   
   const now = Date.now();
+  const events: Array<{
+    eventType: string;
+    previousValue?: any;
+    newValue?: any;
+    metadata?: any;
+  }> = [];
   
   if (existing) {
     const updates: any = {
@@ -214,18 +226,47 @@ async function updateCurrentInventory(
       lastSnapshotId: args.snapshotId,
     };
     
-    // Track price changes
+    // Track price changes (with events)
     if (existing.currentPrice !== args.price) {
       updates.previousPrice = existing.currentPrice;
       updates.priceChangedAt = now;
+      
+      const changePercent = ((args.price - existing.currentPrice) / existing.currentPrice) * 100;
+      
+      // Only record significant price changes (> 1%)
+      if (Math.abs(changePercent) > 1) {
+        events.push({
+          eventType: args.price < existing.currentPrice ? "price_drop" : "price_increase",
+          previousValue: { price: existing.currentPrice },
+          newValue: { price: args.price },
+          metadata: { 
+            rawName: args.rawProductName,
+            changePercent: Math.round(changePercent * 10) / 10,
+          },
+        });
+      }
     }
     
-    // Track stock changes
+    // Track stock changes (with events)
     if (args.inStock && !existing.inStock) {
       updates.lastInStockAt = now;
       updates.outOfStockSince = undefined;
+      
+      events.push({
+        eventType: "restock",
+        previousValue: { inStock: false, outOfStockSince: existing.outOfStockSince },
+        newValue: { inStock: true, price: args.price },
+        metadata: { rawName: args.rawProductName },
+      });
     } else if (!args.inStock && existing.inStock) {
       updates.outOfStockSince = now;
+      
+      events.push({
+        eventType: "sold_out",
+        previousValue: { inStock: true, lastInStockAt: existing.lastInStockAt },
+        newValue: { inStock: false },
+        metadata: { rawName: args.rawProductName },
+      });
     }
     
     // Increment days on menu
@@ -248,7 +289,32 @@ async function updateCurrentInventory(
       lastUpdatedAt: now,
       lastSnapshotId: args.snapshotId,
     });
+    
+    // New product event
+    events.push({
+      eventType: "new_product",
+      newValue: { price: args.price, inStock: args.inStock },
+      metadata: { rawName: args.rawProductName },
+    });
   }
+  
+  // Record inventory events
+  for (const event of events) {
+    await ctx.db.insert("inventoryEvents", {
+      retailerId: args.retailerId,
+      productId: args.productId,
+      brandId: args.brandId,
+      eventType: event.eventType,
+      previousValue: event.previousValue,
+      newValue: event.newValue,
+      metadata: event.metadata,
+      batchId: args.batchId,
+      timestamp: now,
+      notified: false,
+    });
+  }
+  
+  return events.length;
 }
 
 // ============================================================

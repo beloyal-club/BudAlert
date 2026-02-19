@@ -1,0 +1,20 @@
+# CannaSignal Cron Orchestrator Worker
+# Triggers every 15 minutes to scrape all embedded Dutchie locations
+
+name = "cannasignal-cron"
+main = "index.ts"
+compatibility_date = "2024-01-01"
+node_compat = true
+
+# 15-minute cron schedule
+[triggers]
+crons = ["*/15 * * * *"]
+
+# Secrets (set via `wrangler secret put`)
+# BROWSERBASE_API_KEY
+# BROWSERBASE_PROJECT_ID  
+# DISCORD_WEBHOOK_URL
+
+[vars]
+CONVEX_URL = "https://quick-weasel-225.convex.site"
+BROWSERBASE_PROJECT_ID = "5838b775-9417-42f0-b272-c0142eec43b7"
