@@ -1,6 +1,6 @@
 # CannaSignal Progress Tracker
 
-## Current Status: Phase 4 ✅ COMPLETE (Coverage Expansion)
+## Current Status: Phase 5 ✅ COMPLETE (Smart Features)
 
 ---
 
@@ -168,7 +168,117 @@ https://dutchie.com/dispensary/the-cannabist-brooklyn
 
 ---
 
-## Phase 5: Future Work
+## Phase 5: Smart Features ✅ COMPLETE
+
+### Overview
+Implemented intelligent analytics that analyze `inventoryEvents` to provide predictive insights about product behavior.
+
+### Completed ✅
+
+- [x] **Sell-out Velocity (`getSelloutVelocity`)**
+  - Calculates how fast products sell out after restock
+  - Returns avg/median hours to sellout, fastest sellout
+  - Trend detection (faster/slower/stable)
+  - Confidence levels based on data volume
+
+- [x] **Restock Predictions (`getRestockPattern`)**
+  - Detects patterns: preferred days of week, preferred hours
+  - Calculates average days between restocks
+  - Predicts next restock timestamp
+  - Per-product and per-location analysis
+
+- [x] **Drop Patterns (`getDropPatterns`)**
+  - Analyzes when new products typically appear
+  - Preferred days/hours for new drops
+  - Average drops per week by brand/retailer
+  - Filterable by brand, retailer, time period
+
+- [x] **Popularity Scores (`getPopularityScore`)**
+  - 0-100 score based on multiple signals:
+    - Sell-out velocity (faster = more popular)
+    - Location spread (more locations = more popular)
+    - Restock frequency (frequent = high demand)
+    - Scarcity bonus (often out of stock = desirable)
+  - Tiers: fire 🔥 / hot ⚡ / warm 📈 / normal / cold
+
+- [x] **"Hot Right Now" Feed (`getHotProducts`)**
+  - Real-time trending products across all locations
+  - Scoring based on recent activity (restocks, sold_outs, price_drops)
+  - "Hot reason" explanations (e.g., "Selling out everywhere! 💨")
+  - Filterable by region, category, time window
+
+- [x] **Product Insights (`getProductInsights`)**
+  - Combined view for UI consumption
+  - Human-readable velocity text ("Sells out in ~4 hours 🔥")
+  - Restock prediction text ("Usually restocks on Tue or Fri")
+  - Recent activity timeline
+
+### UI Components
+
+- [x] **HotProductsFeed.tsx**
+  - Ranked trending product list with hot score badges
+  - Fire/Hot/Trending visual indicators
+  - Metrics display (restocks, sold outs, locations)
+  - New drop highlighting
+
+- [x] **ProductInsights.tsx**
+  - Popularity score card with gradient styling
+  - Velocity gauge with visual progress bar
+  - Restock pattern calendar view
+  - Recent activity timeline
+
+- [x] **App.tsx Updates**
+  - Tab system: "🔥 Trending" | "🔍 Search"
+  - Trending tab as default view
+  - Hot products feed integration
+
+- [x] **ProductModal.tsx Updates**
+  - Smart Insights section added
+  - Shows velocity, restock predictions, popularity
+  - Integrated with existing product detail view
+
+### File Structure
+```
+convex/
+├── smartAnalytics.ts    # NEW - All smart analytics functions
+│   ├── getSelloutVelocity()
+│   ├── getRestockPattern()
+│   ├── getDropPatterns()
+│   ├── getPopularityScore()
+│   ├── getHotProducts()
+│   └── getProductInsights()
+
+webapp/src/components/
+├── HotProductsFeed.tsx   # NEW - Trending products feed
+├── ProductInsights.tsx   # NEW - Smart insights display
+├── ProductModal.tsx      # UPDATED - Added insights section
+└── App.tsx               # UPDATED - Added trending tab
+```
+
+### Technical Notes
+
+- All algorithms work with sparse data initially
+- Confidence levels indicate data quality
+- Predictions improve as more `inventoryEvents` accumulate
+- No external API calls - all computed from Convex data
+- Real-time updates via Convex subscriptions
+
+### Deployment
+
+```bash
+# Deploy Convex functions
+cd /root/BudAlert
+CONVEX_DEPLOY_KEY=<key> npx convex deploy
+
+# Build and deploy webapp
+cd /root/BudAlert/webapp
+npm run build
+npx wrangler pages deploy dist --project-name=cannasignal
+```
+
+---
+
+## Phase 6: Future Work
 - [ ] Email notifications (in addition to Discord)
 - [ ] Push notifications (web/PWA)
 - [ ] Per-retailer watch filters
@@ -228,4 +338,4 @@ node -e "console.log(require('./data/nyc-retailers-expanded.json').summary)"
 
 ---
 
-*Last updated: 2026-02-19 04:30 UTC*
+*Last updated: 2026-02-19 04:45 UTC*

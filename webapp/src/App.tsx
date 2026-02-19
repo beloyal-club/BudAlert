@@ -7,6 +7,7 @@ import { ProductCard } from "./components/ProductCard";
 import { ProductModal } from "./components/ProductModal";
 import { WatchlistPage } from "./components/WatchlistPage";
 import { LoadingSkeleton } from "./components/LoadingSkeleton";
+import { HotProductsFeed } from "./components/HotProductsFeed";
 import type { Id } from "../../convex/_generated/dataModel";
 
 type Filters = {
@@ -29,6 +30,7 @@ function App() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [showWatchlist, setShowWatchlist] = useState(false);
+  const [activeTab, setActiveTab] = useState<"search" | "trending">("trending");
 
   // Request user location on mount
   useEffect(() => {
@@ -144,11 +146,42 @@ function App() {
             </div>
           </div>
           
-          <SearchBar 
-            value={filters.query} 
-            onChange={handleSearch} 
-          />
+          {/* Tab Switcher */}
+          <div className="flex gap-2 mb-3">
+            <button
+              onClick={() => setActiveTab("trending")}
+              className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                activeTab === "trending"
+                  ? "bg-gradient-to-r from-orange-600 to-amber-500 text-white"
+                  : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+              }`}
+            >
+              <span>🔥</span>
+              <span>Trending</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("search")}
+              className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                activeTab === "search"
+                  ? "bg-cannabis-600 text-white"
+                  : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+              }`}
+            >
+              <span>🔍</span>
+              <span>Search</span>
+            </button>
+          </div>
+
+          {activeTab === "search" && (
+            <>
+              <SearchBar 
+                value={filters.query} 
+                onChange={handleSearch} 
+              />
+            </>
+          )}
           
+          {activeTab === "search" && (
           <div className="flex items-center justify-between mt-3">
             <button
               onClick={() => setShowFilters(!showFilters)}
@@ -177,9 +210,10 @@ function App() {
               <span>In stock only</span>
             </label>
           </div>
+          )}
         </div>
         
-        {showFilters && filterOptions.categories.length > 0 && (
+        {activeTab === "search" && showFilters && filterOptions.categories.length > 0 && (
           <FilterBar
             options={filterOptions}
             filters={filters}
@@ -191,54 +225,66 @@ function App() {
 
       {/* Main Content */}
       <main className="max-w-3xl mx-auto px-4 py-4">
-        {/* Results count */}
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-sm text-neutral-500">
-            {displayProducts ? (
-              <>
-                <span className="text-neutral-300 font-medium">{results.length}</span>
-                {" "}products found
-              </>
-            ) : (
-              <span className="skeleton inline-block w-24 h-4 rounded"></span>
-            )}
-          </p>
-          {results.length > 0 && (
-            <p className="text-xs text-neutral-600">
-              Sorted by {userLocation ? "distance" : "last updated"}
-            </p>
-          )}
-        </div>
-
-        {/* Product Grid */}
-        {!displayProducts ? (
-          <LoadingSkeleton count={6} />
-        ) : results.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-4xl mb-4">🔍</p>
-            <p className="text-neutral-400 mb-2">No products found</p>
-            <p className="text-sm text-neutral-600">
-              Try adjusting your search or filters
-            </p>
-            {activeFilterCount > 0 && (
-              <button
-                onClick={clearFilters}
-                className="mt-4 text-sm text-cannabis-400 hover:text-cannabis-300"
-              >
-                Clear all filters
-              </button>
-            )}
-          </div>
+        {activeTab === "trending" ? (
+          /* Trending Feed */
+          <HotProductsFeed 
+            onProductClick={(productId) => setSelectedProductId(productId)}
+            limit={15}
+            hoursBack={48}
+          />
         ) : (
-          <div className="space-y-3">
-            {results.map((product) => (
-              <ProductCardSimple
-                key={product._id}
-                product={product}
-                onClick={() => setSelectedProductId(product._id)}
-              />
-            ))}
-          </div>
+          /* Search Results */
+          <>
+            {/* Results count */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-neutral-500">
+                {displayProducts ? (
+                  <>
+                    <span className="text-neutral-300 font-medium">{results.length}</span>
+                    {" "}products found
+                  </>
+                ) : (
+                  <span className="skeleton inline-block w-24 h-4 rounded"></span>
+                )}
+              </p>
+              {results.length > 0 && (
+                <p className="text-xs text-neutral-600">
+                  Sorted by {userLocation ? "distance" : "last updated"}
+                </p>
+              )}
+            </div>
+
+            {/* Product Grid */}
+            {!displayProducts ? (
+              <LoadingSkeleton count={6} />
+            ) : results.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-4xl mb-4">🔍</p>
+                <p className="text-neutral-400 mb-2">No products found</p>
+                <p className="text-sm text-neutral-600">
+                  Try adjusting your search or filters
+                </p>
+                {activeFilterCount > 0 && (
+                  <button
+                    onClick={clearFilters}
+                    className="mt-4 text-sm text-cannabis-400 hover:text-cannabis-300"
+                  >
+                    Clear all filters
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {results.map((product) => (
+                  <ProductCardSimple
+                    key={product._id}
+                    product={product}
+                    onClick={() => setSelectedProductId(product._id)}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </main>
 

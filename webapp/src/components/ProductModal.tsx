@@ -2,6 +2,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { StockBadge } from "./StockBadge";
 import { WatchButton } from "./WatchButton";
+import { ProductInsights } from "./ProductInsights";
 import type { Id } from "../../../convex/_generated/dataModel";
 
 interface ProductModalProps {
@@ -123,6 +124,15 @@ export function ProductModal({ productId, userLocation, onClose }: ProductModalP
             />
           </div>
         )}
+
+        {/* Smart Insights Section */}
+        <div className="px-4 py-3 border-b border-neutral-800">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">📊</span>
+            <h3 className="text-sm font-medium text-neutral-400">Smart Insights</h3>
+          </div>
+          <ProductInsights productId={productId} />
+        </div>
 
         {/* Locations List */}
         <div className="flex-1 overflow-y-auto">
