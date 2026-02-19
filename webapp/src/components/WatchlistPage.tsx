@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -26,9 +26,29 @@ const setStoredEmail = (email: string): void => {
 };
 
 export function WatchlistPage({ onClose, onProductClick }: WatchlistPageProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
   const [email, setEmail] = useState(getStoredEmail() || "");
   const [isEmailSet, setIsEmailSet] = useState(!!getStoredEmail());
   const [editingEmail, setEditingEmail] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  
+  // Keyboard handling - Escape to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    
+    document.addEventListener("keydown", handleKeyDown);
+    modalRef.current?.focus();
+    document.body.style.overflow = "hidden";
+    
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
   
   const watches = useQuery(
     api.alerts.getWatchesByEmail,
@@ -40,11 +60,24 @@ export function WatchlistPage({ onClose, onProductClick }: WatchlistPageProps) {
   
   const handleSetEmail = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim()) {
-      setStoredEmail(email.trim());
-      setIsEmailSet(true);
-      setEditingEmail(false);
+    setEmailError(null);
+    
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setEmailError("Please enter your email address");
+      return;
     }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmed)) {
+      setEmailError("Please enter a valid email address");
+      return;
+    }
+    
+    setStoredEmail(trimmed);
+    setIsEmailSet(true);
+    setEditingEmail(false);
   };
   
   const handleDeleteWatch = async (watchId: Id<"productWatches">) => {
@@ -68,8 +101,13 @@ export function WatchlistPage({ onClose, onProductClick }: WatchlistPageProps) {
   if (!isEmailSet || editingEmail) {
     return (
       <div
+        ref={modalRef}
         className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
         onClick={handleBackdropClick}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Enter email for watchlist"
       >
         <div className="w-full max-w-md bg-neutral-900 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
@@ -77,6 +115,7 @@ export function WatchlistPage({ onClose, onProductClick }: WatchlistPageProps) {
             <button
               onClick={onClose}
               className="p-2 -mr-2 rounded-full hover:bg-neutral-800 text-neutral-400"
+              aria-label="Close"
             >
               ✕
             </button>
@@ -89,11 +128,23 @@ export function WatchlistPage({ onClose, onProductClick }: WatchlistPageProps) {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setEmailError(null);
+              }}
               placeholder="your@email.com"
-              className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-cannabis-500"
+              className={`w-full px-4 py-3 bg-neutral-800 border rounded-lg text-white focus:outline-none focus:border-cannabis-500 ${
+                emailError ? "border-red-500" : "border-neutral-700"
+              }`}
               autoFocus
+              aria-invalid={!!emailError}
+              aria-describedby={emailError ? "email-error" : undefined}
             />
+            {emailError && (
+              <p id="email-error" className="text-red-400 text-sm mt-2">
+                {emailError}
+              </p>
+            )}
             <button
               type="submit"
               className="w-full mt-4 py-3 bg-cannabis-600 text-white rounded-lg font-medium hover:bg-cannabis-500"
@@ -117,8 +168,13 @@ export function WatchlistPage({ onClose, onProductClick }: WatchlistPageProps) {
   
   return (
     <div
+      ref={modalRef}
       className="fixed inset-0 z-50 bg-black/80 flex items-end sm:items-center justify-center"
       onClick={handleBackdropClick}
+      tabIndex={-1}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Your watchlist"
     >
       <div className="w-full max-w-lg bg-neutral-900 rounded-t-2xl sm:rounded-2xl max-h-[85vh] overflow-hidden flex flex-col animate-slide-up">
         {/* Header */}
