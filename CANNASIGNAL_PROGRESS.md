@@ -706,3 +706,21 @@ convex/
 ---
 
 *Last updated: 2026-02-19 19:17 UTC (onboarding-agent)*
+
+
+---
+
+## [branch-cleanup]: Git Branch Audit (2026-02-19)
+
+All remote branches audited and cleaned up:
+
+| Branch | Last Commit | Status | Action |
+|--------|-------------|--------|--------|
+| b2b-pivot | 2026-02-19 | ✅ Merged | Deleted |
+| dashboard-filters | 2026-02-19 | ✅ Merged | Deleted |
+| discord-webhook-setup | 2026-02-19 | ✅ Merged | Deleted |
+| region-filter | 2026-02-19 | ✅ Merged | Deleted |
+| site-polish-improvements | 2026-02-19 | ✅ Merged | Deleted |
+| workflow-qa-improvements | 2026-02-19 | ✅ Merged | Deleted |
+
+**Result:** All 6 feature branches were already merged to main. Deleted remote branches to keep repo clean.
