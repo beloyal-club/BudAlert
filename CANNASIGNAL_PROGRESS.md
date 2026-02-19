@@ -338,4 +338,62 @@ node -e "console.log(require('./data/nyc-retailers-expanded.json').summary)"
 
 ---
 
-*Last updated: 2026-02-19 04:45 UTC*
+## Phase 7: Pipeline Reliability (workflow-qa) 🔧 IN PROGRESS
+
+### Overview
+Audit and improvements to pipeline resilience by workflow-qa subagent.
+
+### Completed ✅
+
+- [x] **Audit Report** (`WORKFLOW_QA_AUDIT.md`)
+  - 5 critical vulnerabilities identified
+  - 4 high-severity issues documented
+  - 3 medium issues catalogued
+
+- [x] **Retry Utility Module** (`workers/lib/retry.ts`)
+  - `withRetry()` - Exponential backoff wrapper
+  - `fetchWithRetry()` - HTTP fetch with timeout and retry
+  - `withCircuitBreaker()` - Circuit breaker pattern
+  - `sleep()` - Utility function
+
+- [x] **Notification Retry Queue** (`convex/notificationQueue.ts`)
+  - Failed Discord webhooks queued for retry
+  - 5 retries with exponential backoff
+  - Automatic event marking on success
+
+### Pending Code Changes (documented in audit)
+
+- [ ] Update `workers/cron/index.ts` - Add import and use retry utilities
+- [ ] Update `convex/scraperAlerts.ts` - Change staleHoursThreshold to staleMinutesThreshold (45)
+- [ ] Update `convex/schema.ts` - Add notificationQueue table
+- [ ] Update `convex/http.ts` - Add /notifications/*, /dlq/*, /pipeline/health endpoints
+- [ ] Update `convex/inventoryEvents.ts` - Queue failed notifications
+
+### Blockers / Questions
+
+- [workflow-qa]: Should we add SMS/email fallback when Discord is down for extended periods?
+- [workflow-qa]: BrowserBase fallback to BrowserUse - worth the complexity for ~0.5% failure rate?
+- [workflow-qa]: Event TTL - auto-cleanup inventoryEvents older than 30 days?
+- [workflow-qa]: Should notification queue process via cron or on-demand HTTP calls?
+
+### New API Endpoints (to be added)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/notifications/retry` | POST | Process notification retry queue |
+| `/notifications/queue-stats` | GET | Get queue statistics |
+| `/dlq/stats` | GET | Dead letter queue stats |
+| `/dlq/unresolved` | GET | List unresolved errors |
+| `/pipeline/health` | GET | Comprehensive health check |
+
+### Files on Branch `workflow-qa-improvements`
+
+```
+workers/lib/retry.ts           # NEW - Retry utilities
+convex/notificationQueue.ts    # NEW - Retry queue
+WORKFLOW_QA_AUDIT.md           # NEW - Full audit report
+```
+
+---
+
+*Last updated: 2026-02-19 04:36 UTC (workflow-qa audit)*
