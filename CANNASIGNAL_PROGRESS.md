@@ -473,4 +473,236 @@ All changes on `b2b-pivot` branch.
 
 ---
 
-*Last updated: 2026-02-19 16:20 UTC (dashboard-filters branch merged)*
+---
+
+## Phase 7: Stripe Integration (stripe-products-agent) 💳 DOCUMENTED
+
+### Overview
+Stripe product setup and checkout flow documentation for B2B monetization.
+
+### Products to Create in Stripe Dashboard
+
+| Product | Price | Billing | Tier Key |
+|---------|-------|---------|----------|
+| CannaSignal Starter | $499/mo | Monthly | `retailer_starter` |
+| CannaSignal Growth | $799/mo | Monthly | `retailer_growth` |
+| CannaSignal Enterprise | Custom | Contact | `retailer_enterprise` |
+
+Consumer tiers (lower priority):
+| Product | Price | Tier Key |
+|---------|-------|----------|
+| CannaSignal Premium | $7.99/mo | `premium` |
+| CannaSignal Pro | $14.99/mo | `pro` |
+
+### Code Locations Requiring Price IDs
+
+**`convex/stripe.ts` (lines 21-25):**
+```typescript
+const PRICE_IDS = {
+  premium: "price_PLACEHOLDER_PREMIUM",          // → Consumer Premium
+  pro: "price_PLACEHOLDER_PRO",                  // → Consumer Pro  
+  retailer_starter: "price_PLACEHOLDER_RETAILER_STARTER",   // → B2B $499
+  retailer_growth: "price_PLACEHOLDER_RETAILER_GROWTH",     // → B2B $799
+  retailer_enterprise: "price_PLACEHOLDER_RETAILER_ENTERPRISE", // → B2B Custom
+};
+```
+
+**`convex/subscriptions.ts` (lines 31, 44, 60, 73, 86):**
+- Same placeholders in TIERS and RETAILER_TIERS configs
+
+### ⚠️ Price Mismatch - NEEDS FIX
+
+The `convex/subscriptions.ts` RETAILER_TIERS has **wrong prices**:
+
+| Tier | Code Says | B2B Page Says | Fix Needed |
+|------|-----------|---------------|------------|
+| starter | $49/mo | $499/mo | Change 4900 → 49900 |
+| growth | $149/mo | $799/mo | Change 14900 → 79900 |
+| enterprise | $499/mo | Custom | Update to custom handling |
+
+### Webhook Events to Configure
+
+Configure these in Stripe Dashboard → Webhooks:
+
+| Event | Purpose |
+|-------|---------|
+| `checkout.session.completed` | New subscription created |
+| `customer.subscription.created` | Subscription started |
+| `customer.subscription.updated` | Plan changed/renewed |
+| `customer.subscription.deleted` | Subscription canceled |
+| `invoice.payment_failed` | Payment declined |
+| `invoice.payment_succeeded` | Renewal succeeded |
+
+**Webhook URL:** `https://quick-weasel-225.convex.site/stripe/webhook`
+
+### Checkout Flow Verified ✅
+
+```
+B2BPricingPage.tsx → onSelectPlan(tier)
+    ↓
+POST /subscription/checkout → convex/stripe.ts:createCheckoutSession()
+    ↓
+Stripe Checkout (redirect)
+    ↓
+Stripe webhook → /stripe/webhook → processWebhook()
+    ↓
+convex/subscriptions.ts:handleStripeWebhook() → subscription created
+```
+
+### Environment Variables Needed
+
+| Variable | Purpose |
+|----------|---------|
+| `STRIPE_SECRET_KEY` | API authentication (sk_test_... or sk_live_...) |
+| `STRIPE_WEBHOOK_SECRET` | Webhook signature verification (whsec_...) |
+| `STRIPE_PUBLISHABLE_KEY` | Frontend checkout (pk_test_... or pk_live_...) |
+
+### Documentation Created
+
+- [x] `docs/STRIPE_SETUP.md` - Complete setup guide with:
+  - Step-by-step product creation
+  - Price ID mapping table
+  - Webhook configuration
+  - Stripe CLI testing commands
+  - Test card numbers
+  - Production checklist
+  - Troubleshooting guide
+
+### Pending Code Changes
+
+- [ ] Fix RETAILER_TIERS prices in `convex/subscriptions.ts`
+- [ ] Remove scaffolding code from `convex/stripe.ts` (uncomment real Stripe calls)
+- [ ] Add Stripe SDK import: `import Stripe from 'stripe'`
+- [ ] Replace placeholder price IDs with real ones
+- [ ] Add trial period support (14-day free trial)
+- [ ] Add annual billing support (monthly/annual toggle exists in UI)
+
+### [stripe-products]: Questions for Owner
+
+1. **Trial period?** B2B page mentions "14-day free trial" - implement via Stripe trial_period_days?
+2. **Annual billing?** UI has monthly/annual toggle - create separate annual prices (10 months = 2 free)?
+3. **Enterprise tier?** Handle via Stripe Quotes or manual invoicing?
+4. **Tax collection?** Enable Stripe Tax for US states?
+
+---
+
+*Last updated: 2026-02-19 19:17 UTC (stripe-products-agent documentation)*
+
+---
+
+## [onboarding-agent]: B2B Dispensary Onboarding Wizard ✅ COMPLETE
+
+### Overview
+Created a multi-step onboarding flow for dispensary customers to sign up and configure their accounts.
+
+### Completed ✅
+
+- [x] **OnboardingWizard.tsx** - Full 5-step wizard component
+  - Step 1: Welcome / Sign Up (dispensary name, email)
+  - Step 2: Select Your Store (search NYC dispensaries or add new)
+  - Step 3: Select Competitors (radius-based selection using existing RadiusCompetitorSelector)
+  - Step 4: Choose Plan (Starter $499 / Growth $799 / Enterprise)
+  - Step 5: Confirmation (summary and start trial)
+
+- [x] **convex/onboarding.ts** - Backend mutations
+  - `getAvailableStores` - Query available retailers
+  - `getNearbyCompetitors` - Calculate distances for competitor selection
+  - `checkEmailAvailability` - Verify email isn't already registered
+  - `createRetailerAccount` - Create new B2B account
+  - `selectCompetitors` - Add competitor monitors
+  - `startTrial` - Activate 14-day trial
+  - `completeOnboarding` - Single transaction for full signup
+
+- [x] **Routing Setup**
+  - Added react-router-dom@6
+  - Routes configured in main.tsx:
+    - `/onboarding` - Signup wizard
+    - `/business` - B2B landing page
+    - `/pricing` - Pricing page
+    - `/dashboard` - B2B dashboard
+
+### Features
+
+| Feature | Implementation |
+|---------|----------------|
+| Progress indicator | 5-step visual progress bar |
+| Store selection | Search/select from NYC dispensaries + add new |
+| Competitor selection | Radius-based (1-5 miles) using RadiusCompetitorSelector |
+| Plan selection | Starter/Growth/Enterprise with monthly/annual toggle |
+| Validation | Per-step validation with error display |
+| Mobile responsive | Full mobile-friendly design |
+| 14-day trial | Trial period built into account creation |
+
+### Plan Limits (enforced in backend)
+
+| Plan | Competitors | Team Members |
+|------|-------------|--------------|
+| Starter | 10 | 1 |
+| Growth | 25 | 5 |
+| Enterprise | Unlimited | Unlimited |
+
+### File Structure
+
+```
+webapp/src/
+├── main.tsx                      # Updated with routing
+├── components/
+│   └── OnboardingWizard.tsx      # NEW - 5-step wizard (37KB)
+
+convex/
+└── onboarding.ts                 # NEW - Backend mutations (16KB)
+```
+
+### Data Flow
+
+1. User fills out Step 1 (name, email)
+2. Selects existing store OR adds new in Step 2
+3. RadiusCompetitorSelector shows nearby stores in Step 3
+4. Plan selection in Step 4 (affects competitor limits)
+5. Summary and trial start in Step 5
+6. `completeOnboarding` mutation creates:
+   - `retailerAccounts` entry
+   - `competitorMonitors` entries
+   - Welcome `b2bAlerts` entry
+
+### Integration Notes
+
+- Uses existing `RadiusCompetitorSelector` component
+- Uses existing `B2BPricingPage` styling/data
+- Creates accounts compatible with existing `B2BDashboard`
+- Static NYC retailer data (can switch to Convex query when ready)
+
+### Screenshots (Component Flow)
+
+**Step 1 - Welcome:**
+- Dispensary name input
+- Contact email input
+- Feature highlights
+
+**Step 2 - Store Selection:**
+- Searchable list of 12+ NYC dispensaries
+- "Add new store" option with address form
+- Visual confirmation of selection
+
+**Step 3 - Competitors:**
+- RadiusCompetitorSelector integration
+- 1/2/3/5 mile radius options
+- "Add All" bulk action
+- Plan limit display
+
+**Step 4 - Plan:**
+- Monthly/Annual toggle
+- 3-tier pricing cards
+- Feature comparison
+- "Most Popular" badge on Growth
+
+**Step 5 - Confirmation:**
+- Account summary
+- Store summary
+- Competitors list
+- Plan & pricing summary
+- "Start Free Trial" CTA
+
+---
+
+*Last updated: 2026-02-19 19:17 UTC (onboarding-agent)*
