@@ -44,6 +44,8 @@ interface ScrapedProduct {
   price: number;
   originalPrice?: number;
   inStock: boolean;
+  quantity?: number | null;           // Actual inventory count (null = unknown)
+  quantityWarning?: string | null;    // Raw warning text e.g., "Only 3 left"
   imageUrl?: string;
   thcFormatted?: string;
   cbdFormatted?: string;
@@ -209,18 +211,60 @@ async function scrapeLocation(
           const brandEl = card.querySelector('[class*="brandName"], [class*="BrandName"], [class*="brand"]');
           const brand = brandEl?.textContent?.trim() || "Unknown";
           
-          // Price
-          const priceEl = card.querySelector('[class*="price"], .price');
-          const priceText = priceEl?.textContent || "";
-          const priceMatch = priceText.match(/\$(\d+(?:\.\d{2})?)/);
-          const price = priceMatch ? parseFloat(priceMatch[1]) : 0;
+          // Price extraction - FIXED: flexible decimal handling & better selectors
+          // Try current/sale price first, then original, then any price
+          const currentPriceSelectors = [
+            '[class*="DiscountedPrice"]',
+            '[class*="SalePrice"]',
+            '[class*="CurrentPrice"]',
+            '[class*="FinalPrice"]',
+          ];
+          const genericPriceSelectors = [
+            '[class*="price"]:not([class*="original"]):not([class*="strikethrough"])',
+            '[class*="Price"]:not([class*="Original"]):not([class*="Strikethrough"])',
+            '.price',
+            '[data-testid*="price"]',
+          ];
           
-          // Original price (for sales)
-          const origPriceEl = card.querySelector('[class*="original"], [class*="strikethrough"], del');
+          let price = 0;
+          
+          // Try specific current price selectors first
+          for (const sel of [...currentPriceSelectors, ...genericPriceSelectors]) {
+            const el = card.querySelector(sel);
+            if (el && el.textContent) {
+              // Match $XX, $XX.X, or $XX.XX (flexible decimal handling)
+              const match = el.textContent.match(/\$(\d+(?:\.\d{1,2})?)/);
+              if (match) {
+                price = parseFloat(match[1]);
+                if (price > 0) break;
+              }
+            }
+          }
+          
+          // Fallback: scan card text for any price pattern
+          if (!price) {
+            const cardText = card.textContent || '';
+            const allPrices = [...cardText.matchAll(/\$(\d+(?:\.\d{1,2})?)/g)]
+              .map(m => parseFloat(m[1]))
+              .filter(p => p > 0);
+            if (allPrices.length > 0) {
+              // Take the lowest price (likely the current/sale price)
+              price = Math.min(...allPrices);
+            }
+          }
+          
+          // Original price (for sales) - FIXED: flexible decimal handling
+          const origPriceEl = card.querySelector('[class*="original"], [class*="strikethrough"], [class*="Original"], del, s');
           let originalPrice: number | undefined;
           if (origPriceEl) {
-            const origMatch = origPriceEl.textContent?.match(/\$?(\d+(?:\.\d{2})?)/);
-            if (origMatch) originalPrice = parseFloat(origMatch[1]);
+            const origMatch = origPriceEl.textContent?.match(/\$?(\d+(?:\.\d{1,2})?)/);
+            if (origMatch) {
+              const parsedOrig = parseFloat(origMatch[1]);
+              // Only use as original if it's higher than current price (makes sense as sale)
+              if (parsedOrig > price) {
+                originalPrice = parsedOrig;
+              }
+            }
           }
           
           // Category
@@ -231,9 +275,58 @@ async function scrapeLocation(
           const imgEl = card.querySelector('img');
           const imageUrl = imgEl?.src;
           
-          // Stock status
-          const stockEl = card.querySelector('[class*="outOfStock"], [class*="soldOut"]');
-          const inStock = !stockEl;
+          // Stock status & Quantity detection
+          const stockEl = card.querySelector('[class*="outOfStock"], [class*="soldOut"], [class*="OutOfStock"], [class*="SoldOut"], [class*="unavailable"]');
+          let inStock = !stockEl;
+          let quantity: number | null = null;
+          let quantityWarning: string | null = null;
+          
+          // Check for out of stock
+          if (stockEl) {
+            inStock = false;
+            quantity = 0;
+            quantityWarning = stockEl.textContent?.trim() || 'Out of stock';
+          }
+          
+          // Look for quantity warnings (e.g., "Only 3 left", "Low stock: 5")
+          if (inStock) {
+            const cardText = card.textContent || '';
+            
+            // Patterns for quantity extraction
+            const quantityPatterns = [
+              /only\s*(\d+)\s*left/i,
+              /(\d+)\s*left\s*(?:in\s*stock)?/i,
+              /(\d+)\s*remaining/i,
+              /limited[:\s]*(\d+)/i,
+              /low\s*stock[:\s]*(\d+)/i,
+              /(\d+)\s*available/i,
+              /hurry[,!]?\s*only\s*(\d+)/i,
+            ];
+            
+            for (const pattern of quantityPatterns) {
+              const match = cardText.match(pattern);
+              if (match) {
+                quantity = parseInt(match[1], 10);
+                quantityWarning = match[0].trim();
+                break;
+              }
+            }
+            
+            // Check for generic low stock without number
+            if (!quantityWarning) {
+              const lowStockEl = card.querySelector('[class*="LowStock"], [class*="low-stock"], [class*="StockWarning"], [class*="stock-warning"]');
+              if (lowStockEl) {
+                quantityWarning = lowStockEl.textContent?.trim() || 'Low stock';
+                // Try to extract number if present
+                const numMatch = quantityWarning.match(/(\d+)/);
+                if (numMatch) {
+                  quantity = parseInt(numMatch[1], 10);
+                }
+              } else if (/low\s*stock/i.test(cardText)) {
+                quantityWarning = 'Low stock';
+              }
+            }
+          }
           
           // THC/CBD
           const thcEl = card.querySelector('[class*="thc"], [class*="THC"]');
@@ -249,6 +342,8 @@ async function scrapeLocation(
               price,
               originalPrice,
               inStock,
+              quantity,
+              quantityWarning,
               imageUrl,
               thcFormatted,
               cbdFormatted,

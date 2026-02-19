@@ -473,239 +473,185 @@ All changes on `b2b-pivot` branch.
 
 ---
 
----
+## Phase 8: Authentication 🔐 IN PROGRESS
 
-## Phase 7: Stripe Integration (stripe-products-agent) 💳 DOCUMENTED
+### [auth-agent]: Decision - Clerk + Convex Integration
 
-### Overview
-Stripe product setup and checkout flow documentation for B2B monetization.
+**Chosen Solution:** Clerk with `ConvexProviderWithClerk`
 
-### Products to Create in Stripe Dashboard
+**Rationale:**
+1. Official integration via `@clerk/clerk-react` and `convex/react-clerk`
+2. Free tier (10k MAU) sufficient for MVP
+3. Magic links, Google, email/password built-in
+4. User management dashboard included
+5. The schema already had `externalAuthId` field - this was planned
+6. Convex Auth is still beta and less mature
 
-| Product | Price | Billing | Tier Key |
-|---------|-------|---------|----------|
-| CannaSignal Starter | $499/mo | Monthly | `retailer_starter` |
-| CannaSignal Growth | $799/mo | Monthly | `retailer_growth` |
-| CannaSignal Enterprise | Custom | Contact | `retailer_enterprise` |
+### [auth-agent]: Implementation Status
 
-Consumer tiers (lower priority):
-| Product | Price | Tier Key |
-|---------|-------|----------|
-| CannaSignal Premium | $7.99/mo | `premium` |
-| CannaSignal Pro | $14.99/mo | `pro` |
+**Completed ✅**
 
-### Code Locations Requiring Price IDs
+- [x] **Convex Auth Config** (`convex/auth.config.ts`)
+  - Clerk JWT validation configuration
+  - Requires `CLERK_JWT_ISSUER_DOMAIN` env var in Convex Dashboard
 
-**`convex/stripe.ts` (lines 21-25):**
-```typescript
-const PRICE_IDS = {
-  premium: "price_PLACEHOLDER_PREMIUM",          // → Consumer Premium
-  pro: "price_PLACEHOLDER_PRO",                  // → Consumer Pro  
-  retailer_starter: "price_PLACEHOLDER_RETAILER_STARTER",   // → B2B $499
-  retailer_growth: "price_PLACEHOLDER_RETAILER_GROWTH",     // → B2B $799
-  retailer_enterprise: "price_PLACEHOLDER_RETAILER_ENTERPRISE", // → B2B Custom
-};
-```
+- [x] **Clerk Provider Setup** (`webapp/src/main.tsx`)
+  - `ClerkProvider` wrapping app
+  - `ConvexProviderWithClerk` for auth-aware Convex
+  - Graceful fallback when Clerk not configured
+  - Requires `VITE_CLERK_PUBLISHABLE_KEY` env var
 
-**`convex/subscriptions.ts` (lines 31, 44, 60, 73, 86):**
-- Same placeholders in TIERS and RETAILER_TIERS configs
+- [x] **Auth Utilities** (`webapp/src/lib/auth.ts`)
+  - `useAuthUser()` - unified hook for user info
+  - `useUserEmail()` - get email from auth or legacy localStorage
+  - `useNeedsSignup()` - detect users needing migration
+  - Backward compatibility with localStorage email
 
-### ⚠️ Price Mismatch - NEEDS FIX
+- [x] **Auth Components** (`webapp/src/components/AuthButton.tsx`)
+  - Header sign-in/sign-up buttons
+  - User avatar/menu when signed in
+  - Loading states
 
-The `convex/subscriptions.ts` RETAILER_TIERS has **wrong prices**:
+- [x] **Protected Routes** (`webapp/src/components/ProtectedRoute.tsx`)
+  - `<ProtectedRoute>` - generic auth wrapper
+  - `<B2BProtectedRoute>` - B2B-specific variant
+  - Sign-in prompts with branding
 
-| Tier | Code Says | B2B Page Says | Fix Needed |
-|------|-----------|---------------|------------|
-| starter | $49/mo | $499/mo | Change 4900 → 49900 |
-| growth | $149/mo | $799/mo | Change 14900 → 79900 |
-| enterprise | $499/mo | Custom | Update to custom handling |
+- [x] **WatchButton.tsx Updates**
+  - Uses `useAuthUser()` for authenticated users
+  - Falls back to email input for guests (legacy)
+  - Sign-in prompt in watch limit warning
 
-### Webhook Events to Configure
+- [x] **WatchlistPage.tsx Updates**
+  - Sign-in prompt for new users
+  - Backward compatible with localStorage email
+  - "Or continue with email" option
 
-Configure these in Stripe Dashboard → Webhooks:
+- [x] **App.tsx Updates**
+  - `<AuthButton>` in header
 
-| Event | Purpose |
-|-------|---------|
-| `checkout.session.completed` | New subscription created |
-| `customer.subscription.created` | Subscription started |
-| `customer.subscription.updated` | Plan changed/renewed |
-| `customer.subscription.deleted` | Subscription canceled |
-| `invoice.payment_failed` | Payment declined |
-| `invoice.payment_succeeded` | Renewal succeeded |
+- [x] **Backend Auth Helper** (`convex/authHelpers.ts`)
+  - `getAuthUser()` - get identity from context
+  - `requireAuth()` - throw if not authenticated
+  - `getUserEmail()` - email with fallback
+  - `verifyEmailAccess()` - prevent cross-user access
+  - `getOrCreateAuthUser()` - sync user to database
 
-**Webhook URL:** `https://quick-weasel-225.convex.site/stripe/webhook`
+- [x] **Dependency Installation**
+  - `@clerk/clerk-react` added to webapp
 
-### Checkout Flow Verified ✅
+- [x] **Environment Template** (`webapp/.env.example`)
+  - Documents required env vars
 
-```
-B2BPricingPage.tsx → onSelectPlan(tier)
-    ↓
-POST /subscription/checkout → convex/stripe.ts:createCheckoutSession()
-    ↓
-Stripe Checkout (redirect)
-    ↓
-Stripe webhook → /stripe/webhook → processWebhook()
-    ↓
-convex/subscriptions.ts:handleStripeWebhook() → subscription created
-```
+### [auth-agent]: Setup Required (Human Action)
 
-### Environment Variables Needed
+To complete the auth setup, the human needs to:
 
-| Variable | Purpose |
-|----------|---------|
-| `STRIPE_SECRET_KEY` | API authentication (sk_test_... or sk_live_...) |
-| `STRIPE_WEBHOOK_SECRET` | Webhook signature verification (whsec_...) |
-| `STRIPE_PUBLISHABLE_KEY` | Frontend checkout (pk_test_... or pk_live_...) |
+1. **Create Clerk Account**
+   - Go to https://clerk.com
+   - Sign up / Sign in
+   - Create new application
 
-### Documentation Created
+2. **Create JWT Template**
+   - Clerk Dashboard → JWT Templates
+   - Click "New template"
+   - Select "Convex" template
+   - **Important:** Keep the name as "convex" (don't rename)
+   - Copy the "Issuer URL" (format: `https://verb-noun-00.clerk.accounts.dev`)
 
-- [x] `docs/STRIPE_SETUP.md` - Complete setup guide with:
-  - Step-by-step product creation
-  - Price ID mapping table
-  - Webhook configuration
-  - Stripe CLI testing commands
-  - Test card numbers
-  - Production checklist
-  - Troubleshooting guide
+3. **Configure Convex**
+   - Convex Dashboard → Settings → Environment Variables
+   - Add: `CLERK_JWT_ISSUER_DOMAIN` = the Issuer URL from step 2
+   - Run `npx convex deploy` to sync
 
-### Pending Code Changes
+4. **Configure Webapp**
+   - Create `webapp/.env.local`:
+     ```
+     VITE_CLERK_PUBLISHABLE_KEY=pk_test_xxxxx
+     ```
+   - Get the Publishable Key from Clerk Dashboard → API Keys
+   - Restart dev server
 
-- [ ] Fix RETAILER_TIERS prices in `convex/subscriptions.ts`
-- [ ] Remove scaffolding code from `convex/stripe.ts` (uncomment real Stripe calls)
-- [ ] Add Stripe SDK import: `import Stripe from 'stripe'`
-- [ ] Replace placeholder price IDs with real ones
-- [ ] Add trial period support (14-day free trial)
-- [ ] Add annual billing support (monthly/annual toggle exists in UI)
+5. **Test Auth Flow**
+   - Visit webapp
+   - Click "Sign In" in header
+   - Try email magic link or Google sign-in
+   - Verify user appears in Clerk dashboard
+   - Test watch functionality with authenticated user
 
-### [stripe-products]: Questions for Owner
-
-1. **Trial period?** B2B page mentions "14-day free trial" - implement via Stripe trial_period_days?
-2. **Annual billing?** UI has monthly/annual toggle - create separate annual prices (10 months = 2 free)?
-3. **Enterprise tier?** Handle via Stripe Quotes or manual invoicing?
-4. **Tax collection?** Enable Stripe Tax for US states?
-
----
-
-*Last updated: 2026-02-19 19:17 UTC (stripe-products-agent documentation)*
-
----
-
-## [onboarding-agent]: B2B Dispensary Onboarding Wizard ✅ COMPLETE
-
-### Overview
-Created a multi-step onboarding flow for dispensary customers to sign up and configure their accounts.
-
-### Completed ✅
-
-- [x] **OnboardingWizard.tsx** - Full 5-step wizard component
-  - Step 1: Welcome / Sign Up (dispensary name, email)
-  - Step 2: Select Your Store (search NYC dispensaries or add new)
-  - Step 3: Select Competitors (radius-based selection using existing RadiusCompetitorSelector)
-  - Step 4: Choose Plan (Starter $499 / Growth $799 / Enterprise)
-  - Step 5: Confirmation (summary and start trial)
-
-- [x] **convex/onboarding.ts** - Backend mutations
-  - `getAvailableStores` - Query available retailers
-  - `getNearbyCompetitors` - Calculate distances for competitor selection
-  - `checkEmailAvailability` - Verify email isn't already registered
-  - `createRetailerAccount` - Create new B2B account
-  - `selectCompetitors` - Add competitor monitors
-  - `startTrial` - Activate 14-day trial
-  - `completeOnboarding` - Single transaction for full signup
-
-- [x] **Routing Setup**
-  - Added react-router-dom@6
-  - Routes configured in main.tsx:
-    - `/onboarding` - Signup wizard
-    - `/business` - B2B landing page
-    - `/pricing` - Pricing page
-    - `/dashboard` - B2B dashboard
-
-### Features
-
-| Feature | Implementation |
-|---------|----------------|
-| Progress indicator | 5-step visual progress bar |
-| Store selection | Search/select from NYC dispensaries + add new |
-| Competitor selection | Radius-based (1-5 miles) using RadiusCompetitorSelector |
-| Plan selection | Starter/Growth/Enterprise with monthly/annual toggle |
-| Validation | Per-step validation with error display |
-| Mobile responsive | Full mobile-friendly design |
-| 14-day trial | Trial period built into account creation |
-
-### Plan Limits (enforced in backend)
-
-| Plan | Competitors | Team Members |
-|------|-------------|--------------|
-| Starter | 10 | 1 |
-| Growth | 25 | 5 |
-| Enterprise | Unlimited | Unlimited |
-
-### File Structure
+### [auth-agent]: Files Changed
 
 ```
-webapp/src/
-├── main.tsx                      # Updated with routing
-├── components/
-│   └── OnboardingWizard.tsx      # NEW - 5-step wizard (37KB)
-
 convex/
-└── onboarding.ts                 # NEW - Backend mutations (16KB)
+├── auth.config.ts         # NEW - Clerk JWT config
+└── authHelpers.ts         # NEW - Auth utilities for backend
+
+webapp/
+├── .env.example           # NEW - Env template
+├── package.json           # UPDATED - Added @clerk/clerk-react
+├── src/
+│   ├── main.tsx           # UPDATED - ClerkProvider + ConvexProviderWithClerk
+│   ├── App.tsx            # UPDATED - Added AuthButton
+│   ├── lib/
+│   │   └── auth.ts        # NEW - Auth hooks/utilities
+│   └── components/
+│       ├── AuthButton.tsx     # NEW - Header auth button
+│       ├── ProtectedRoute.tsx # NEW - Auth wrappers
+│       ├── WatchButton.tsx    # UPDATED - Auth-aware
+│       └── WatchlistPage.tsx  # UPDATED - Auth-aware
 ```
 
-### Data Flow
+### [auth-agent]: Notes
 
-1. User fills out Step 1 (name, email)
-2. Selects existing store OR adds new in Step 2
-3. RadiusCompetitorSelector shows nearby stores in Step 3
-4. Plan selection in Step 4 (affects competitor limits)
-5. Summary and trial start in Step 5
-6. `completeOnboarding` mutation creates:
-   - `retailerAccounts` entry
-   - `competitorMonitors` entries
-   - Welcome `b2bAlerts` entry
-
-### Integration Notes
-
-- Uses existing `RadiusCompetitorSelector` component
-- Uses existing `B2BPricingPage` styling/data
-- Creates accounts compatible with existing `B2BDashboard`
-- Static NYC retailer data (can switch to Convex query when ready)
-
-### Screenshots (Component Flow)
-
-**Step 1 - Welcome:**
-- Dispensary name input
-- Contact email input
-- Feature highlights
-
-**Step 2 - Store Selection:**
-- Searchable list of 12+ NYC dispensaries
-- "Add new store" option with address form
-- Visual confirmation of selection
-
-**Step 3 - Competitors:**
-- RadiusCompetitorSelector integration
-- 1/2/3/5 mile radius options
-- "Add All" bulk action
-- Plan limit display
-
-**Step 4 - Plan:**
-- Monthly/Annual toggle
-- 3-tier pricing cards
-- Feature comparison
-- "Most Popular" badge on Growth
-
-**Step 5 - Confirmation:**
-- Account summary
-- Store summary
-- Competitors list
-- Plan & pricing summary
-- "Start Free Trial" CTA
+- **Backward Compatibility:** Existing localStorage-based email users will continue to work
+- **Migration Path:** When user signs up, we can migrate their watches from localStorage email
+- **B2B Dashboard:** Use `<B2BProtectedRoute>` wrapper for full dashboard protection
+- **Consumer App:** Public routes work without auth, auth optional for enhanced features
 
 ---
 
-*Last updated: 2026-02-19 19:17 UTC (onboarding-agent)*
+*Last updated: 2026-02-19 19:17 UTC (auth-agent implementation)*
+
+## [pipeline-deploy]: 2026-02-19 - Pipeline Deployment Complete ✅
+
+### Status: OPERATIONAL
+
+The cron worker and browser scraping pipeline are now deployed and working.
+
+### Deployments
+1. **cannasignal-browser** (v2.0.0) - https://cannasignal-browser.prtl.workers.dev
+   - Cloudflare Browser Rendering worker
+   - Handles age gate bypassing
+   - DOM inspection for debugging
+
+2. **cannasignal-cron** (v3.0.0) - https://cannasignal-cron.prtl.workers.dev  
+   - Direct Browser binding (no Worker-to-Worker calls)
+   - Cron schedule: */15 * * * *
+   - Convex URL: https://quick-weasel-225.convex.site
+
+### Test Results
+- **CONBUD LES**: ✅ 101 products scraped successfully
+  - Product names, brands, prices, THC%, strains
+  - Images from Dutchie CDN
+  
+### Architecture Changes
+- Removed BrowserBase dependency (incompatible with Workers)
+- Added @cloudflare/puppeteer directly to cron worker
+- Fixed wrangler.toml compatibility flags (nodejs_compat)
+- Updated selectors for styled-components DOM
+
+### Remaining Work
+1. Set DISCORD_WEBHOOK_URL secret for notifications
+2. Test all 16 locations (currently limited to 3)
+3. Verify Convex ingestion endpoint exists
+4. Enable full cron schedule
+
+### Endpoints
+- GET /health - Status check
+- GET /test-single - Test single location scrape
+- POST /trigger - Manual scrape trigger
+- GET /locations - List all 16 configured locations
+
 
 
 ---
@@ -724,3 +670,53 @@ All remote branches audited and cleaned up:
 | workflow-qa-improvements | 2026-02-19 | ✅ Merged | Deleted |
 
 **Result:** All 6 feature branches were already merged to main. Deleted remote branches to keep repo clean.
+
+---
+
+## [scraper-fix]: Price & Inventory Quantity Fixes (2026-02-19)
+
+### Problems Identified
+1. **Price = 0 or wrong** — Scraper was extracting strikethrough/original price instead of current price
+2. **No inventory quantity** — Only tracked `inStock: boolean`, not actual count like "3 left"
+
+### Root Causes Found
+
+**Price Issue:**
+- `[class*="OriginalPrice"]` was listed first in selectors — this is the STRIKETHROUGH price on sale items
+- Regex `/\$(\d+(?:\.\d{2})?)/` required exactly 2 decimals or none — failed on prices like `$45.0`
+- Fallback `price: price || 0` meant any parse failure resulted in price=0
+
+### Fixes Implemented
+
+**1. Price Extraction (workers/cron/index.ts)**
+- Reordered selectors: current/sale price first, then original price
+- Added flexible decimal regex: `\$(\d+(?:\.\d{1,2})?)`
+- Added fallback: scan all card text for prices, take lowest (likely sale price)
+- Validate original price > current price before storing
+
+**2. Quantity Detection (workers/cron/index.ts)**
+- Added out-of-stock indicator detection
+- Added low stock warning patterns:
+  - "Only X left", "X left in stock", "X remaining"
+  - "Limited: X", "Low stock: X", "X available"
+  - Generic "Low stock" without number
+- Added Dutchie-specific stock warning selectors
+
+**3. Schema Updates (convex/schema.ts)**
+- `menuSnapshots` table: Added `quantity` and `quantityWarning` fields
+- `currentInventory` table: Added `quantity` and `quantityWarning` fields
+
+**4. Ingestion Updates (convex/ingestion.ts)**
+- Updated `ingestScrapedBatch` args to accept `quantity` and `quantityWarning`
+- Updated `updateCurrentInventory` to store and track quantity changes
+- New inventory records include quantity in event metadata
+
+### Files Changed
+- `workers/cron/index.ts` — Price extraction fix + quantity detection
+- `convex/schema.ts` — Added quantity fields to menuSnapshots & currentInventory
+- `convex/ingestion.ts` — Updated mutation args and inventory tracking
+
+### Branch
+`scraper-fixes` — Ready for review and merge
+
+*Updated: 2026-02-19 20:10 UTC (scraper-fix-agent)*

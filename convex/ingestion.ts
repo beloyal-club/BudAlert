@@ -21,6 +21,8 @@ export const ingestScrapedBatch = mutation({
         price: v.number(),
         originalPrice: v.optional(v.number()),
         inStock: v.boolean(),
+        quantity: v.optional(v.union(v.number(), v.null())),        // Actual inventory count
+        quantityWarning: v.optional(v.union(v.string(), v.null())), // Raw warning text
         imageUrl: v.optional(v.string()),
         thcFormatted: v.optional(v.string()),
         cbdFormatted: v.optional(v.string()),
@@ -143,6 +145,8 @@ export const ingestScrapedBatch = mutation({
               ? Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)
               : undefined,
             inStock: item.inStock,
+            quantity: item.quantity ?? undefined,           // Actual inventory count
+            quantityWarning: item.quantityWarning ?? undefined, // Raw warning text
             sourceUrl: item.sourceUrl,
             sourcePlatform: item.sourcePlatform,
             rawProductName: item.rawProductName,
@@ -158,6 +162,8 @@ export const ingestScrapedBatch = mutation({
             snapshotId,
             price: item.price,
             inStock: item.inStock,
+            quantity: item.quantity ?? undefined,
+            quantityWarning: item.quantityWarning ?? undefined,
             rawProductName: item.rawProductName,
             batchId: args.batchId,
           });
@@ -199,6 +205,8 @@ async function updateCurrentInventory(
     snapshotId: any;
     price: number;
     inStock: boolean;
+    quantity?: number;           // Actual inventory count
+    quantityWarning?: string;    // Raw warning text e.g., "Only 3 left"
     rawProductName: string;
     batchId: string;
   }
@@ -222,6 +230,8 @@ async function updateCurrentInventory(
     const updates: any = {
       currentPrice: args.price,
       inStock: args.inStock,
+      quantity: args.quantity,
+      quantityWarning: args.quantityWarning,
       lastUpdatedAt: now,
       lastSnapshotId: args.snapshotId,
     };
@@ -284,6 +294,8 @@ async function updateCurrentInventory(
       brandId: args.brandId,
       currentPrice: args.price,
       inStock: args.inStock,
+      quantity: args.quantity,
+      quantityWarning: args.quantityWarning,
       lastInStockAt: args.inStock ? now : undefined,
       daysOnMenu: 1,
       lastUpdatedAt: now,
@@ -293,8 +305,8 @@ async function updateCurrentInventory(
     // New product event
     events.push({
       eventType: "new_product",
-      newValue: { price: args.price, inStock: args.inStock },
-      metadata: { rawName: args.rawProductName },
+      newValue: { price: args.price, inStock: args.inStock, quantity: args.quantity },
+      metadata: { rawName: args.rawProductName, quantityWarning: args.quantityWarning },
     });
   }
   
