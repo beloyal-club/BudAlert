@@ -449,6 +449,15 @@ All changes on `b2b-pivot` branch.
 
 ### Pending
 
+- [x] **Dashboard Filters** (`webapp/src/components/B2BDashboard.tsx` - `dashboard-filters` branch)
+  - Competitor selection: checkbox list, search/filter by name, select/deselect all
+  - Data filters: category, brand, price range, stock status, time range
+  - View options: sort by (price, name, updated, distance), group by (category, brand, competitor)
+  - Filter persistence to localStorage
+  - Reset filters button
+  - Visual filter chips showing active filters
+  - Collapsible filters panel
+
 - [ ] **Onboarding Flow**: B2B signup, retailer selection, competitor setup wizard
 - [ ] **Alert Generation**: Background job to generate B2B alerts from inventory events
 - [ ] **Slack Integration**: Webhook setup for B2B alerts
@@ -464,4 +473,4 @@ All changes on `b2b-pivot` branch.
 
 ---
 
-*Last updated: 2026-02-19 15:29 UTC (b2b-pivot branch created)*
+*Last updated: 2026-02-19 16:20 UTC (dashboard-filters branch merged)*
