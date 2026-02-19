@@ -102,6 +102,8 @@ export default defineSchema({
     discountPercent: v.optional(v.number()),
     inStock: v.boolean(),
     stockLevel: v.optional(v.string()),
+    quantity: v.optional(v.number()),           // Actual inventory count (null = unknown)
+    quantityWarning: v.optional(v.string()),    // Raw warning text e.g., "Only 3 left"
     sourceUrl: v.string(),
     sourcePlatform: v.string(),
     rawProductName: v.string(),
@@ -127,6 +129,8 @@ export default defineSchema({
     priceChangedAt: v.optional(v.number()),
     inStock: v.boolean(),
     stockLevel: v.optional(v.string()),
+    quantity: v.optional(v.number()),           // Actual inventory count (null = unknown)
+    quantityWarning: v.optional(v.string()),    // Raw warning text e.g., "Only 3 left"
     lastInStockAt: v.optional(v.number()),
     outOfStockSince: v.optional(v.number()),
     daysOnMenu: v.number(),

@@ -670,3 +670,53 @@ All remote branches audited and cleaned up:
 | workflow-qa-improvements | 2026-02-19 | ✅ Merged | Deleted |
 
 **Result:** All 6 feature branches were already merged to main. Deleted remote branches to keep repo clean.
+
+---
+
+## [scraper-fix]: Price & Inventory Quantity Fixes (2026-02-19)
+
+### Problems Identified
+1. **Price = 0 or wrong** — Scraper was extracting strikethrough/original price instead of current price
+2. **No inventory quantity** — Only tracked `inStock: boolean`, not actual count like "3 left"
+
+### Root Causes Found
+
+**Price Issue:**
+- `[class*="OriginalPrice"]` was listed first in selectors — this is the STRIKETHROUGH price on sale items
+- Regex `/\$(\d+(?:\.\d{2})?)/` required exactly 2 decimals or none — failed on prices like `$45.0`
+- Fallback `price: price || 0` meant any parse failure resulted in price=0
+
+### Fixes Implemented
+
+**1. Price Extraction (workers/cron/index.ts)**
+- Reordered selectors: current/sale price first, then original price
+- Added flexible decimal regex: `\$(\d+(?:\.\d{1,2})?)`
+- Added fallback: scan all card text for prices, take lowest (likely sale price)
+- Validate original price > current price before storing
+
+**2. Quantity Detection (workers/cron/index.ts)**
+- Added out-of-stock indicator detection
+- Added low stock warning patterns:
+  - "Only X left", "X left in stock", "X remaining"
+  - "Limited: X", "Low stock: X", "X available"
+  - Generic "Low stock" without number
+- Added Dutchie-specific stock warning selectors
+
+**3. Schema Updates (convex/schema.ts)**
+- `menuSnapshots` table: Added `quantity` and `quantityWarning` fields
+- `currentInventory` table: Added `quantity` and `quantityWarning` fields
+
+**4. Ingestion Updates (convex/ingestion.ts)**
+- Updated `ingestScrapedBatch` args to accept `quantity` and `quantityWarning`
+- Updated `updateCurrentInventory` to store and track quantity changes
+- New inventory records include quantity in event metadata
+
+### Files Changed
+- `workers/cron/index.ts` — Price extraction fix + quantity detection
+- `convex/schema.ts` — Added quantity fields to menuSnapshots & currentInventory
+- `convex/ingestion.ts` — Updated mutation args and inventory tracking
+
+### Branch
+`scraper-fixes` — Ready for review and merge
+
+*Updated: 2026-02-19 20:10 UTC (scraper-fix-agent)*
