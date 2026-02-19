@@ -23,7 +23,10 @@ export const processProductAlerts = action({
   args: {
     maxEvents: v.optional(v.number()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<
+    | { success: false; error: string; hint?: string }
+    | { processed: number; alerts_sent: number; watches_notified?: number }
+  > => {
     const webhookUrl = process.env.DISCORD_WEBHOOK_PRODUCT_ALERTS;
     
     if (!webhookUrl) {
@@ -51,7 +54,19 @@ export const checkScraperHealth = action({
   args: {
     forceAlert: v.optional(v.boolean()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<
+    | { success: false; error: string; hint?: string }
+    | {
+        success: boolean;
+        alertsSent: number;
+        message?: string;
+        primaryType?: string;
+        severity?: string;
+        deliveredTo?: string[];
+        triggeredConditions?: number;
+        conditions: unknown;
+      }
+  > => {
     const webhookUrl = process.env.DISCORD_WEBHOOK_SCRAPER_ALERTS;
     
     if (!webhookUrl) {
