@@ -1,0 +1,388 @@
+{
+  "metadata": {
+    "description": "NYC cannabis retailers with geocoded coordinates for distance-based filtering",
+    "lastUpdated": "2026-02-19",
+    "anchorStore": {
+      "name": "CONBUD LES",
+      "slug": "conbud-les",
+      "coordinates": { "lat": 40.7246, "lng": -73.9927 },
+      "address": "88 E Houston St, New York, NY 10012"
+    },
+    "notes": "Coordinates are approximate, based on street addresses. For production, use a geocoding API."
+  },
+  "retailers": [
+    {
+      "slug": "conbud-les",
+      "name": "CONBUD LES",
+      "address": { "street": "88 E Houston St", "city": "New York", "state": "NY", "zip": "10012" },
+      "region": "manhattan",
+      "coordinates": { "lat": 40.7246, "lng": -73.9927 },
+      "platform": "dutchie-embedded",
+      "menuUrl": "https://conbud.com/stores/conbud-les/products"
+    },
+    {
+      "slug": "conbud-bronx",
+      "name": "CONBUD Bronx",
+      "address": { "city": "Bronx", "state": "NY" },
+      "region": "bronx",
+      "coordinates": { "lat": 40.8448, "lng": -73.8648 },
+      "platform": "dutchie-embedded",
+      "menuUrl": "https://conbud.com/stores/conbud-bronx/products"
+    },
+    {
+      "slug": "conbud-yankee-stadium",
+      "name": "CONBUD Yankee Stadium",
+      "address": { "city": "Bronx", "state": "NY" },
+      "region": "bronx",
+      "coordinates": { "lat": 40.8296, "lng": -73.9262 },
+      "platform": "dutchie-embedded",
+      "menuUrl": "https://conbud.com/stores/conbud-yankee-stadium/products"
+    },
+    {
+      "slug": "gotham-bowery",
+      "name": "Gotham Bowery",
+      "address": { "street": "3 E 3rd St", "city": "New York", "state": "NY" },
+      "region": "manhattan",
+      "coordinates": { "lat": 40.7255, "lng": -73.9920 },
+      "platform": "dutchie-plus",
+      "menuUrl": "https://gotham.nyc/menu/"
+    },
+    {
+      "slug": "gotham-williamsburg",
+      "name": "Gotham Williamsburg",
+      "address": { "street": "300 Kent Ave", "city": "Brooklyn", "state": "NY" },
+      "region": "brooklyn",
+      "coordinates": { "lat": 40.7186, "lng": -73.9618 },
+      "platform": "dutchie-plus",
+      "menuUrl": "https://gotham.nyc/menu/"
+    },
+    {
+      "slug": "gotham-chelsea",
+      "name": "Gotham Chelsea",
+      "address": { "street": "146 10th Ave", "city": "New York", "state": "NY" },
+      "region": "manhattan",
+      "coordinates": { "lat": 40.7455, "lng": -74.0063 },
+      "platform": "dutchie-plus",
+      "menuUrl": "https://gotham.nyc/menu/"
+    },
+    {
+      "slug": "housing-works-cannabis",
+      "name": "Housing Works Cannabis",
+      "address": { "street": "750 Broadway", "city": "New York", "state": "NY", "zip": "10003" },
+      "region": "manhattan",
+      "coordinates": { "lat": 40.7308, "lng": -73.9917 },
+      "platform": "dutchie-embedded",
+      "menuUrl": "https://hwcannabis.co/",
+      "ocmLicense": "OCM-AUCC-2022-00001"
+    },
+    {
+      "slug": "travel-agency-union-square",
+      "name": "Travel Agency Union Square",
+      "address": { "street": "835 Broadway", "city": "New York", "state": "NY" },
+      "region": "manhattan",
+      "coordinates": { "lat": 40.7340, "lng": -73.9904 },
+      "platform": "dutchie-backend",
+      "menuUrl": "https://www.thetravelagency.co/menu/"
+    },
+    {
+      "slug": "dagmar-soho",
+      "name": "Dagmar Cannabis SoHo",
+      "address": { "street": "412 W Broadway", "city": "New York", "state": "NY" },
+      "region": "manhattan",
+      "coordinates": { "lat": 40.7246, "lng": -74.0002 },
+      "platform": "joint-dutchie-plugin",
+      "menuUrl": "https://dagmarcannabis.com/menu/"
+    },
+    {
+      "slug": "smacked-village",
+      "name": "Smacked Village",
+      "address": { "street": "144 Bleecker St", "city": "New York", "state": "NY" },
+      "region": "manhattan",
+      "coordinates": { "lat": 40.7283, "lng": -73.9994 },
+      "platform": "joint-dutchie-plugin",
+      "menuUrl": "https://getsmacked.online/menu/"
+    },
+    {
+      "slug": "alta-nolita",
+      "name": "Alta Nolita",
+      "address": { "street": "52 Kenmare St A", "city": "New York", "state": "NY", "zip": "10012" },
+      "region": "manhattan",
+      "coordinates": { "lat": 40.7221, "lng": -73.9960 },
+      "platform": "dutchie-embedded",
+      "menuUrl": "https://altadispensary.nyc/",
+      "ocmLicense": "OCM-RETL-24-000104"
+    },
+    {
+      "slug": "daily-green-times-square",
+      "name": "Daily Green Times Square",
+      "address": { "street": "719 7th Ave", "city": "New York", "state": "NY", "zip": "10036" },
+      "region": "manhattan",
+      "coordinates": { "lat": 40.7612, "lng": -73.9847 },
+      "platform": "dutchie-embedded",
+      "menuUrl": "https://thedailygreennyc.com/menu/",
+      "ocmLicense": "OCM-RETL-24-000254"
+    },
+    {
+      "slug": "maison-canal",
+      "name": "Maison Canal",
+      "address": { "street": "386 Canal St", "city": "New York", "state": "NY", "zip": "10013" },
+      "region": "manhattan",
+      "coordinates": { "lat": 40.7189, "lng": -74.0015 },
+      "platform": "dutchie-embedded",
+      "menuUrl": "https://shop.maisoncanalny.com/",
+      "ocmLicense": "OCM-RETL-24-000032"
+    },
+    {
+      "slug": "liberty-buds-manhattan",
+      "name": "Liberty Buds Manhattan",
+      "address": { "street": "1115 1st Ave", "city": "New York", "state": "NY", "zip": "10065" },
+      "region": "manhattan",
+      "coordinates": { "lat": 40.7654, "lng": -73.9580 },
+      "platform": "dutchie-embedded",
+      "menuUrl": "https://libertybudsnyc.com/",
+      "ocmLicense": "OCM-CAURD-24-000075"
+    },
+    {
+      "slug": "liberty-buds-queens",
+      "name": "Liberty Buds Queens",
+      "address": { "street": "245-02 Horace Harding Expy", "city": "Douglaston", "state": "NY", "zip": "11362" },
+      "region": "queens",
+      "coordinates": { "lat": 40.7626, "lng": -73.7304 },
+      "platform": "dutchie-embedded",
+      "menuUrl": "https://libertybudsnyc.com/",
+      "ocmLicense": "OCM-CAURD-24-000075"
+    },
+    {
+      "slug": "easy-times-brooklyn",
+      "name": "Easy Times Brooklyn",
+      "address": { "street": "2668 Coney Island Ave", "city": "Brooklyn", "state": "NY", "zip": "11223" },
+      "region": "brooklyn",
+      "coordinates": { "lat": 40.5890, "lng": -73.9621 },
+      "platform": "dutchie-embedded",
+      "menuUrl": "https://easytimesny.com/",
+      "ocmLicense": "OCM-RETL-25-000294"
+    },
+    {
+      "slug": "the-vault-staten-island",
+      "name": "The Vault Staten Island",
+      "address": { "street": "1151 Hylan Blvd", "city": "Staten Island", "state": "NY", "zip": "10305" },
+      "region": "staten_island",
+      "coordinates": { "lat": 40.5856, "lng": -74.0861 },
+      "platform": "dutchie-embedded",
+      "menuUrl": "https://thevaultsi.com/",
+      "ocmLicense": "OCM-RETL-24-000103"
+    },
+    {
+      "slug": "dazed-union-square",
+      "name": "Dazed Union Square",
+      "address": { "city": "New York", "state": "NY" },
+      "region": "manhattan",
+      "coordinates": { "lat": 40.7359, "lng": -73.9911 },
+      "platform": "dutchie-direct",
+      "dutchieUrl": "https://dutchie.com/dispensary/dazed-cannabis1"
+    },
+    {
+      "slug": "culture-house-nyc",
+      "name": "Culture House NYC",
+      "address": { "city": "New York", "state": "NY" },
+      "region": "manhattan",
+      "coordinates": { "lat": 40.7128, "lng": -74.0060 },
+      "platform": "dutchie-direct",
+      "dutchieUrl": "https://dutchie.com/dispensary/culture-house"
+    },
+    {
+      "slug": "emerald-manhattan",
+      "name": "The Emerald Manhattan",
+      "address": { "city": "New York", "state": "NY" },
+      "region": "manhattan",
+      "coordinates": { "lat": 40.7282, "lng": -73.9942 },
+      "platform": "dutchie-direct",
+      "dutchieUrl": "https://dutchie.com/dispensary/the-emerald-dispensary-manhattan"
+    },
+    {
+      "slug": "superfly-nyc",
+      "name": "Superfly NYC",
+      "address": { "city": "New York", "state": "NY" },
+      "region": "manhattan",
+      "coordinates": { "lat": 40.7195, "lng": -73.9973 },
+      "platform": "dutchie-direct",
+      "dutchieUrl": "https://dutchie.com/dispensary/afny"
+    },
+    {
+      "slug": "ny-elite-bayside",
+      "name": "NY Elite Bayside",
+      "address": { "city": "Bayside", "state": "NY" },
+      "region": "queens",
+      "coordinates": { "lat": 40.7689, "lng": -73.7694 },
+      "platform": "dutchie-direct",
+      "dutchieUrl": "https://dutchie.com/dispensary/ny-elite"
+    },
+    {
+      "slug": "be-brooklyn",
+      "name": "Be. Brooklyn",
+      "address": { "city": "Park Slope", "state": "NY" },
+      "region": "brooklyn",
+      "coordinates": { "lat": 40.6712, "lng": -73.9772 },
+      "platform": "dutchie-direct",
+      "dutchieUrl": "https://dutchie.com/dispensary/citiva-medical-llc-brooklyn"
+    },
+    {
+      "slug": "kaya-bliss-brooklyn-heights",
+      "name": "Kaya Bliss Brooklyn Heights",
+      "address": { "street": "64 Henry St", "city": "Brooklyn", "state": "NY", "zip": "11201" },
+      "region": "brooklyn",
+      "coordinates": { "lat": 40.6962, "lng": -73.9919 },
+      "platform": "dutchie-direct",
+      "dutchieUrl": "https://dutchie.com/dispensary/high-of-brooklyn"
+    },
+    {
+      "slug": "brooklyn-bourne-flatbush",
+      "name": "Brooklyn Bourne Flatbush",
+      "address": { "city": "Flatbush", "state": "NY" },
+      "region": "brooklyn",
+      "coordinates": { "lat": 40.6501, "lng": -73.9496 },
+      "platform": "dutchie-direct",
+      "dutchieUrl": "https://dutchie.com/dispensary/brooklyn-bourne"
+    },
+    {
+      "slug": "grow-together-brooklyn",
+      "name": "Grow Together Brooklyn",
+      "address": { "city": "Gravesend", "state": "NY" },
+      "region": "brooklyn",
+      "coordinates": { "lat": 40.5979, "lng": -73.9658 },
+      "platform": "dutchie-direct",
+      "dutchieUrl": "https://dutchie.com/dispensary/grow-together-brooklyn"
+    },
+    {
+      "slug": "greene-street-brooklyn",
+      "name": "Greene Street Brooklyn",
+      "address": { "city": "Brooklyn", "state": "NY" },
+      "region": "brooklyn",
+      "coordinates": { "lat": 40.6782, "lng": -73.9442 },
+      "platform": "dutchie-direct",
+      "dutchieUrl": "https://dutchie.com/dispensary/green-street-brooklyn"
+    },
+    {
+      "slug": "the-cannabist-brooklyn",
+      "name": "The Cannabist Brooklyn",
+      "address": { "street": "680 Atlantic Ave", "city": "Brooklyn", "state": "NY", "zip": "11217" },
+      "region": "brooklyn",
+      "coordinates": { "lat": 40.6849, "lng": -73.9772 },
+      "platform": "dutchie-direct",
+      "dutchieUrl": "https://dutchie.com/dispensary/the-cannabist-brooklyn",
+      "ocmLicense": "OCM-AUCC-2023-00015"
+    },
+    {
+      "slug": "new-amsterdam",
+      "name": "New Amsterdam",
+      "address": { "street": "245 W 14th St", "city": "New York", "state": "NY", "zip": "10011" },
+      "region": "manhattan",
+      "coordinates": { "lat": 40.7397, "lng": -74.0007 },
+      "platform": "alpine-iq",
+      "menuUrl": "https://newamsterdam.nyc/store/"
+    },
+    {
+      "slug": "verdi-chelsea",
+      "name": "Verdi Chelsea",
+      "address": { "street": "158 W 23rd St", "city": "New York", "state": "NY", "zip": "10011" },
+      "region": "manhattan",
+      "coordinates": { "lat": 40.7436, "lng": -73.9930 },
+      "platform": "alpine-iq",
+      "menuUrl": "https://verdicannabis.com/shop/"
+    },
+    {
+      "slug": "verdi-park-slope",
+      "name": "Verdi Park Slope",
+      "address": { "street": "360 7th Ave", "city": "Brooklyn", "state": "NY", "zip": "11215" },
+      "region": "brooklyn",
+      "coordinates": { "lat": 40.6694, "lng": -73.9803 },
+      "platform": "alpine-iq",
+      "menuUrl": "https://verdicannabis.com/shop/"
+    },
+    {
+      "slug": "q-flatbush",
+      "name": "Q Flatbush",
+      "address": { "street": "733 Flatbush Ave", "city": "Brooklyn", "state": "NY", "zip": "11226" },
+      "region": "brooklyn",
+      "coordinates": { "lat": 40.6566, "lng": -73.9621 },
+      "platform": "shopify",
+      "menuUrl": "https://qiscannabis.com/",
+      "ocmLicense": "OCM-RETL-24-000011"
+    },
+    {
+      "slug": "blue-forest-farms-manhattan",
+      "name": "Blue Forest Farms Manhattan",
+      "address": { "street": "122 E 25th St", "city": "New York", "state": "NY", "zip": "10010" },
+      "region": "manhattan",
+      "coordinates": { "lat": 40.7406, "lng": -73.9871 },
+      "platform": "woocommerce",
+      "menuUrl": "https://shop.blueforestfarmsdispensary.com/"
+    },
+    {
+      "slug": "carnegie-hill-cannabis",
+      "name": "Carnegie Hill Cannabis",
+      "address": { "street": "1720 2nd Ave", "city": "New York", "state": "NY", "zip": "10128" },
+      "region": "manhattan",
+      "coordinates": { "lat": 40.7826, "lng": -73.9502 },
+      "platform": "unknown",
+      "menuUrl": "https://carnegiehillcannabis.com/"
+    },
+    {
+      "slug": "happy-buds-brooklyn",
+      "name": "Happy Buds Brooklyn",
+      "address": { "street": "225 Malcolm X Blvd", "city": "Brooklyn", "state": "NY", "zip": "11221" },
+      "region": "brooklyn",
+      "coordinates": { "lat": 40.6915, "lng": -73.9326 },
+      "platform": "shopify",
+      "menuUrl": "https://www.happybudsbk.com/"
+    },
+    {
+      "slug": "sanctuary-garden-uws",
+      "name": "Sanctuary Garden Upper West Side",
+      "address": { "street": "2610 Broadway Ave", "city": "New York", "state": "NY", "zip": "10025" },
+      "region": "manhattan",
+      "coordinates": { "lat": 40.7928, "lng": -73.9702 },
+      "platform": "unknown",
+      "menuUrl": "https://thesanctuarygarden.co/"
+    }
+  ],
+  "distancesFromConbudLES": {
+    "description": "Pre-calculated distances from Conbud LES (anchor) in miles",
+    "within_1_mile": [
+      { "slug": "gotham-bowery", "distance": 0.06, "formatted": "0.1 mi" },
+      { "slug": "alta-nolita", "distance": 0.19, "formatted": "0.2 mi" },
+      { "slug": "smacked-village", "distance": 0.35, "formatted": "0.4 mi" },
+      { "slug": "housing-works-cannabis", "distance": 0.43, "formatted": "0.4 mi" },
+      { "slug": "dagmar-soho", "distance": 0.43, "formatted": "0.4 mi" },
+      { "slug": "maison-canal", "distance": 0.50, "formatted": "0.5 mi" },
+      { "slug": "emerald-manhattan", "distance": 0.26, "formatted": "0.3 mi" },
+      { "slug": "superfly-nyc", "distance": 0.37, "formatted": "0.4 mi" },
+      { "slug": "travel-agency-union-square", "distance": 0.66, "formatted": "0.7 mi" },
+      { "slug": "dazed-union-square", "distance": 0.79, "formatted": "0.8 mi" },
+      { "slug": "culture-house-nyc", "distance": 0.92, "formatted": "0.9 mi" }
+    ],
+    "within_2_miles": [
+      { "slug": "blue-forest-farms-manhattan", "distance": 1.13, "formatted": "1.1 mi" },
+      { "slug": "gotham-williamsburg", "distance": 1.51, "formatted": "1.5 mi" },
+      { "slug": "new-amsterdam", "distance": 1.18, "formatted": "1.2 mi" },
+      { "slug": "gotham-chelsea", "distance": 1.55, "formatted": "1.6 mi" },
+      { "slug": "verdi-chelsea", "distance": 1.35, "formatted": "1.4 mi" },
+      { "slug": "kaya-bliss-brooklyn-heights", "distance": 1.97, "formatted": "2.0 mi" }
+    ],
+    "within_3_miles": [
+      { "slug": "the-cannabist-brooklyn", "distance": 2.76, "formatted": "2.8 mi" },
+      { "slug": "daily-green-times-square", "distance": 2.55, "formatted": "2.6 mi" },
+      { "slug": "liberty-buds-manhattan", "distance": 2.90, "formatted": "2.9 mi" },
+      { "slug": "be-brooklyn", "distance": 2.65, "formatted": "2.7 mi" },
+      { "slug": "verdi-park-slope", "distance": 2.91, "formatted": "2.9 mi" },
+      { "slug": "greene-street-brooklyn", "distance": 2.87, "formatted": "2.9 mi" }
+    ],
+    "within_5_miles": [
+      { "slug": "carnegie-hill-cannabis", "distance": 4.02, "formatted": "4.0 mi" },
+      { "slug": "sanctuary-garden-uws", "distance": 4.74, "formatted": "4.7 mi" },
+      { "slug": "brooklyn-bourne-flatbush", "distance": 4.62, "formatted": "4.6 mi" },
+      { "slug": "q-flatbush", "distance": 4.25, "formatted": "4.3 mi" },
+      { "slug": "happy-buds-brooklyn", "distance": 3.55, "formatted": "3.6 mi" }
+    ]
+  }
+}

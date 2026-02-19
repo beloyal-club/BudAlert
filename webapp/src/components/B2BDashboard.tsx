@@ -231,7 +231,7 @@ interface B2BDashboardProps {
   onSettings: () => void;
 }
 
-type TabType = "alerts" | "pricing" | "trends" | "competitors";
+type TabType = "alerts" | "pricing" | "trends" | "competitors" | "discover";
 
 export function B2BDashboard({
   retailerName,
@@ -322,6 +322,7 @@ export function B2BDashboard({
             { id: "pricing", label: "Price Intel", icon: "💰" },
             { id: "trends", label: "Market Trends", icon: "📈" },
             { id: "competitors", label: "Competitors", icon: "🏪" },
+            { id: "discover", label: "Discover Nearby", icon: "📍" },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -368,6 +369,16 @@ export function B2BDashboard({
           <CompetitorsTab
             competitors={MOCK_COMPETITORS}
             onManage={onManageCompetitors}
+          />
+        )}
+        
+        {activeTab === "discover" && (
+          <RadiusDiscoveryTab
+            tier={tier}
+            currentMonitorCount={MOCK_COMPETITORS.filter(c => 
+              filters.selectedCompetitors.length === 0 || 
+              filters.selectedCompetitors.includes(c.id)
+            ).length}
           />
         )}
       </div>
@@ -746,6 +757,263 @@ function CompetitorsTab({
           Search Dispensaries
         </button>
       </div>
+    </div>
+  );
+}
+
+// ============================================
+// RADIUS-BASED COMPETITOR DISCOVERY TAB
+// ============================================
+
+// Mock nearby competitors with coordinates (to be replaced with Convex query)
+const MOCK_NEARBY_COMPETITORS: NearbyCompetitor[] = [
+  {
+    id: "1",
+    name: "Housing Works Cannabis",
+    slug: "housing-works-cannabis",
+    address: { street: "750 Broadway", city: "New York", state: "NY", zip: "10003" },
+    region: "manhattan",
+    coordinates: { lat: 40.7308, lng: -73.9917 },
+    distanceMiles: 0.4,
+    distanceFormatted: "0.4 mi",
+    isMonitored: true,
+    lastUpdated: Date.now() - 300000,
+  },
+  {
+    id: "2",
+    name: "Gotham Bowery",
+    slug: "gotham-bowery",
+    address: { street: "3 E 3rd St", city: "New York", state: "NY" },
+    region: "manhattan",
+    coordinates: { lat: 40.7255, lng: -73.9920 },
+    distanceMiles: 0.1,
+    distanceFormatted: "0.1 mi",
+    isMonitored: true,
+    lastUpdated: Date.now() - 600000,
+  },
+  {
+    id: "3",
+    name: "Dagmar Cannabis SoHo",
+    slug: "dagmar-soho",
+    address: { street: "412 W Broadway", city: "New York", state: "NY" },
+    region: "manhattan",
+    coordinates: { lat: 40.7246, lng: -74.0002 },
+    distanceMiles: 0.5,
+    distanceFormatted: "0.5 mi",
+    isMonitored: false,
+    lastUpdated: Date.now() - 120000,
+  },
+  {
+    id: "4",
+    name: "Smacked Village",
+    slug: "smacked-village",
+    address: { street: "144 Bleecker St", city: "New York", state: "NY" },
+    region: "manhattan",
+    coordinates: { lat: 40.7283, lng: -73.9994 },
+    distanceMiles: 0.3,
+    distanceFormatted: "0.3 mi",
+    isMonitored: true,
+    lastUpdated: Date.now() - 480000,
+  },
+  {
+    id: "5",
+    name: "Alta Nolita",
+    slug: "alta-nolita",
+    address: { street: "52 Kenmare St A", city: "New York", state: "NY", zip: "10012" },
+    region: "manhattan",
+    coordinates: { lat: 40.7221, lng: -73.9960 },
+    distanceMiles: 0.2,
+    distanceFormatted: "0.2 mi",
+    isMonitored: false,
+    lastUpdated: Date.now() - 900000,
+  },
+  {
+    id: "6",
+    name: "Maison Canal",
+    slug: "maison-canal",
+    address: { street: "386 Canal St", city: "New York", state: "NY", zip: "10013" },
+    region: "manhattan",
+    coordinates: { lat: 40.7189, lng: -74.0015 },
+    distanceMiles: 0.6,
+    distanceFormatted: "0.6 mi",
+    isMonitored: false,
+    lastUpdated: Date.now() - 1800000,
+  },
+  {
+    id: "7",
+    name: "The Travel Agency Union Square",
+    slug: "travel-agency-union-square",
+    address: { street: "835 Broadway", city: "New York", state: "NY" },
+    region: "manhattan",
+    coordinates: { lat: 40.7340, lng: -73.9904 },
+    distanceMiles: 0.7,
+    distanceFormatted: "0.7 mi",
+    isMonitored: true,
+    lastUpdated: Date.now() - 240000,
+  },
+  {
+    id: "8",
+    name: "Kaya Bliss Brooklyn Heights",
+    slug: "kaya-bliss-brooklyn-heights",
+    address: { street: "64 Henry St", city: "Brooklyn", state: "NY", zip: "11201" },
+    region: "brooklyn",
+    coordinates: { lat: 40.6962, lng: -73.9919 },
+    distanceMiles: 1.9,
+    distanceFormatted: "1.9 mi",
+    isMonitored: false,
+    lastUpdated: Date.now() - 3600000,
+  },
+  {
+    id: "9",
+    name: "The Cannabist Brooklyn",
+    slug: "the-cannabist-brooklyn",
+    address: { street: "680 Atlantic Ave", city: "Brooklyn", state: "NY", zip: "11217" },
+    region: "brooklyn",
+    coordinates: { lat: 40.6849, lng: -73.9772 },
+    distanceMiles: 2.8,
+    distanceFormatted: "2.8 mi",
+    isMonitored: false,
+    lastUpdated: Date.now() - 7200000,
+  },
+  {
+    id: "10",
+    name: "Gotham Williamsburg",
+    slug: "gotham-williamsburg",
+    address: { street: "300 Kent Ave", city: "Brooklyn", state: "NY" },
+    region: "brooklyn",
+    coordinates: { lat: 40.7186, lng: -73.9618 },
+    distanceMiles: 1.5,
+    distanceFormatted: "1.5 mi",
+    isMonitored: false,
+    lastUpdated: Date.now() - 1200000,
+  },
+  {
+    id: "11",
+    name: "Daily Green Times Square",
+    slug: "daily-green-times-square",
+    address: { street: "719 7th Ave", city: "New York", state: "NY", zip: "10036" },
+    region: "manhattan",
+    coordinates: { lat: 40.7612, lng: -73.9847 },
+    distanceMiles: 2.5,
+    distanceFormatted: "2.5 mi",
+    isMonitored: false,
+    lastUpdated: Date.now() - 5400000,
+  },
+  {
+    id: "12",
+    name: "Gotham Chelsea",
+    slug: "gotham-chelsea",
+    address: { street: "146 10th Ave", city: "New York", state: "NY" },
+    region: "manhattan",
+    coordinates: { lat: 40.7455, lng: -74.0063 },
+    distanceMiles: 1.8,
+    distanceFormatted: "1.8 mi",
+    isMonitored: false,
+    lastUpdated: Date.now() - 2400000,
+  },
+  {
+    id: "13",
+    name: "Blue Forest Farms Manhattan",
+    slug: "blue-forest-farms-manhattan",
+    address: { street: "122 E 25th St", city: "New York", state: "NY", zip: "10010" },
+    region: "manhattan",
+    coordinates: { lat: 40.7406, lng: -73.9871 },
+    distanceMiles: 1.1,
+    distanceFormatted: "1.1 mi",
+    isMonitored: false,
+    lastUpdated: Date.now() - 4800000,
+  },
+];
+
+// Conbud LES anchor coordinates
+const CONBUD_LES_ANCHOR: Coordinates = { lat: 40.7246, lng: -73.9927 };
+
+interface RadiusDiscoveryTabProps {
+  tier: "starter" | "growth" | "enterprise";
+  currentMonitorCount: number;
+}
+
+function RadiusDiscoveryTab({ tier, currentMonitorCount }: RadiusDiscoveryTabProps) {
+  const [radiusMiles, setRadiusMiles] = useState(2);
+  const [competitors, setCompetitors] = useState(MOCK_NEARBY_COMPETITORS);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const planLimits = { starter: 10, growth: 25, enterprise: Infinity };
+  const planLimit = planLimits[tier];
+
+  // Filter competitors by radius
+  const filteredCompetitors = useMemo(() => {
+    return competitors
+      .filter(c => c.distanceMiles <= radiusMiles)
+      .sort((a, b) => a.distanceMiles - b.distanceMiles);
+  }, [competitors, radiusMiles]);
+
+  const handleRadiusChange = (newRadius: number) => {
+    setRadiusMiles(newRadius);
+    // In production, this would trigger a Convex query:
+    // const data = useQuery(api.b2b.getCompetitorsInRadius, { 
+    //   retailerAccountId, 
+    //   radiusMiles: newRadius 
+    // });
+  };
+
+  const handleAddCompetitor = (id: string) => {
+    setCompetitors(prev => 
+      prev.map(c => c.id === id ? { ...c, isMonitored: true } : c)
+    );
+    // In production: useMutation(api.b2b.addCompetitor)
+  };
+
+  const handleRemoveCompetitor = (id: string) => {
+    setCompetitors(prev => 
+      prev.map(c => c.id === id ? { ...c, isMonitored: false } : c)
+    );
+    // In production: useMutation(api.b2b.removeCompetitor)
+  };
+
+  const handleAddAllInRadius = () => {
+    const monitoredCount = competitors.filter(c => c.isMonitored).length;
+    const available = planLimit - monitoredCount;
+    
+    setCompetitors(prev => {
+      let added = 0;
+      return prev.map(c => {
+        if (!c.isMonitored && c.distanceMiles <= radiusMiles && added < available) {
+          added++;
+          return { ...c, isMonitored: true };
+        }
+        return c;
+      });
+    });
+    // In production: useMutation(api.b2b.addCompetitorsInRadius)
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-lg font-semibold text-white">Discover Nearby Competitors</h2>
+          <p className="text-sm text-neutral-500">
+            Find dispensaries within your target radius and add them to your monitoring list
+          </p>
+        </div>
+      </div>
+
+      <RadiusCompetitorSelector
+        anchor={{
+          name: "CONBUD LES",
+          coordinates: CONBUD_LES_ANCHOR,
+        }}
+        competitors={filteredCompetitors}
+        radiusMiles={radiusMiles}
+        onRadiusChange={handleRadiusChange}
+        onAddCompetitor={handleAddCompetitor}
+        onRemoveCompetitor={handleRemoveCompetitor}
+        onAddAllInRadius={handleAddAllInRadius}
+        planLimit={planLimit}
+        currentCount={currentMonitorCount}
+        isLoading={isLoading}
+      />
     </div>
   );
 }
