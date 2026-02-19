@@ -553,3 +553,286 @@ export const updateAccountSettings = mutation({
     await ctx.db.patch(args.retailerAccountId, update as any);
   },
 });
+
+// ============================================================
+// REGION/RADIUS FILTERING (Phase 7.1 - Conbud LES Focus)
+// ============================================================
+
+import { haversineDistance, formatDistance, NYC_RETAILER_COORDINATES, CONBUD_LES_COORDINATES, type Coordinates } from "./lib/geo";
+
+/**
+ * Get all retailers within a radius from an anchor point
+ */
+export const getRetailersInRadius = query({
+  args: {
+    anchorLat: v.optional(v.number()),
+    anchorLng: v.optional(v.number()),
+    radiusMiles: v.number(),
+    excludeSelf: v.optional(v.string()), // Slug to exclude (your own store)
+  },
+  handler: async (ctx, args) => {
+    // Default to Conbud LES if no anchor provided
+    const anchor: Coordinates = {
+      lat: args.anchorLat ?? CONBUD_LES_COORDINATES.lat,
+      lng: args.anchorLng ?? CONBUD_LES_COORDINATES.lng,
+    };
+
+    // Get all active retailers
+    const retailers = await ctx.db
+      .query("retailers")
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .collect();
+
+    // Calculate distances and filter
+    const retailersWithDistance = retailers
+      .map((retailer) => {
+        // Get coordinates from address or lookup table
+        let coords: Coordinates | null = null;
+
+        // First check if retailer has coords in address
+        if (retailer.address?.lat && retailer.address?.lng) {
+          coords = { lat: retailer.address.lat, lng: retailer.address.lng };
+        } else {
+          // Look up from our coordinate database
+          const slug = retailer.slug;
+          if (slug && NYC_RETAILER_COORDINATES[slug]) {
+            coords = NYC_RETAILER_COORDINATES[slug];
+          }
+        }
+
+        if (!coords) return null;
+
+        const distance = haversineDistance(anchor, coords);
+
+        return {
+          ...retailer,
+          coordinates: coords,
+          distanceMiles: distance,
+          distanceFormatted: formatDistance(distance),
+        };
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null)
+      .filter((r) => r.distanceMiles <= args.radiusMiles)
+      .filter((r) => !args.excludeSelf || r.slug !== args.excludeSelf)
+      .sort((a, b) => a.distanceMiles - b.distanceMiles);
+
+    return {
+      anchor,
+      radiusMiles: args.radiusMiles,
+      count: retailersWithDistance.length,
+      retailers: retailersWithDistance,
+    };
+  },
+});
+
+/**
+ * Get competitors for a retailer account with distance filtering
+ */
+export const getCompetitorsInRadius = query({
+  args: {
+    retailerAccountId: v.id("retailerAccounts"),
+    radiusMiles: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const account = await ctx.db.get(args.retailerAccountId);
+    if (!account) throw new Error("Account not found");
+
+    // Get the anchor retailer's location
+    const anchorRetailer = await ctx.db.get(account.retailerId);
+    if (!anchorRetailer) throw new Error("Retailer not found");
+
+    // Get anchor coordinates
+    let anchorCoords: Coordinates;
+    if (anchorRetailer.address?.lat && anchorRetailer.address?.lng) {
+      anchorCoords = { lat: anchorRetailer.address.lat, lng: anchorRetailer.address.lng };
+    } else if (anchorRetailer.slug && NYC_RETAILER_COORDINATES[anchorRetailer.slug]) {
+      anchorCoords = NYC_RETAILER_COORDINATES[anchorRetailer.slug];
+    } else {
+      // Default to Conbud LES as fallback
+      anchorCoords = CONBUD_LES_COORDINATES;
+    }
+
+    // Get all active retailers except self
+    const retailers = await ctx.db
+      .query("retailers")
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .collect();
+
+    const competitorsWithDistance = retailers
+      .filter((r) => r._id !== account.retailerId)
+      .map((retailer) => {
+        let coords: Coordinates | null = null;
+
+        if (retailer.address?.lat && retailer.address?.lng) {
+          coords = { lat: retailer.address.lat, lng: retailer.address.lng };
+        } else if (retailer.slug && NYC_RETAILER_COORDINATES[retailer.slug]) {
+          coords = NYC_RETAILER_COORDINATES[retailer.slug];
+        }
+
+        if (!coords) return null;
+
+        const distance = haversineDistance(anchorCoords, coords);
+
+        return {
+          id: retailer._id,
+          name: retailer.name,
+          slug: retailer.slug,
+          address: retailer.address,
+          region: retailer.region,
+          coordinates: coords,
+          distanceMiles: distance,
+          distanceFormatted: formatDistance(distance),
+          lastUpdated: retailer.menuSources?.[0]?.lastScrapedAt,
+        };
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null)
+      .filter((r) => r.distanceMiles <= args.radiusMiles)
+      .sort((a, b) => a.distanceMiles - b.distanceMiles);
+
+    // Check which are already being monitored
+    const monitors = await ctx.db
+      .query("competitorMonitors")
+      .withIndex("by_account", (q) => q.eq("accountId", args.retailerAccountId))
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .collect();
+
+    const monitoredIds = new Set(monitors.map((m) => m.competitorId.toString()));
+
+    return {
+      anchor: {
+        retailerId: account.retailerId,
+        name: anchorRetailer.name,
+        coordinates: anchorCoords,
+      },
+      radiusMiles: args.radiusMiles,
+      count: competitorsWithDistance.length,
+      competitors: competitorsWithDistance.map((c) => ({
+        ...c,
+        isMonitored: monitoredIds.has(c.id.toString()),
+      })),
+    };
+  },
+});
+
+/**
+ * Update retailer location coordinates
+ */
+export const updateRetailerCoordinates = mutation({
+  args: {
+    retailerId: v.id("retailers"),
+    lat: v.number(),
+    lng: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const retailer = await ctx.db.get(args.retailerId);
+    if (!retailer) throw new Error("Retailer not found");
+
+    const updatedAddress = {
+      ...retailer.address,
+      lat: args.lat,
+      lng: args.lng,
+    };
+
+    await ctx.db.patch(args.retailerId, {
+      address: updatedAddress,
+    });
+
+    return { success: true };
+  },
+});
+
+/**
+ * Bulk add competitors within radius
+ */
+export const addCompetitorsInRadius = mutation({
+  args: {
+    retailerAccountId: v.id("retailerAccounts"),
+    radiusMiles: v.number(),
+    maxCompetitors: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const account = await ctx.db.get(args.retailerAccountId);
+    if (!account) throw new Error("Account not found");
+
+    // Check plan limits
+    const existingMonitors = await ctx.db
+      .query("competitorMonitors")
+      .withIndex("by_account", (q) => q.eq("accountId", args.retailerAccountId))
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .collect();
+
+    const limits = {
+      starter: 10,
+      growth: 25,
+      enterprise: Infinity,
+    };
+    const limit = limits[account.tier as keyof typeof limits] || 10;
+    const available = limit - existingMonitors.length;
+
+    if (available <= 0) {
+      throw new Error(`Plan limit reached (${limit} competitors). Upgrade to add more.`);
+    }
+
+    // Get anchor retailer location
+    const anchorRetailer = await ctx.db.get(account.retailerId);
+    if (!anchorRetailer) throw new Error("Retailer not found");
+
+    let anchorCoords: Coordinates;
+    if (anchorRetailer.address?.lat && anchorRetailer.address?.lng) {
+      anchorCoords = { lat: anchorRetailer.address.lat, lng: anchorRetailer.address.lng };
+    } else if (anchorRetailer.slug && NYC_RETAILER_COORDINATES[anchorRetailer.slug]) {
+      anchorCoords = NYC_RETAILER_COORDINATES[anchorRetailer.slug];
+    } else {
+      anchorCoords = CONBUD_LES_COORDINATES;
+    }
+
+    // Get all retailers
+    const retailers = await ctx.db
+      .query("retailers")
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .collect();
+
+    // Calculate distances and filter
+    const eligibleCompetitors = retailers
+      .filter((r) => r._id !== account.retailerId)
+      .filter((r) => !existingMonitors.some((m) => m.competitorId === r._id))
+      .map((retailer) => {
+        let coords: Coordinates | null = null;
+        if (retailer.address?.lat && retailer.address?.lng) {
+          coords = { lat: retailer.address.lat, lng: retailer.address.lng };
+        } else if (retailer.slug && NYC_RETAILER_COORDINATES[retailer.slug]) {
+          coords = NYC_RETAILER_COORDINATES[retailer.slug];
+        }
+        if (!coords) return null;
+
+        return {
+          retailer,
+          distance: haversineDistance(anchorCoords, coords),
+        };
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null)
+      .filter((r) => r.distance <= args.radiusMiles)
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, Math.min(available, args.maxCompetitors ?? available));
+
+    // Add competitors
+    const added: { id: Id<"competitorMonitors">; name: string; distance: number }[] = [];
+    for (const { retailer, distance } of eligibleCompetitors) {
+      const monitorId = await ctx.db.insert("competitorMonitors", {
+        accountId: args.retailerAccountId,
+        competitorId: retailer._id,
+        alertsEnabled: true,
+        alertTypes: ["new_product", "price_drop", "stock_out", "restock"],
+        isActive: true,
+        addedAt: Date.now(),
+      });
+      added.push({ id: monitorId, name: retailer.name, distance });
+    }
+
+    return {
+      added: added.length,
+      competitors: added,
+      remaining: available - added.length,
+    };
+  },
+});
