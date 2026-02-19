@@ -15,7 +15,7 @@
  * - Discord webhook retry with backoff
  * 
  * Deployed at: cannasignal-cron.prtl.workers.dev
- * Cron schedule: */15 * * * * (every 15 minutes)
+ * Cron schedule: every 15 minutes
  */
 
 import { chromium, Browser, Page } from 'playwright-core';

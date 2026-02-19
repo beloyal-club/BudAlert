@@ -1,6 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { ConvexProviderWithClerk } from "convex/react-clerk";
+import { ClerkProvider, useAuth } from "@clerk/clerk-react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import App from "./App";
 import { OnboardingWizard } from "./components/OnboardingWizard";
@@ -10,6 +12,8 @@ import { B2BDashboard } from "./components/B2BDashboard";
 import "./index.css";
 
 const CONVEX_URL = import.meta.env.VITE_CONVEX_URL || "https://quick-weasel-225.convex.cloud";
+const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
 const convex = new ConvexReactClient(CONVEX_URL);
 
 // Simple onboarding completion handler
@@ -65,25 +69,42 @@ function DashboardPage() {
   );
 }
 
+// Wrap app with Clerk + Convex providers
+function AppWithProviders() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Consumer app */}
+        <Route path="/" element={<App />} />
+        
+        {/* B2B routes */}
+        <Route path="/business" element={<B2BLanding />} />
+        <Route path="/pricing" element={<PricingPageWrapper />} />
+        <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        
+        {/* Redirects */}
+        <Route path="/signup" element={<Navigate to="/onboarding" replace />} />
+        <Route path="/b2b" element={<Navigate to="/business" replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+// Render with or without Clerk based on key availability
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ConvexProvider client={convex}>
-      <BrowserRouter>
-        <Routes>
-          {/* Consumer app */}
-          <Route path="/" element={<App />} />
-          
-          {/* B2B routes */}
-          <Route path="/business" element={<B2BLanding />} />
-          <Route path="/pricing" element={<PricingPageWrapper />} />
-          <Route path="/onboarding" element={<OnboardingPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          
-          {/* Redirects */}
-          <Route path="/signup" element={<Navigate to="/onboarding" replace />} />
-          <Route path="/b2b" element={<Navigate to="/business" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </ConvexProvider>
+    {CLERK_PUBLISHABLE_KEY ? (
+      <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
+        <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+          <AppWithProviders />
+        </ConvexProviderWithClerk>
+      </ClerkProvider>
+    ) : (
+      // Fallback for dev without Clerk keys
+      <ConvexProvider client={convex}>
+        <AppWithProviders />
+      </ConvexProvider>
+    )}
   </React.StrictMode>
 );

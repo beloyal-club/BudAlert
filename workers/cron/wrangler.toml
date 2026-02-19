@@ -4,7 +4,7 @@
 name = "cannasignal-cron"
 main = "index.ts"
 compatibility_date = "2024-01-01"
-node_compat = true
+compatibility_flags = ["nodejs_compat"]
 
 # 15-minute cron schedule
 [triggers]
