@@ -574,14 +574,46 @@ export class CDPPage {
 }
 
 /**
- * Create a BrowserBase CDP client
+ * Create a BrowserBase session and get CDP connection URL
+ * BrowserBase requires: 1) Create session via REST, 2) Connect to returned connectUrl
+ */
+async function createBrowserBaseSession(
+  apiKey: string,
+  projectId: string
+): Promise<string> {
+  const response = await fetch('https://www.browserbase.com/v1/sessions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-bb-api-key': apiKey,
+    },
+    body: JSON.stringify({ projectId }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`BrowserBase session creation failed: ${response.status} ${text}`);
+  }
+
+  const session = await response.json() as { connectUrl: string; id: string };
+  if (!session.connectUrl) {
+    throw new Error('BrowserBase session missing connectUrl');
+  }
+
+  console.log(`[CDP] BrowserBase session created: ${session.id}`);
+  return session.connectUrl;
+}
+
+/**
+ * Create a BrowserBase CDP client (legacy - use BrowserSession instead)
  */
 export function createBrowserBaseClient(
   apiKey: string,
   projectId: string,
   options?: Omit<CDPClientOptions, 'wsUrl'>
 ): CDPClient {
-  const wsUrl = `wss://connect.browserbase.com?apiKey=${apiKey}&projectId=${projectId}`;
+  // This is now just a placeholder - actual connection happens in BrowserSession.init()
+  const wsUrl = `wss://placeholder.browserbase.com`;
   return new CDPClient({ wsUrl, ...options });
 }
 
@@ -589,32 +621,45 @@ export function createBrowserBaseClient(
  * Higher-level browser abstraction for simple scraping tasks
  */
 export class BrowserSession {
-  private client: CDPClient;
+  private client: CDPClient | null = null;
   private page: CDPPage | null = null;
+  private apiKey: string;
+  private projectId: string;
+  private debug: boolean;
 
   constructor(apiKey: string, projectId: string, debug = false) {
-    this.client = createBrowserBaseClient(apiKey, projectId, { debug });
+    this.apiKey = apiKey;
+    this.projectId = projectId;
+    this.debug = debug;
   }
 
   async init(): Promise<void> {
+    // Step 1: Create BrowserBase session and get connectUrl
+    const connectUrl = await createBrowserBaseSession(this.apiKey, this.projectId);
+    
+    // Step 2: Create CDP client with the actual connectUrl
+    this.client = new CDPClient({ wsUrl: connectUrl, debug: this.debug });
+    
+    // Step 3: Connect via WebSocket
     await this.client.connect();
-    // Get the default page or create one
+    
+    // Step 4: Get the default page or create one
     this.page = await this.client.getFirstPage() || await this.client.createPage();
     await this.page.setViewport(1280, 800);
   }
 
   async goto(url: string): Promise<void> {
-    if (!this.page) throw new Error('Session not initialized');
+    if (!this.page || !this.client) throw new Error('Session not initialized');
     await this.page.navigate(url);
   }
 
   async waitForTimeout(ms: number): Promise<void> {
-    if (!this.page) throw new Error('Session not initialized');
+    if (!this.page || !this.client) throw new Error('Session not initialized');
     await this.page.waitForTimeout(ms);
   }
 
   async evaluate<T = unknown>(expression: string): Promise<T> {
-    if (!this.page) throw new Error('Session not initialized');
+    if (!this.page || !this.client) throw new Error('Session not initialized');
     return this.page.evaluate<T>(expression);
   }
 
@@ -622,12 +667,12 @@ export class BrowserSession {
     fn: (...args: unknown[]) => T,
     ...args: unknown[]
   ): Promise<T> {
-    if (!this.page) throw new Error('Session not initialized');
+    if (!this.page || !this.client) throw new Error('Session not initialized');
     return this.page.evaluateFunction(fn, ...args);
   }
 
   async screenshot(options?: Parameters<CDPPage['screenshot']>[0]): Promise<string> {
-    if (!this.page) throw new Error('Session not initialized');
+    if (!this.page || !this.client) throw new Error('Session not initialized');
     return this.page.screenshot(options);
   }
 
@@ -639,7 +684,9 @@ export class BrowserSession {
         // Ignore close errors
       }
     }
-    await this.client.disconnect();
+    if (this.client) {
+      await this.client.disconnect();
+    }
   }
 
   getPage(): CDPPage | null {
