@@ -492,8 +492,12 @@ export default {
     const batchId = `batch-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const startTime = Date.now();
     
+    // Get active locations only
+    const activeLocations = getActiveLocations();
+    const disabledCount = EMBEDDED_LOCATIONS.length - activeLocations.length;
+    
     console.log(`[Cron] Starting scrape batch ${batchId}`);
-    console.log(`[Cron] Scraping ${EMBEDDED_LOCATIONS.length} locations`);
+    console.log(`[Cron] Scraping ${activeLocations.length} locations (${disabledCount} disabled)`);
     
     let session: BrowserSession | null = null;
     const results: Array<{
@@ -510,8 +514,8 @@ export default {
       // Connect to BrowserBase (with circuit breaker + retry)
       session = await createBrowserSession(env);
       
-      // Scrape each location with per-location retry (CRIT-001)
-      for (const location of EMBEDDED_LOCATIONS) {
+      // Scrape each active location with per-location retry (CRIT-001)
+      for (const location of activeLocations) {
         let attempts = 0;
         let success = false;
         let lastError: string | undefined;
@@ -606,12 +610,12 @@ export default {
       fields: [
         { name: "Batch ID", value: batchId, inline: true },
         { name: "Duration", value: `${duration}s`, inline: true },
-        { name: "Locations", value: `${successCount}/${EMBEDDED_LOCATIONS.length}`, inline: true },
+        { name: "Locations", value: `${successCount}/${activeLocations.length} (${disabledCount} disabled)`, inline: true },
         { name: "Products", value: totalProducts.toString(), inline: true },
         { name: "Events", value: ingestionResult?.totalEventsDetected?.toString() || "N/A", inline: true },
         { name: "Errors", value: failCount.toString(), inline: true },
       ],
-      footer: { text: "v3.0.0 - CDP native client" },
+      footer: { text: "v3.1.0 - fullscrape enabled" },
       timestamp: new Date().toISOString(),
     };
     
@@ -628,7 +632,7 @@ export default {
       console.error('[Cron] Failed to send Discord summary after all retries');
     }
     
-    console.log(`[Cron] Batch ${batchId} complete: ${successCount}/${EMBEDDED_LOCATIONS.length} locations, ${totalProducts} products, ${duration}s`);
+    console.log(`[Cron] Batch ${batchId} complete: ${successCount}/${activeLocations.length} active locations, ${totalProducts} products, ${duration}s`);
   },
   
   // HTTP handler for manual triggers and status
@@ -636,11 +640,16 @@ export default {
     const url = new URL(request.url);
     
     if (url.pathname === "/health") {
+      const activeLocations = getActiveLocations();
       return Response.json({
         status: "ok",
         service: "cannasignal-cron",
-        version: "3.0.0-cdp-native",
-        locations: EMBEDDED_LOCATIONS.length,
+        version: "3.1.0-fullscrape",
+        locations: {
+          total: EMBEDDED_LOCATIONS.length,
+          active: activeLocations.length,
+          disabled: EMBEDDED_LOCATIONS.length - activeLocations.length,
+        },
         schedule: "*/15 * * * *",
         convexUrl: env.CONVEX_URL,
         features: [
@@ -649,6 +658,7 @@ export default {
           "circuit-breaker",
           "exponential-backoff",
           "webhook-retry",
+          "disabled-location-support",
         ],
       });
     }
@@ -670,21 +680,30 @@ export default {
     }
     
     if (url.pathname === "/locations") {
+      const activeLocations = getActiveLocations();
       return Response.json({
-        count: EMBEDDED_LOCATIONS.length,
+        total: EMBEDDED_LOCATIONS.length,
+        active: activeLocations.length,
+        disabled: EMBEDDED_LOCATIONS.length - activeLocations.length,
         locations: EMBEDDED_LOCATIONS.map((l) => ({
           name: l.name,
           retailer: l.retailerName,
           url: l.menuUrl,
           region: l.region,
+          status: l.disabled ? "disabled" : "active",
+          disabledReason: l.disabledReason,
         })),
       });
     }
     
     return Response.json({
       service: "cannasignal-cron",
-      version: "3.0.0-cdp-native",
-      endpoints: ["/health", "/trigger (POST)", "/locations"],
+      version: "3.1.0-fullscrape",
+      endpoints: [
+        "GET /health - Service health with location stats",
+        "POST /trigger - Manual scrape trigger",
+        "GET /locations - All locations with status",
+      ],
     });
   },
 };

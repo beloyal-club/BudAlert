@@ -2,10 +2,18 @@
 
 **Date:** 2026-02-20
 **Status:** Complete
+
 **Files Created:**
-- `workers/lib/cartHack.ts` - Core cart hack module
+- `workers/lib/cartHack.ts` - Playwright-based cart hack module (for testing/deep scraping)
+- `workers/lib/cartHackCDP.ts` - CDP-compatible version (for Cloudflare Workers)
 - `workers/lib/inventoryFallback.ts` - Fallback hierarchy implementation
 - `test-cart-hack.ts` - Test suite
+
+**Key Finding:** The existing `extractProducts` function in `workers/cron/index.ts` already 
+handles most inventory patterns via text matching. The cart hack module adds:
+1. Cart overflow technique for revealing hidden inventory
+2. Dropdown max value detection
+3. Unified fallback hierarchy
 
 ## Research Findings
 
@@ -152,19 +160,29 @@ function pickBestResult(
 
 ## Integration with cron/index.ts
 
-The integration is minimal and non-disruptive:
+### Current State
+
+The existing `extractProducts` function in cron/index.ts already handles:
+- Out-of-stock badge detection (`[class*="outOfStock"]`, etc.)
+- "Only X left" pattern matching
+- "X remaining/available" patterns  
+- Low stock warnings
+
+### Optional Enhancement
+
+For cases where existing patterns don't catch inventory, use the CDP-compatible version:
 
 ```typescript
 import { 
-  extractInventoryFromListing, 
-  enhanceProductsWithInventory 
-} from '../lib/cartHack';
+  extractInventoryFromListingCDP, 
+  enhanceProductsWithInventoryCDP 
+} from '../lib/cartHackCDP';
 
 // In scrapeLocation(), after extracting products:
 try {
-  const inventoryMap = await extractInventoryFromListing(page);
-  if (inventoryMap.size > 0) {
-    const enhanced = enhanceProductsWithInventory(products, inventoryMap);
+  const inventoryData = await extractInventoryFromListingCDP(page);
+  if (inventoryData.length > 0) {
+    const enhanced = enhanceProductsWithInventoryCDP(products, inventoryData);
     return { products: enhanced };
   }
 } catch (invError) {
@@ -172,11 +190,27 @@ try {
 }
 ```
 
+### Deep Scraping (Testing/Individual Products)
+
+For detailed inventory investigation, use the Playwright-based module:
+
+```typescript
+import { getExactInventory } from '../lib/cartHack';
+
+// On a product page:
+const result = await getExactInventory(page, undefined, {
+  targetQuantity: 99,
+  cleanupCart: true,
+  debug: true,
+});
+console.log(`Inventory: ${result.quantity}, Source: ${result.source}`);
+```
+
 This enhancement:
 - Runs after existing extraction
 - Is non-blocking (errors don't break scraping)
-- Enhances products that didn't get inventory from DOM scraping
-- Adds no significant latency (uses same page, no extra navigation)
+- Adds dropdown max value detection
+- Includes cart overflow for revealing hidden inventory (slow)
 
 ## Testing
 
