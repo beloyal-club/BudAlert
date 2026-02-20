@@ -1,5 +1,10 @@
 # CannaSignal Cron Orchestrator Worker
 # Triggers every 15 minutes to scrape all embedded Dutchie locations
+# 
+# FULLSCRAPE UPDATE (2026-02-20):
+# - 18 total locations, ~10 active after deduplication
+# - URL deduplication reduces browser sessions
+# - Disabled broken Just Breathe URLs (404)
 
 name = "cannasignal-cron"
 main = "index.ts"
@@ -9,6 +14,11 @@ compatibility_flags = ["nodejs_compat"]
 # 15-minute cron schedule
 [triggers]
 crons = ["*/15 * * * *"]
+
+# Extend CPU limit for safety buffer (default 30s, max 5min for paid)
+# Most time is I/O wait, but retries can consume CPU
+[limits]
+cpu_ms = 60000  # 60 seconds (2x default)
 
 # Secrets (set via `wrangler secret put`)
 # BROWSERBASE_API_KEY

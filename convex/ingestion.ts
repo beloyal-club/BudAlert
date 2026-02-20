@@ -4,6 +4,19 @@ import { internal } from "./_generated/api";
 import { normalizeProductName, extractStrainName, type NormalizedProduct } from "./lib/productNormalizer";
 
 // ============================================================
+// CONSTANTS
+// ============================================================
+
+// Low stock threshold - alert when quantity drops below this
+const LOW_STOCK_THRESHOLD = 5;
+
+// Maximum entries in quantity history array
+const MAX_QUANTITY_HISTORY = 10;
+
+// Minimum quantity change to record as an event (avoid noise)
+const MIN_QUANTITY_CHANGE_PERCENT = 20; // 20% change
+
+// ============================================================
 // HTTP ENDPOINT FOR SCRAPER CALLBACK
 // ============================================================
 
@@ -21,8 +34,12 @@ export const ingestScrapedBatch = mutation({
         price: v.number(),
         originalPrice: v.optional(v.number()),
         inStock: v.boolean(),
+        // === ENHANCED QUANTITY TRACKING ===
         quantity: v.optional(v.union(v.number(), v.null())),        // Actual inventory count
         quantityWarning: v.optional(v.union(v.string(), v.null())), // Raw warning text
+        quantitySource: v.optional(v.string()),                      // "cart_hack" | "text_pattern" | "graphql" | "inferred"
+        quantityCheckedAt: v.optional(v.number()),                   // When quantity was checked
+        // ==================================
         imageUrl: v.optional(v.string()),
         thcFormatted: v.optional(v.string()),
         cbdFormatted: v.optional(v.string()),
@@ -38,6 +55,7 @@ export const ingestScrapedBatch = mutation({
     let totalProcessed = 0;
     let totalFailed = 0;
     let totalEventsDetected = 0;
+    const eventBreakdown: Record<string, number> = {};
     
     for (const result of args.results) {
       if (result.status !== "ok") {
@@ -132,7 +150,7 @@ export const ingestScrapedBatch = mutation({
             await ctx.db.patch(product._id, { lastSeenAt: Date.now() });
           }
           
-          // Create menu snapshot
+          // Create menu snapshot with enhanced quantity tracking
           const snapshotId = await ctx.db.insert("menuSnapshots", {
             retailerId: result.retailerId,
             productId: product!._id,
@@ -145,8 +163,11 @@ export const ingestScrapedBatch = mutation({
               ? Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)
               : undefined,
             inStock: item.inStock,
-            quantity: item.quantity ?? undefined,           // Actual inventory count
-            quantityWarning: item.quantityWarning ?? undefined, // Raw warning text
+            // Enhanced quantity fields
+            quantity: item.quantity ?? undefined,
+            quantityWarning: item.quantityWarning ?? undefined,
+            quantitySource: item.quantitySource ?? inferQuantitySource(item.quantity, item.quantityWarning),
+            quantityCheckedAt: item.quantityCheckedAt ?? (item.quantity !== undefined ? item.scrapedAt : undefined),
             sourceUrl: item.sourceUrl,
             sourcePlatform: item.sourcePlatform,
             rawProductName: item.rawProductName,
@@ -154,7 +175,7 @@ export const ingestScrapedBatch = mutation({
             rawCategory: item.rawCategory,
           });
           
-          // Update current inventory (with delta detection)
+          // Update current inventory (with enhanced delta detection)
           const eventsGenerated = await updateCurrentInventory(ctx, {
             retailerId: result.retailerId,
             productId: product!._id,
@@ -164,11 +185,17 @@ export const ingestScrapedBatch = mutation({
             inStock: item.inStock,
             quantity: item.quantity ?? undefined,
             quantityWarning: item.quantityWarning ?? undefined,
+            quantitySource: item.quantitySource ?? inferQuantitySource(item.quantity, item.quantityWarning),
             rawProductName: item.rawProductName,
             batchId: args.batchId,
           });
           
-          totalEventsDetected += eventsGenerated;
+          // Track event breakdown
+          for (const eventType of eventsGenerated.eventTypes) {
+            eventBreakdown[eventType] = (eventBreakdown[eventType] || 0) + 1;
+          }
+          
+          totalEventsDetected += eventsGenerated.count;
           totalProcessed += 1;
         } catch (error) {
           console.error("Failed to process item:", error);
@@ -191,11 +218,41 @@ export const ingestScrapedBatch = mutation({
       });
     }
     
-    return { totalProcessed, totalFailed, totalEventsDetected, batchId: args.batchId };
+    return { 
+      totalProcessed, 
+      totalFailed, 
+      totalEventsDetected, 
+      eventBreakdown,
+      batchId: args.batchId 
+    };
   },
 });
 
-// Helper to update current inventory with delta detection
+// ============================================================
+// HELPER: Infer quantity source from available data
+// ============================================================
+
+function inferQuantitySource(
+  quantity: number | null | undefined, 
+  quantityWarning: string | null | undefined
+): string | undefined {
+  if (quantity === undefined || quantity === null) {
+    return undefined;
+  }
+  
+  // If we have a warning text, it was likely parsed from text
+  if (quantityWarning) {
+    return "text_pattern";
+  }
+  
+  // Default to inferred if we have a number but no clear source
+  return "inferred";
+}
+
+// ============================================================
+// HELPER: Update current inventory with enhanced delta detection
+// ============================================================
+
 async function updateCurrentInventory(
   ctx: any,
   args: {
@@ -205,12 +262,13 @@ async function updateCurrentInventory(
     snapshotId: any;
     price: number;
     inStock: boolean;
-    quantity?: number;           // Actual inventory count
-    quantityWarning?: string;    // Raw warning text e.g., "Only 3 left"
+    quantity?: number;
+    quantityWarning?: string;
+    quantitySource?: string;
     rawProductName: string;
     batchId: string;
   }
-) {
+): Promise<{ count: number; eventTypes: string[] }> {
   const existing = await ctx.db
     .query("currentInventory")
     .withIndex("by_retailer_product", (q: any) =>
@@ -230,11 +288,89 @@ async function updateCurrentInventory(
     const updates: any = {
       currentPrice: args.price,
       inStock: args.inStock,
-      quantity: args.quantity,
-      quantityWarning: args.quantityWarning,
       lastUpdatedAt: now,
       lastSnapshotId: args.snapshotId,
     };
+    
+    // === ENHANCED QUANTITY TRACKING ===
+    if (args.quantity !== undefined) {
+      updates.previousQuantity = existing.quantity;
+      updates.quantity = args.quantity;
+      updates.quantityWarning = args.quantityWarning;
+      updates.quantitySource = args.quantitySource;
+      updates.lastQuantityAt = now;
+      
+      // Update quantity history (keep last N entries)
+      const history = existing.quantityHistory || [];
+      const newHistory = [
+        { quantity: args.quantity, timestamp: now, source: args.quantitySource },
+        ...history.slice(0, MAX_QUANTITY_HISTORY - 1),
+      ];
+      updates.quantityHistory = newHistory;
+      
+      // Detect quantity changes
+      if (existing.quantity !== undefined && existing.quantity !== null) {
+        const prevQty = existing.quantity;
+        const newQty = args.quantity;
+        
+        // Check for low stock transition
+        if (prevQty >= LOW_STOCK_THRESHOLD && newQty < LOW_STOCK_THRESHOLD && newQty > 0) {
+          events.push({
+            eventType: "low_stock",
+            previousValue: { quantity: prevQty },
+            newValue: { quantity: newQty, warning: args.quantityWarning },
+            metadata: { 
+              rawName: args.rawProductName,
+              quantitySource: args.quantitySource,
+              threshold: LOW_STOCK_THRESHOLD,
+            },
+          });
+        }
+        
+        // Check for significant quantity change
+        if (prevQty > 0) {
+          const changePercent = ((newQty - prevQty) / prevQty) * 100;
+          
+          // Only record if change is significant
+          if (Math.abs(changePercent) >= MIN_QUANTITY_CHANGE_PERCENT) {
+            events.push({
+              eventType: "quantity_change",
+              previousValue: { quantity: prevQty },
+              newValue: { quantity: newQty },
+              metadata: { 
+                rawName: args.rawProductName,
+                changePercent: Math.round(changePercent * 10) / 10,
+                quantitySource: args.quantitySource,
+                direction: newQty > prevQty ? "increase" : "decrease",
+              },
+            });
+          }
+        }
+      }
+    } else if (args.quantityWarning) {
+      // We have a warning but no exact quantity
+      updates.quantityWarning = args.quantityWarning;
+      
+      // Try to detect low stock from warning text
+      const lowStockMatch = args.quantityWarning.match(/only\s+(\d+)\s+left/i) ||
+                           args.quantityWarning.match(/(\d+)\s+remaining/i) ||
+                           args.quantityWarning.match(/low\s+stock/i);
+      
+      if (lowStockMatch) {
+        const extractedQty = parseInt(lowStockMatch[1]) || 1;
+        if (!existing.quantityWarning || extractedQty < LOW_STOCK_THRESHOLD) {
+          events.push({
+            eventType: "low_stock",
+            previousValue: { warning: existing.quantityWarning },
+            newValue: { warning: args.quantityWarning, estimatedQuantity: extractedQty },
+            metadata: { 
+              rawName: args.rawProductName,
+              quantitySource: "text_pattern",
+            },
+          });
+        }
+      }
+    }
     
     // Track price changes (with events)
     if (existing.currentPrice !== args.price) {
@@ -265,15 +401,18 @@ async function updateCurrentInventory(
       events.push({
         eventType: "restock",
         previousValue: { inStock: false, outOfStockSince: existing.outOfStockSince },
-        newValue: { inStock: true, price: args.price },
-        metadata: { rawName: args.rawProductName },
+        newValue: { inStock: true, price: args.price, quantity: args.quantity },
+        metadata: { 
+          rawName: args.rawProductName,
+          quantitySource: args.quantitySource,
+        },
       });
     } else if (!args.inStock && existing.inStock) {
       updates.outOfStockSince = now;
       
       events.push({
         eventType: "sold_out",
-        previousValue: { inStock: true, lastInStockAt: existing.lastInStockAt },
+        previousValue: { inStock: true, lastInStockAt: existing.lastInStockAt, lastQuantity: existing.quantity },
         newValue: { inStock: false },
         metadata: { rawName: args.rawProductName },
       });
@@ -288,6 +427,10 @@ async function updateCurrentInventory(
     await ctx.db.patch(existing._id, updates);
   } else {
     // Create new inventory record
+    const initialHistory = args.quantity !== undefined 
+      ? [{ quantity: args.quantity, timestamp: now, source: args.quantitySource }]
+      : undefined;
+    
     await ctx.db.insert("currentInventory", {
       retailerId: args.retailerId,
       productId: args.productId,
@@ -296,6 +439,9 @@ async function updateCurrentInventory(
       inStock: args.inStock,
       quantity: args.quantity,
       quantityWarning: args.quantityWarning,
+      quantitySource: args.quantitySource,
+      lastQuantityAt: args.quantity !== undefined ? now : undefined,
+      quantityHistory: initialHistory,
       lastInStockAt: args.inStock ? now : undefined,
       daysOnMenu: 1,
       lastUpdatedAt: now,
@@ -306,12 +452,32 @@ async function updateCurrentInventory(
     events.push({
       eventType: "new_product",
       newValue: { price: args.price, inStock: args.inStock, quantity: args.quantity },
-      metadata: { rawName: args.rawProductName, quantityWarning: args.quantityWarning },
+      metadata: { 
+        rawName: args.rawProductName, 
+        quantityWarning: args.quantityWarning,
+        quantitySource: args.quantitySource,
+      },
     });
+    
+    // If new product is already low stock, also emit low_stock event
+    if (args.quantity !== undefined && args.quantity < LOW_STOCK_THRESHOLD && args.quantity > 0) {
+      events.push({
+        eventType: "low_stock",
+        newValue: { quantity: args.quantity, warning: args.quantityWarning },
+        metadata: { 
+          rawName: args.rawProductName,
+          quantitySource: args.quantitySource,
+          threshold: LOW_STOCK_THRESHOLD,
+          isNewProduct: true,
+        },
+      });
+    }
   }
   
   // Record inventory events
+  const eventTypes: string[] = [];
   for (const event of events) {
+    eventTypes.push(event.eventType);
     await ctx.db.insert("inventoryEvents", {
       retailerId: args.retailerId,
       productId: args.productId,
@@ -326,14 +492,63 @@ async function updateCurrentInventory(
     });
   }
   
-  return events.length;
+  return { count: events.length, eventTypes };
 }
+
+// ============================================================
+// QUERY: Get low stock items
+// ============================================================
+
+export const getLowStockItems = mutation({
+  args: {
+    threshold: v.optional(v.number()),
+    retailerId: v.optional(v.id("retailers")),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const threshold = args.threshold ?? LOW_STOCK_THRESHOLD;
+    const limit = args.limit ?? 50;
+    
+    let query = ctx.db
+      .query("currentInventory")
+      .withIndex("by_low_stock", (q: any) => q.eq("inStock", true));
+    
+    if (args.retailerId) {
+      query = ctx.db
+        .query("currentInventory")
+        .withIndex("by_retailer", (q: any) => q.eq("retailerId", args.retailerId));
+    }
+    
+    const items = await query.collect();
+    
+    // Filter by quantity threshold
+    const lowStock = items
+      .filter(item => 
+        item.inStock && 
+        item.quantity !== undefined && 
+        item.quantity !== null &&
+        item.quantity < threshold &&
+        item.quantity > 0
+      )
+      .slice(0, limit);
+    
+    // Enrich with product/brand/retailer data
+    const enriched = await Promise.all(
+      lowStock.map(async (item) => {
+        const product = await ctx.db.get(item.productId);
+        const brand = await ctx.db.get(item.brandId);
+        const retailer = await ctx.db.get(item.retailerId);
+        return { ...item, product, brand, retailer };
+      })
+    );
+    
+    return enriched;
+  },
+});
 
 // ============================================================
 // NORMALIZATION HELPERS (legacy - kept for mapCategory/extractWeight)
 // ============================================================
-
-// NOTE: normalizeProductName is now imported from ./lib/productNormalizer (DATA-005)
 
 function mapCategory(rawCategory?: string): string {
   if (!rawCategory) return "other";

@@ -102,8 +102,12 @@ export default defineSchema({
     discountPercent: v.optional(v.number()),
     inStock: v.boolean(),
     stockLevel: v.optional(v.string()),
-    quantity: v.optional(v.number()),           // Actual inventory count (null = unknown)
-    quantityWarning: v.optional(v.string()),    // Raw warning text e.g., "Only 3 left"
+    // === QUANTITY TRACKING (Enhanced) ===
+    quantity: v.optional(v.number()),              // Actual inventory count (null = unknown)
+    quantityWarning: v.optional(v.string()),       // Raw warning text e.g., "Only 3 left"
+    quantitySource: v.optional(v.string()),        // "cart_hack" | "text_pattern" | "graphql" | "inferred"
+    quantityCheckedAt: v.optional(v.number()),     // When quantity was last checked
+    // ====================================
     sourceUrl: v.string(),
     sourcePlatform: v.string(),
     rawProductName: v.string(),
@@ -129,8 +133,18 @@ export default defineSchema({
     priceChangedAt: v.optional(v.number()),
     inStock: v.boolean(),
     stockLevel: v.optional(v.string()),
-    quantity: v.optional(v.number()),           // Actual inventory count (null = unknown)
-    quantityWarning: v.optional(v.string()),    // Raw warning text e.g., "Only 3 left"
+    // === QUANTITY TRACKING (Enhanced) ===
+    quantity: v.optional(v.number()),              // Actual inventory count (null = unknown)
+    quantityWarning: v.optional(v.string()),       // Raw warning text e.g., "Only 3 left"
+    quantitySource: v.optional(v.string()),        // "cart_hack" | "text_pattern" | "graphql" | "inferred"
+    lastQuantityAt: v.optional(v.number()),        // When quantity was last updated
+    previousQuantity: v.optional(v.number()),      // Previous quantity (for delta detection)
+    quantityHistory: v.optional(v.array(v.object({
+      quantity: v.number(),
+      timestamp: v.number(),
+      source: v.optional(v.string()),
+    }))),                                          // Recent quantity history (last 10 entries)
+    // ====================================
     lastInStockAt: v.optional(v.number()),
     outOfStockSince: v.optional(v.number()),
     daysOnMenu: v.number(),
@@ -143,7 +157,9 @@ export default defineSchema({
     .index("by_brand", ["brandId"])
     .index("by_retailer_brand", ["retailerId", "brandId"])
     .index("by_stock_status", ["inStock", "brandId"])
-    .index("by_retailer_product", ["retailerId", "productId"]),
+    .index("by_retailer_product", ["retailerId", "productId"])
+    // === NEW QUANTITY INDEXES ===
+    .index("by_low_stock", ["inStock", "quantity"]),  // Find low stock items
 
   // ============================================================
   // BRAND ANALYTICS (computed daily)
@@ -318,9 +334,10 @@ export default defineSchema({
     email: v.string(),                  // User identifier (no auth needed)
     productId: v.id("products"),
     brandId: v.id("brands"),
-    alertTypes: v.array(v.string()),    // ["restock", "price_drop", "new_drop"]
+    alertTypes: v.array(v.string()),    // ["restock", "price_drop", "new_drop", "low_stock"]
     retailerIds: v.optional(v.array(v.id("retailers"))), // Optional: only these locations
     discordWebhook: v.optional(v.string()), // Optional: personal webhook
+    lowStockThreshold: v.optional(v.number()), // Alert when quantity drops below this
     isActive: v.boolean(),
     createdAt: v.number(),
     lastNotifiedAt: v.optional(v.number()),
@@ -364,6 +381,7 @@ export default defineSchema({
       uniqueProducts: v.number(),
       inStock: v.number(),
       outOfStock: v.number(),
+      lowStock: v.optional(v.number()), // Items with quantity < 5
     }),
     scrapeHealth: v.object({
       unresolvedErrors: v.number(),
@@ -376,7 +394,7 @@ export default defineSchema({
     .index("by_key", ["key"]),
 
   // ============================================================
-  // INVENTORY EVENTS (Delta Detection - Phase 1)
+  // INVENTORY EVENTS (Delta Detection - Enhanced)
   // Tracks changes between scrape snapshots
   // ============================================================
 
@@ -384,10 +402,11 @@ export default defineSchema({
     retailerId: v.id("retailers"),
     productId: v.optional(v.id("products")),
     brandId: v.optional(v.id("brands")),
-    eventType: v.string(),              // "new_product" | "restock" | "sold_out" | "price_drop" | "price_increase" | "removed"
-    previousValue: v.optional(v.any()), // Previous state (price, inStock, etc.)
+    // Enhanced event types including quantity changes
+    eventType: v.string(),              // "new_product" | "restock" | "sold_out" | "price_drop" | "price_increase" | "removed" | "low_stock" | "quantity_change"
+    previousValue: v.optional(v.any()), // Previous state (price, inStock, quantity, etc.)
     newValue: v.optional(v.any()),      // New state
-    metadata: v.optional(v.any()),      // Additional context (rawName, changePercent, etc.)
+    metadata: v.optional(v.any()),      // Additional context (rawName, changePercent, quantitySource, etc.)
     batchId: v.string(),                // Links to scrape batch
     timestamp: v.number(),              // When the change was detected
     notified: v.boolean(),              // Has notification been sent?
@@ -398,7 +417,9 @@ export default defineSchema({
     .index("by_product", ["productId", "timestamp"])
     .index("by_type", ["eventType", "timestamp"])
     .index("by_notified", ["notified", "timestamp"])
-    .index("by_batch", ["batchId"]),
+    .index("by_batch", ["batchId"])
+    // === NEW: Index for quantity-related events ===
+    .index("by_type_notified", ["eventType", "notified"]),
 
   // ============================================================
   // SUBSCRIPTIONS & MONETIZATION (Phase 6)
@@ -492,7 +513,7 @@ export default defineSchema({
     webhookUrl: v.string(),               // Discord webhook URL
     payload: v.any(),                     // The message payload to send
     eventIds: v.optional(v.array(v.id("inventoryEvents"))), // Related events
-    notificationType: v.string(),         // "product_alert" | "scraper_alert" | etc.
+    notificationType: v.string(),         // "product_alert" | "scraper_alert" | "low_stock" | etc.
     errorMessage: v.string(),             // Last error message
     attemptNumber: v.number(),            // Current retry attempt
     status: v.string(),                   // "pending" | "delivered" | "failed"
@@ -513,7 +534,7 @@ export default defineSchema({
     accountId: v.id("retailerAccounts"),    // The retailer account doing the monitoring
     competitorId: v.id("retailers"),        // The competitor being monitored
     alertsEnabled: v.boolean(),             // Whether to send alerts for this competitor
-    alertTypes: v.array(v.string()),        // ["new_product", "price_drop", "stock_out", "restock"]
+    alertTypes: v.array(v.string()),        // ["new_product", "price_drop", "stock_out", "restock", "low_stock"]
     customNotes: v.optional(v.string()),    // User notes about this competitor
     isActive: v.boolean(),                  // Soft delete
     addedAt: v.number(),
@@ -529,7 +550,7 @@ export default defineSchema({
 
   b2bAlerts: defineTable({
     accountId: v.id("retailerAccounts"),    // The retailer account receiving the alert
-    type: v.string(),                       // "new_product" | "price_drop" | "price_increase" | "stock_out" | "restock" | "trending" | "opportunity"
+    type: v.string(),                       // "new_product" | "price_drop" | "price_increase" | "stock_out" | "restock" | "trending" | "opportunity" | "low_stock"
     severity: v.string(),                   // "low" | "medium" | "high" | "critical"
     competitorId: v.optional(v.id("retailers")),   // Which competitor triggered this
     productId: v.optional(v.id("products")),       // Related product
@@ -537,7 +558,7 @@ export default defineSchema({
     title: v.string(),
     message: v.string(),
     actionHint: v.optional(v.string()),            // Suggested action
-    data: v.optional(v.any()),                     // Additional context (prices, changes, etc.)
+    data: v.optional(v.any()),                     // Additional context (prices, changes, quantities, etc.)
     isRead: v.boolean(),
     readAt: v.optional(v.number()),
     deliveredVia: v.array(v.string()),             // ["email", "slack", "dashboard"]
