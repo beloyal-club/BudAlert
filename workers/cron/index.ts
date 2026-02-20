@@ -376,8 +376,9 @@ async function scrapeLocation(
     await session.waitForTimeout(3000);
     
     // Extract products using our extraction function
+    // Type cast needed because evaluateFunction uses unknown[] for args
     const products = await session.evaluateFunction<ScrapedProduct[]>(
-      extractProducts,
+      extractProducts as (...args: unknown[]) => ScrapedProduct[],
       location.menuUrl,
       scrapedAt
     );
