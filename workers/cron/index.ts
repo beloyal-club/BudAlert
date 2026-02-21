@@ -28,6 +28,14 @@
  *          - Before: ~30 min for 10 locations × 40 products
  *          - After:  ~18 min estimated
  * 
+ * v3.4.0 - TRUE Parallel Product Page Visits (Phase 2 Optimizations)
+ *          - Creates 4 concurrent browser pages per session
+ *          - Products are visited in parallel batches of 4
+ *          - Expected improvement: ~3-4x faster product detail extraction
+ *          - Before: ~15 min (v3.3.0 with sequential visits)
+ *          - After:  ~4-5 min with 4x parallelization
+ *          - GraphQL interception explored (see scripts/graphql-analysis.md)
+ * 
  * Deployed at: cannasignal-cron.prtl.workers.dev
  * Cron schedule: every 15 minutes
  */
@@ -36,24 +44,33 @@ import { BrowserSession, CDPPage, CDPClient } from '../lib/cdp';
 import { withRetry, fetchWithRetry, withCircuitBreaker, sleep } from '../lib/retry';
 
 // ============================================================
-// PARALLEL PAGE MANAGER (v3.3.0)
+// PARALLEL PAGE MANAGER (v3.4.0 - True Parallelization)
 // ============================================================
 
 interface PagePool {
   pages: CDPPage[];
-  inUse: Set<number>;
+  session: BrowserSession;
 }
 
 /**
- * Creates a pool of browser pages for parallel scraping
+ * Creates a pool of browser pages for parallel scraping (v3.4.0)
+ * Uses BrowserSession.createPage() to spawn additional pages within the same session
  */
-async function createPagePool(client: CDPClient, count: number): Promise<PagePool> {
+async function createPagePool(session: BrowserSession, count: number): Promise<PagePool> {
   const pages: CDPPage[] = [];
   
-  for (let i = 0; i < count; i++) {
+  // The main page is page 0
+  const mainPage = session.getPage();
+  if (mainPage) {
+    pages.push(mainPage);
+  }
+  
+  // Create additional pages for parallelization
+  for (let i = pages.length; i < count; i++) {
     try {
-      const page = await client.createPage();
+      const page = await session.createPage();
       pages.push(page);
+      console.log(`[Cron] Created parallel page ${i + 1}/${count}`);
     } catch (error) {
       console.log(`[Cron] Failed to create page ${i + 1}/${count}: ${error instanceof Error ? error.message : 'Unknown'}`);
       // Continue with fewer pages if some fail
@@ -61,17 +78,18 @@ async function createPagePool(client: CDPClient, count: number): Promise<PagePoo
     }
   }
   
-  console.log(`[Cron] Created page pool with ${pages.length} pages`);
-  return { pages, inUse: new Set() };
+  console.log(`[Cron] Page pool ready: ${pages.length} concurrent pages`);
+  return { pages, session };
 }
 
 /**
- * Closes all pages in the pool
+ * Closes extra pages in the pool (keeps main page)
  */
 async function closePagePool(pool: PagePool): Promise<void> {
-  for (const page of pool.pages) {
+  // Close all pages except the first (main page - managed by session)
+  for (let i = 1; i < pool.pages.length; i++) {
     try {
-      await page.close();
+      await pool.pages[i].close();
     } catch {
       // Ignore close errors
     }
@@ -79,39 +97,80 @@ async function closePagePool(pool: PagePool): Promise<void> {
 }
 
 /**
- * Process items in parallel batches using a page pool
+ * Process product detail pages in parallel using page pool (v3.4.0)
+ * Each page in the pool handles one product concurrently
  */
-async function processInParallel<T, R>(
-  items: T[],
+async function processProductsInParallel(
+  products: ScrapedProduct[],
   pool: PagePool,
-  processor: (item: T, page: CDPPage) => Promise<R>
-): Promise<R[]> {
-  const results: R[] = [];
+  extractFn: typeof extractInventoryFromDetailPage,
+  cartHackFn: typeof attemptCartHack,
+  enableCartHack: boolean,
+  maxCartHackAttempts: number,
+  inventoryStats: { checked: number; found: number }
+): Promise<void> {
   const batchSize = pool.pages.length;
+  let cartHackAttempts = 0;
   
-  for (let i = 0; i < items.length; i += batchSize) {
-    const batch = items.slice(i, i + batchSize);
+  for (let batchStart = 0; batchStart < products.length; batchStart += batchSize) {
+    const batch = products.slice(batchStart, batchStart + batchSize);
     
-    const batchPromises = batch.map(async (item, idx) => {
-      const page = pool.pages[idx % pool.pages.length];
+    // Process batch in TRUE parallel - each page handles one product
+    const batchPromises = batch.map(async (product, batchIdx) => {
+      if (!product.productUrl) return;
+      
+      const page = pool.pages[batchIdx];
+      if (!page) return;
+      
       try {
-        return await processor(item, page);
-      } catch (error) {
-        console.log(`[Cron] Parallel processing error: ${error instanceof Error ? error.message : 'Unknown'}`);
-        return null as R;
+        inventoryStats.checked++;
+        
+        // Navigate to product detail page
+        await page.navigate(product.productUrl);
+        await page.waitForTimeout(PAGE_RENDER_WAIT_MS);
+        
+        // Extract inventory from detail page
+        const detailData = await page.evaluateFunction(extractFn);
+        
+        // Update product with extracted data
+        if (detailData.quantity !== null) {
+          product.quantity = detailData.quantity;
+          product.quantityWarning = detailData.quantityWarning;
+          product.quantitySource = detailData.quantitySource;
+          product.inStock = detailData.inStock;
+          inventoryStats.found++;
+          console.log(`[Cron] ✓ ${product.rawProductName.slice(0, 30)}: ${detailData.quantity} left`);
+        } else if (enableCartHack && cartHackAttempts < maxCartHackAttempts) {
+          // Try cart hack as fallback - only for first few products
+          cartHackAttempts++;
+          
+          await page.waitForTimeout(500);
+          
+          const cartResult = await page.evaluateFunction(cartHackFn);
+          
+          if (cartResult.success && cartResult.quantity !== null) {
+            product.quantity = cartResult.quantity;
+            product.quantityWarning = cartResult.quantityWarning;
+            product.quantitySource = 'cart_hack';
+            inventoryStats.found++;
+            console.log(`[Cron] ✓ ${product.rawProductName.slice(0, 30)}: ${cartResult.quantity} via cart`);
+          }
+        }
+        
+      } catch (detailError) {
+        // Non-fatal: continue to next product
+        console.log(`[Cron] ✗ ${product.rawProductName.slice(0, 25)}: ${detailError instanceof Error ? detailError.message.slice(0, 40) : 'Error'}`);
       }
     });
     
-    const batchResults = await Promise.all(batchPromises);
-    results.push(...batchResults);
+    // Wait for all products in this batch to complete IN PARALLEL
+    await Promise.all(batchPromises);
     
-    // Small delay between batches for rate limiting
-    if (i + batchSize < items.length) {
+    // Brief pause between batches for rate limiting
+    if (batchStart + batchSize < products.length) {
       await sleep(BATCH_DELAY_MS);
     }
   }
-  
-  return results;
 }
 
 interface Env {
@@ -813,78 +872,25 @@ async function scrapeLocation(
     
     console.log(`[Cron] ${location.name}: Checking ${productsToCheck.length} product detail pages for inventory (parallel=${PARALLEL_PAGE_COUNT})`);
     
-    // Track cart hack attempts globally for this location
-    let cartHackAttempts = 0;
-    
-    // Process products in parallel using the main page
-    // For parallel processing, we need access to the CDP client
-    // Since BrowserSession wraps the page, we'll batch process using Promise.allSettled
-    
-    const BATCH_SIZE = PARALLEL_PAGE_COUNT;
-    
-    for (let batchStart = 0; batchStart < productsToCheck.length; batchStart += BATCH_SIZE) {
-      const batch = productsToCheck.slice(batchStart, batchStart + BATCH_SIZE);
+    // v3.4.0: TRUE PARALLEL PROCESSING with multiple browser pages
+    // Create a page pool for concurrent product page visits
+    if (productsToCheck.length > 0) {
+      const pagePool = await createPagePool(session, PARALLEL_PAGE_COUNT);
       
-      // Process batch in parallel using same page (sequentially visit URLs)
-      // Note: True parallelism requires multiple browser sessions (expensive)
-      // This batching still improves speed by reducing wait overhead
-      
-      const batchPromises = batch.map(async (product, batchIdx) => {
-        if (!product.productUrl) return;
-        
-        try {
-          inventoryStats.checked++;
-          
-          // Navigate to product detail page - use reduced timeout
-          await session.goto(product.productUrl);
-          await session.waitForTimeout(PAGE_RENDER_WAIT_MS);
-          
-          // Extract inventory from detail page
-          const detailData = await session.evaluateFunction(
-            extractInventoryFromDetailPage
-          );
-          
-          // Update product with extracted data
-          if (detailData.quantity !== null) {
-            product.quantity = detailData.quantity;
-            product.quantityWarning = detailData.quantityWarning;
-            product.quantitySource = detailData.quantitySource;
-            product.inStock = detailData.inStock;
-            inventoryStats.found++;
-            console.log(`[Cron] ${product.rawProductName.slice(0, 30)}: ${detailData.quantity} left`);
-          } else if (ENABLE_CART_HACK_FALLBACK && cartHackAttempts < MAX_CART_HACK_ATTEMPTS) {
-            // Try cart hack as fallback - only for first few products
-            cartHackAttempts++;
-            
-            await session.waitForTimeout(500); // Reduced from 1000
-            
-            const cartResult = await session.evaluateFunction(attemptCartHack);
-            
-            if (cartResult.success && cartResult.quantity !== null) {
-              product.quantity = cartResult.quantity;
-              product.quantityWarning = cartResult.quantityWarning;
-              product.quantitySource = 'cart_hack';
-              inventoryStats.found++;
-              console.log(`[Cron] ${product.rawProductName.slice(0, 30)}: ${cartResult.quantity} via cart`);
-            }
-          }
-          
-        } catch (detailError) {
-          // Non-fatal: continue to next product
-          console.log(`[Cron] ✗ ${product.rawProductName.slice(0, 25)}: ${detailError instanceof Error ? detailError.message.slice(0, 40) : 'Error'}`);
-        }
-      });
-      
-      // Wait for all products in this batch (sequential per page but batched for logging)
-      // Since we're using a single session, these still run sequentially
-      // The real speedup comes from reduced wait times
-      for (const promise of batchPromises) {
-        await promise;
-      }
-      
-      // Brief pause between batches
-      if (batchStart + BATCH_SIZE < productsToCheck.length) {
-        await sleep(BATCH_DELAY_MS);
+      try {
+        // Process all products in parallel batches using the page pool
+        await processProductsInParallel(
+          productsToCheck,
+          pagePool,
+          extractInventoryFromDetailPage,
+          attemptCartHack,
+          ENABLE_CART_HACK_FALLBACK,
+          MAX_CART_HACK_ATTEMPTS,
+          inventoryStats
+        );
+      } finally {
+        // Clean up extra pages
+        await closePagePool(pagePool);
       }
     }
     
@@ -1128,7 +1134,7 @@ export default {
         { name: "Inventory", value: `${totalInventoryFound}/${totalInventoryChecked} checked`, inline: true },
         { name: "Events", value: ingestionResult?.totalEventsDetected?.toString() || "N/A", inline: true },
       ],
-      footer: { text: "v3.3.0 - speed optimizations" },
+      footer: { text: "v3.4.0 - parallel page visits" },
       timestamp: new Date().toISOString(),
     };
     
@@ -1157,7 +1163,7 @@ export default {
       return Response.json({
         status: "ok",
         service: "cannasignal-cron",
-        version: "3.3.0-speed-optimizations",
+        version: "3.4.0-parallel-pages",
         locations: {
           total: EMBEDDED_LOCATIONS.length,
           active: activeLocations.length,
@@ -1175,7 +1181,8 @@ export default {
           "product-detail-page-inventory",
           "cart-hack-fallback",
           "optimized-wait-times",
-          "batch-processing",
+          "parallel-page-pool",
+          "concurrent-product-visits",
         ],
         config: {
           maxDetailPageVisits: MAX_DETAIL_PAGE_VISITS_PER_LOCATION,
@@ -1223,7 +1230,7 @@ export default {
     
     return Response.json({
       service: "cannasignal-cron",
-      version: "3.3.0-speed-optimizations",
+      version: "3.4.0-parallel-pages",
       endpoints: [
         "GET /health - Service health with location stats",
         "POST /trigger - Manual scrape trigger",

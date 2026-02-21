@@ -692,4 +692,21 @@ export class BrowserSession {
   getPage(): CDPPage | null {
     return this.page;
   }
+
+  /**
+   * Get the underlying CDP client for advanced operations (e.g., creating multiple pages)
+   */
+  getClient(): CDPClient | null {
+    return this.client;
+  }
+
+  /**
+   * Create additional pages for parallel operations
+   */
+  async createPage(url = 'about:blank'): Promise<CDPPage> {
+    if (!this.client) throw new Error('Session not initialized');
+    const page = await this.client.createPage(url);
+    await page.setViewport(1280, 800);
+    return page;
+  }
 }
