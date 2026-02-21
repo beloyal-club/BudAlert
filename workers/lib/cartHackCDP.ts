@@ -6,6 +6,11 @@
  * 
  * The CDP client's evaluate() only accepts string expressions, so all
  * JavaScript logic runs directly in the browser context.
+ * 
+ * v2.0.0 - Added product detail page inventory extraction
+ *          - extractInventoryFromDetailPageCDP()
+ *          - attemptCartHackCDP()
+ *          - Enhanced pattern matching for "X left" text
  */
 
 import { CDPPage } from './cdp';
@@ -18,7 +23,7 @@ export interface InventoryResult {
   quantity: number | null;
   quantityWarning: string | null;
   inStock: boolean;
-  source: 'page-text' | 'quantity-dropdown' | 'out-of-stock-badge' | 'cart-overflow' | 'unknown';
+  source: 'page-text' | 'quantity-dropdown' | 'out-of-stock-badge' | 'cart-overflow' | 'cart-hack' | 'unknown';
   confidence: 'exact' | 'estimated' | 'boolean';
 }
 
@@ -31,8 +36,220 @@ export interface ProductInventory {
   confidence: string;
 }
 
+export interface DetailPageInventory {
+  quantity: number | null;
+  quantityWarning: string | null;
+  quantitySource: string;
+  productName: string | null;
+  price: number | null;
+  thcFormatted: string | null;
+  inStock: boolean;
+}
+
 // ============================================================
-// MAIN EXTRACTION FUNCTION
+// PRODUCT DETAIL PAGE INVENTORY EXTRACTION
+// ============================================================
+
+/**
+ * Extract inventory from a product detail page using text patterns.
+ * This is the primary method - looks for "X left" and similar patterns.
+ */
+export async function extractInventoryFromDetailPageCDP(
+  page: CDPPage
+): Promise<DetailPageInventory> {
+  return page.evaluate<DetailPageInventory>(`
+    (function() {
+      const bodyText = document.body.innerText || '';
+      
+      // Primary pattern: "X left" (proven to work on Dutchie product pages)
+      const stockPatterns = [
+        /(\\d+)\\s*left/i,
+        /only\\s*(\\d+)\\s*left/i,
+        /(\\d+)\\s*left\\s*in\\s*stock/i,
+        /(\\d+)\\s*remaining/i,
+        /(\\d+)\\s*available/i,
+        /(\\d+)\\s*in\\s*stock/i,
+        /hurry[,!]?\\s*only\\s*(\\d+)/i,
+        /limited[:\\s]*(\\d+)/i,
+        /low\\s*stock[:\\s]*(\\d+)/i,
+      ];
+      
+      let quantity = null;
+      let quantityWarning = null;
+      let quantitySource = 'none';
+      
+      for (const pattern of stockPatterns) {
+        const match = bodyText.match(pattern);
+        if (match) {
+          quantity = parseInt(match[1], 10);
+          quantityWarning = match[0].trim();
+          quantitySource = 'text_pattern';
+          break;
+        }
+      }
+      
+      // Check for out of stock indicators
+      const outOfStockPatterns = [
+        /out\\s*of\\s*stock/i,
+        /sold\\s*out/i,
+        /unavailable/i,
+        /not\\s*available/i,
+      ];
+      
+      let inStock = true;
+      for (const pattern of outOfStockPatterns) {
+        if (pattern.test(bodyText)) {
+          inStock = false;
+          quantity = 0;
+          quantityWarning = 'Out of stock';
+          quantitySource = 'text_pattern';
+          break;
+        }
+      }
+      
+      // Extract product name from page
+      const nameEl = document.querySelector('h1, [class*="ProductName"], [class*="product-name"], [class*="productTitle"]');
+      const productName = nameEl ? nameEl.textContent.trim() : null;
+      
+      // Extract price
+      let price = null;
+      const priceMatch = bodyText.match(/\\$(\\d+(?:\\.\\d{1,2})?)/);
+      if (priceMatch) {
+        price = parseFloat(priceMatch[1]);
+      }
+      
+      // Extract THC
+      let thcFormatted = null;
+      const thcMatch = bodyText.match(/THC[:\\s]*(\\d+(?:\\.\\d+)?)\\s*%/i);
+      if (thcMatch) {
+        thcFormatted = thcMatch[1] + '%';
+      }
+      
+      return {
+        quantity,
+        quantityWarning,
+        quantitySource,
+        productName,
+        price,
+        thcFormatted,
+        inStock,
+      };
+    })()
+  `);
+}
+
+/**
+ * Attempt cart hack to discover inventory limits.
+ * This is a fallback when text patterns don't reveal inventory.
+ */
+export async function attemptCartHackCDP(
+  page: CDPPage
+): Promise<{ quantity: number | null; quantityWarning: string | null; success: boolean }> {
+  return page.evaluate<{ quantity: number | null; quantityWarning: string | null; success: boolean }>(`
+    (function() {
+      // Find add to cart button
+      const addButtons = document.querySelectorAll('button:not([disabled])');
+      let addButton = null;
+      
+      addButtons.forEach(btn => {
+        const text = btn.textContent?.toLowerCase() || '';
+        if ((text.includes('add') && (text.includes('cart') || text.includes('bag'))) || 
+            (text.includes('add') && btn.textContent.length < 20)) {
+          addButton = btn;
+        }
+      });
+      
+      if (!addButton) {
+        return { quantity: null, quantityWarning: null, success: false };
+      }
+      
+      // Look for quantity input
+      const qtyInput = document.querySelector('input[type="number"], input[name*="qty"], input[name*="quantity"]');
+      
+      if (qtyInput) {
+        // Set high value to trigger limit
+        const originalValue = qtyInput.value;
+        qtyInput.value = '999';
+        qtyInput.dispatchEvent(new Event('input', { bubbles: true }));
+        qtyInput.dispatchEvent(new Event('change', { bubbles: true }));
+        
+        // Check for immediate validation error
+        const pageText = document.body.innerText || '';
+        
+        // Look for error messages about limits
+        const limitPatterns = [
+          /max(?:imum)?\\s*(?:of\\s*)?(\\d+)/i,
+          /limit(?:ed)?\\s*(?:to\\s*)?(\\d+)/i,
+          /only\\s*(\\d+)\\s*(?:available|remaining|left)/i,
+          /cannot\\s*add\\s*more\\s*than\\s*(\\d+)/i,
+          /(\\d+)\\s*(?:items?\\s*)?(?:maximum|max|limit)/i,
+        ];
+        
+        for (const pattern of limitPatterns) {
+          const match = pageText.match(pattern);
+          if (match) {
+            qtyInput.value = originalValue;
+            return {
+              quantity: parseInt(match[1], 10),
+              quantityWarning: match[0].trim(),
+              success: true,
+            };
+          }
+        }
+        
+        // Check if input was auto-corrected
+        const correctedValue = parseInt(qtyInput.value, 10);
+        if (correctedValue > 0 && correctedValue < 999) {
+          qtyInput.value = originalValue;
+          return {
+            quantity: correctedValue,
+            quantityWarning: 'Max quantity: ' + correctedValue,
+            success: true,
+          };
+        }
+        
+        // Reset
+        qtyInput.value = originalValue;
+      }
+      
+      // Check for max attribute on input
+      if (qtyInput && qtyInput.max) {
+        const maxVal = parseInt(qtyInput.max, 10);
+        if (maxVal > 0 && maxVal < 100) {
+          return {
+            quantity: maxVal,
+            quantityWarning: 'Max: ' + maxVal,
+            success: true,
+          };
+        }
+      }
+      
+      // Check for select dropdown with quantity options
+      const qtySelect = document.querySelector('select[name*="qty"], select[name*="quantity"]');
+      if (qtySelect && qtySelect.options && qtySelect.options.length > 0) {
+        const options = Array.from(qtySelect.options)
+          .map(o => parseInt(o.value, 10))
+          .filter(n => !isNaN(n) && n > 0);
+        
+        if (options.length > 0) {
+          const maxOption = Math.max(...options);
+          if (maxOption < 50) { // Likely inventory-capped
+            return {
+              quantity: maxOption,
+              quantityWarning: 'Max qty: ' + maxOption,
+              success: true,
+            };
+          }
+        }
+      }
+      
+      return { quantity: null, quantityWarning: null, success: false };
+    })()
+  `);
+}
+
+// ============================================================
+// LISTING PAGE INVENTORY EXTRACTION (Original Functions)
 // ============================================================
 
 /**
@@ -273,6 +490,51 @@ export async function extractInventoryFromPageTextCDP(
       }
       
       return { quantity: null, warning: null };
+    })()
+  `);
+}
+
+/**
+ * Extract product URLs from a listing page for detail page visits
+ */
+export async function extractProductUrlsCDP(
+  page: CDPPage
+): Promise<{ name: string; url: string }[]> {
+  return page.evaluate<{ name: string; url: string }[]>(`
+    (function() {
+      const productLinks = [];
+      
+      // Find all product links - Dutchie embeds typically use <a> tags
+      const linkSelectors = [
+        'a[href*="/product"]',
+        'a[href*="/products/"]',
+        '[data-testid="product-card"] a',
+        '[class*="ProductCard"] a',
+        '[class*="product-card"] a',
+      ];
+      
+      const seen = new Set();
+      
+      for (const selector of linkSelectors) {
+        const links = document.querySelectorAll(selector);
+        links.forEach(link => {
+          const href = link.href;
+          if (href && !seen.has(href) && !href.includes('#')) {
+            seen.add(href);
+            
+            // Try to get product name from the link or nearby elements
+            const nameEl = link.querySelector('h2, h3, [class*="productName"], [class*="name"]') ||
+                          link.closest('[data-testid="product-card"], [class*="ProductCard"]')?.querySelector('h2, h3, [class*="productName"], [class*="name"]');
+            const name = nameEl?.textContent?.trim() || link.textContent?.trim() || '';
+            
+            if (name.length > 2) {
+              productLinks.push({ name, url: href });
+            }
+          }
+        });
+      }
+      
+      return productLinks;
     })()
   `);
 }

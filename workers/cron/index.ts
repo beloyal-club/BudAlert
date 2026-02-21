@@ -4,9 +4,10 @@
  * Triggers every 15 minutes to:
  * 1. Fetch all active embedded-dutchie retailers
  * 2. Scrape each location via BrowserBase (CDP over WebSocket)
- * 3. Post results to Convex ingestion
- * 4. Trigger delta detection
- * 5. Send Discord notifications for inventory changes
+ * 3. Visit product detail pages to extract "X left" inventory counts
+ * 4. Post results to Convex ingestion
+ * 5. Trigger delta detection
+ * 6. Send Discord notifications for inventory changes
  * 
  * RESILIENCE IMPROVEMENTS (workflow-qa):
  * - Per-location retry with exponential backoff
@@ -14,8 +15,10 @@
  * - Retry logic for Convex ingestion
  * - Discord webhook retry with backoff
  * 
- * v3.0.0 - Switched from playwright-core to lightweight CDP client
- *          (fixes 161 bundling errors from Node.js built-ins)
+ * v3.2.0 - Added product detail page inventory extraction
+ *          - Extracts "X left" from product pages
+ *          - Implements cart hack fallback
+ *          - Samples ~30-50 products per location for speed
  * 
  * Deployed at: cannasignal-cron.prtl.workers.dev
  * Cron schedule: every 15 minutes
@@ -50,15 +53,34 @@ interface ScrapedProduct {
   price: number;
   originalPrice?: number;
   inStock: boolean;
-  quantity?: number | null;           // Actual inventory count (null = unknown)
-  quantityWarning?: string | null;    // Raw warning text e.g., "Only 3 left"
+  quantity: number | null;              // Actual inventory count (null = unknown)
+  quantityWarning: string | null;       // Raw warning text e.g., "3 left"
+  quantitySource: string;               // "text_pattern" | "cart_hack" | "inferred" | "none"
   imageUrl?: string;
   thcFormatted?: string;
   cbdFormatted?: string;
   sourceUrl: string;
   sourcePlatform: string;
   scrapedAt: number;
+  // Product detail page specific
+  productUrl?: string;                  // URL of the product detail page
 }
+
+// ============================================================
+// CONFIGURATION
+// ============================================================
+
+// Max products to visit detail pages for per location (speed optimization)
+const MAX_DETAIL_PAGE_VISITS_PER_LOCATION = 40;
+
+// Timeout for product detail page load (ms)
+const DETAIL_PAGE_TIMEOUT_MS = 8000;
+
+// Whether to enable cart hack fallback (slower but more thorough)
+const ENABLE_CART_HACK_FALLBACK = true;
+
+// Max products to apply cart hack to (very slow operation)
+const MAX_CART_HACK_ATTEMPTS = 5;
 
 // ============================================================
 // EMBEDDED DUTCHIE LOCATIONS (18 total, 11 active)
@@ -145,7 +167,253 @@ async function createBrowserSession(env: Env): Promise<BrowserSession> {
 }
 
 // ============================================================
-// PRODUCT EXTRACTION SCRIPT (runs in browser context)
+// PRODUCT URL EXTRACTION (runs in browser context)
+// 
+// Dutchie product detail URLs follow the pattern:
+// /stores/{store-slug}/product/{product-slug}
+// Note: This is different from category pages which use /products/
+// ============================================================
+
+function extractProductUrls(): { name: string; url: string }[] {
+  const productLinks: { name: string; url: string }[] = [];
+  const seen = new Set<string>();
+  
+  // Find links matching product detail pattern (singular /product/, not /products/)
+  const productLinkEls = document.querySelectorAll('a[href*="/product/"]') as NodeListOf<HTMLAnchorElement>;
+  
+  productLinkEls.forEach((link) => {
+    const href = link.href;
+    
+    // Only include actual product detail pages (contains /product/ but not /products/)
+    if (href && !seen.has(href) && href.includes('/product/') && !href.includes('/products/')) {
+      seen.add(href);
+      
+      // Get product name from the link text or nearby elements
+      const text = link.textContent?.trim() || 
+                  link.closest('div')?.querySelector('h2, h3, [class*="name"], [class*="Name"]')?.textContent?.trim() || '';
+      
+      // Only include if we have meaningful text or a valid URL
+      if (text.length > 2 || href.length > 50) {
+        productLinks.push({ name: text || 'Unknown', url: href });
+      }
+    }
+  });
+  
+  // Fallback: try to find product cards with links
+  if (productLinks.length === 0) {
+    const cards = document.querySelectorAll('[data-testid="product-card"], [class*="ProductCard"], [class*="product-card"]');
+    cards.forEach((card) => {
+      const link = card.querySelector('a[href*="/product/"]') as HTMLAnchorElement | null;
+      if (link && link.href && !seen.has(link.href) && !link.href.includes('/products/')) {
+        seen.add(link.href);
+        const name = card.querySelector('h2, h3, [class*="productName"]')?.textContent?.trim() || '';
+        productLinks.push({ name: name || 'Unknown', url: link.href });
+      }
+    });
+  }
+  
+  return productLinks;
+}
+
+// ============================================================
+// PRODUCT DETAIL PAGE INVENTORY EXTRACTION
+// ============================================================
+
+function extractInventoryFromDetailPage(): {
+  quantity: number | null;
+  quantityWarning: string | null;
+  quantitySource: string;
+  productName: string | null;
+  price: number | null;
+  thcFormatted: string | null;
+  inStock: boolean;
+} {
+  const bodyText = document.body.innerText || '';
+  
+  // Primary pattern: "X left" (proven to work on Dutchie product pages)
+  const stockPatterns = [
+    /(\d+)\s*left/i,
+    /only\s*(\d+)\s*left/i,
+    /(\d+)\s*left\s*in\s*stock/i,
+    /(\d+)\s*remaining/i,
+    /(\d+)\s*available/i,
+    /(\d+)\s*in\s*stock/i,
+    /hurry[,!]?\s*only\s*(\d+)/i,
+    /limited[:\s]*(\d+)/i,
+    /low\s*stock[:\s]*(\d+)/i,
+  ];
+  
+  let quantity: number | null = null;
+  let quantityWarning: string | null = null;
+  let quantitySource = 'none';
+  
+  for (const pattern of stockPatterns) {
+    const match = bodyText.match(pattern);
+    if (match) {
+      quantity = parseInt(match[1], 10);
+      quantityWarning = match[0].trim();
+      quantitySource = 'text_pattern';
+      break;
+    }
+  }
+  
+  // Check for out of stock indicators
+  const outOfStockPatterns = [
+    /out\s*of\s*stock/i,
+    /sold\s*out/i,
+    /unavailable/i,
+    /not\s*available/i,
+  ];
+  
+  let inStock = true;
+  for (const pattern of outOfStockPatterns) {
+    if (pattern.test(bodyText)) {
+      inStock = false;
+      quantity = 0;
+      quantityWarning = 'Out of stock';
+      quantitySource = 'text_pattern';
+      break;
+    }
+  }
+  
+  // Extract product name from page
+  const nameEl = document.querySelector('h1, [class*="ProductName"], [class*="product-name"], [class*="productTitle"]');
+  const productName = nameEl?.textContent?.trim() || null;
+  
+  // Extract price
+  let price: number | null = null;
+  const priceMatch = bodyText.match(/\$(\d+(?:\.\d{1,2})?)/);
+  if (priceMatch) {
+    price = parseFloat(priceMatch[1]);
+  }
+  
+  // Extract THC
+  let thcFormatted: string | null = null;
+  const thcMatch = bodyText.match(/THC[:\s]*(\d+(?:\.\d+)?)\s*%/i);
+  if (thcMatch) {
+    thcFormatted = `${thcMatch[1]}%`;
+  }
+  
+  return {
+    quantity,
+    quantityWarning,
+    quantitySource,
+    productName,
+    price,
+    thcFormatted,
+    inStock,
+  };
+}
+
+// ============================================================
+// CART HACK FALLBACK (in browser context)
+// ============================================================
+
+function attemptCartHack(): { quantity: number | null; quantityWarning: string | null; success: boolean } {
+  // Find add to cart button
+  const addButtons = document.querySelectorAll(
+    'button:not([disabled])'
+  );
+  
+  let addButton: HTMLButtonElement | null = null;
+  addButtons.forEach((btn) => {
+    const text = btn.textContent?.toLowerCase() || '';
+    if (text.includes('add') && (text.includes('cart') || text.includes('bag') || btn.textContent?.length! < 20)) {
+      addButton = btn as HTMLButtonElement;
+    }
+  });
+  
+  if (!addButton) {
+    return { quantity: null, quantityWarning: null, success: false };
+  }
+  
+  // Look for quantity input
+  const qtyInput = document.querySelector('input[type="number"], input[name*="qty"], input[name*="quantity"]') as HTMLInputElement | null;
+  
+  if (qtyInput) {
+    // Set high value to trigger limit
+    const originalValue = qtyInput.value;
+    qtyInput.value = '999';
+    qtyInput.dispatchEvent(new Event('input', { bubbles: true }));
+    qtyInput.dispatchEvent(new Event('change', { bubbles: true }));
+    
+    // Check for immediate validation error
+    const pageText = document.body.innerText || '';
+    
+    // Look for error messages about limits
+    const limitPatterns = [
+      /max(?:imum)?\s*(?:of\s*)?(\d+)/i,
+      /limit(?:ed)?\s*(?:to\s*)?(\d+)/i,
+      /only\s*(\d+)\s*(?:available|remaining|left)/i,
+      /cannot\s*add\s*more\s*than\s*(\d+)/i,
+      /(\d+)\s*(?:items?\s*)?(?:maximum|max|limit)/i,
+    ];
+    
+    for (const pattern of limitPatterns) {
+      const match = pageText.match(pattern);
+      if (match) {
+        // Reset the input
+        qtyInput.value = originalValue;
+        return {
+          quantity: parseInt(match[1], 10),
+          quantityWarning: match[0].trim(),
+          success: true,
+        };
+      }
+    }
+    
+    // Check if input was auto-corrected
+    const correctedValue = parseInt(qtyInput.value, 10);
+    if (correctedValue > 0 && correctedValue < 999) {
+      qtyInput.value = originalValue;
+      return {
+        quantity: correctedValue,
+        quantityWarning: `Max quantity: ${correctedValue}`,
+        success: true,
+      };
+    }
+    
+    // Reset
+    qtyInput.value = originalValue;
+  }
+  
+  // Check for max attribute on input
+  const maxAttr = qtyInput?.max;
+  if (maxAttr) {
+    const maxVal = parseInt(maxAttr, 10);
+    if (maxVal > 0 && maxVal < 100) {
+      return {
+        quantity: maxVal,
+        quantityWarning: `Max: ${maxVal}`,
+        success: true,
+      };
+    }
+  }
+  
+  // Check for select dropdown with quantity options
+  const qtySelect = document.querySelector('select[name*="qty"], select[name*="quantity"]') as HTMLSelectElement | null;
+  if (qtySelect && qtySelect.options.length > 0) {
+    const options = Array.from(qtySelect.options)
+      .map(o => parseInt(o.value, 10))
+      .filter(n => !isNaN(n) && n > 0);
+    
+    if (options.length > 0) {
+      const maxOption = Math.max(...options);
+      if (maxOption < 50) { // Likely inventory-capped
+        return {
+          quantity: maxOption,
+          quantityWarning: `Max qty: ${maxOption}`,
+          success: true,
+        };
+      }
+    }
+  }
+  
+  return { quantity: null, quantityWarning: null, success: false };
+}
+
+// ============================================================
+// CATEGORY PAGE PRODUCT EXTRACTION (runs in browser context)
 // ============================================================
 
 function extractProducts(sourceUrl: string, timestamp: number): ScrapedProduct[] {
@@ -252,19 +520,21 @@ function extractProducts(sourceUrl: string, timestamp: number): ScrapedProduct[]
       const imgEl = card.querySelector('img');
       const imageUrl = imgEl?.src;
       
-      // Stock status & Quantity detection
+      // Stock status & Quantity detection from listing page
       const stockEl = card.querySelector('[class*="outOfStock"], [class*="soldOut"], [class*="OutOfStock"], [class*="SoldOut"], [class*="unavailable"]');
       let inStock = !stockEl;
       let quantity: number | null = null;
       let quantityWarning: string | null = null;
+      let quantitySource = 'none';
       
       if (stockEl) {
         inStock = false;
         quantity = 0;
         quantityWarning = stockEl.textContent?.trim() || 'Out of stock';
+        quantitySource = 'text_pattern';
       }
       
-      // Look for quantity warnings
+      // Look for quantity warnings on listing page
       if (inStock) {
         const cardText = card.textContent || '';
         
@@ -283,6 +553,7 @@ function extractProducts(sourceUrl: string, timestamp: number): ScrapedProduct[]
           if (match) {
             quantity = parseInt(match[1], 10);
             quantityWarning = match[0].trim();
+            quantitySource = 'text_pattern';
             break;
           }
         }
@@ -294,10 +565,23 @@ function extractProducts(sourceUrl: string, timestamp: number): ScrapedProduct[]
             const numMatch = quantityWarning.match(/(\d+)/);
             if (numMatch) {
               quantity = parseInt(numMatch[1], 10);
+              quantitySource = 'text_pattern';
             }
           } else if (/low\s*stock/i.test(cardText)) {
             quantityWarning = 'Low stock';
           }
+        }
+      }
+      
+      // Extract product URL for detail page visits
+      // Look for links with /product/ pattern (product detail pages)
+      const productLinkEl = card.querySelector('a[href*="/product/"]') || card.querySelector('a') || card.closest('a');
+      let productUrl: string | undefined = undefined;
+      if (productLinkEl) {
+        const href = (productLinkEl as HTMLAnchorElement).href;
+        // Only use URLs that are actual product detail pages (contain /product/ but not /products/)
+        if (href && href.includes('/product/') && !href.includes('/products/')) {
+          productUrl = href;
         }
       }
       
@@ -317,10 +601,12 @@ function extractProducts(sourceUrl: string, timestamp: number): ScrapedProduct[]
           inStock,
           quantity,
           quantityWarning,
+          quantitySource,
           imageUrl,
           thcFormatted,
           cbdFormatted,
           sourceUrl,
+          productUrl,
           sourcePlatform: "dutchie-embedded",
           scrapedAt: timestamp,
         });
@@ -334,14 +620,15 @@ function extractProducts(sourceUrl: string, timestamp: number): ScrapedProduct[]
 }
 
 // ============================================================
-// SCRAPER (with navigation retry - HIGH-002)
+// SCRAPER (with product detail page inventory extraction)
 // ============================================================
 
 async function scrapeLocation(
   session: BrowserSession,
   location: Location
-): Promise<{ products: ScrapedProduct[]; error?: string }> {
+): Promise<{ products: ScrapedProduct[]; error?: string; inventoryStats: { checked: number; found: number } }> {
   const scrapedAt = Date.now();
+  const inventoryStats = { checked: 0, found: 0 };
   
   try {
     // Navigate with retry
@@ -366,7 +653,7 @@ async function scrapeLocation(
       const buttons = document.querySelectorAll('button');
       buttons.forEach(btn => {
         const text = btn.textContent?.trim().toLowerCase() || '';
-        if (text === 'yes' || text === 'i am 21' || text.includes('21+')) {
+        if (text === 'yes' || text === 'i am 21' || text.includes('21+') || text.includes('enter') || text === 'i agree') {
           btn.click();
         }
       });
@@ -375,19 +662,119 @@ async function scrapeLocation(
     // Wait more for menu to load after age gate
     await session.waitForTimeout(3000);
     
-    // Extract products using our extraction function
-    // Type cast needed because evaluateFunction uses unknown[] for args
+    // Extract products from category page
     const products = await session.evaluateFunction<ScrapedProduct[]>(
       extractProducts as (...args: unknown[]) => ScrapedProduct[],
       location.menuUrl,
       scrapedAt
     );
     
-    return { products };
+    console.log(`[Cron] ${location.name}: Found ${products.length} products on listing page`);
+    
+    // ============================================================
+    // PRODUCT DETAIL PAGE INVENTORY EXTRACTION
+    // ============================================================
+    
+    // If products don't have URLs, extract them separately and match by name
+    const productsWithoutUrls = products.filter(p => p.inStock && p.quantity === null && !p.productUrl);
+    
+    if (productsWithoutUrls.length > 0) {
+      // Extract all product URLs from the page
+      const allProductUrls = await session.evaluateFunction<{ name: string; url: string }[]>(
+        extractProductUrls
+      );
+      
+      console.log(`[Cron] ${location.name}: Found ${allProductUrls.length} product URLs on page`);
+      
+      // Match URLs to products by name similarity
+      for (const product of productsWithoutUrls) {
+        const productNameLower = product.rawProductName.toLowerCase();
+        
+        // Find best matching URL
+        const matchedUrl = allProductUrls.find(pu => {
+          const urlNameLower = pu.name.toLowerCase();
+          // Check for substring match in either direction
+          return urlNameLower.includes(productNameLower.slice(0, 20)) || 
+                 productNameLower.includes(urlNameLower.slice(0, 20)) ||
+                 // Also check URL slug
+                 pu.url.toLowerCase().includes(productNameLower.replace(/[^a-z0-9]/g, '-').slice(0, 20));
+        });
+        
+        if (matchedUrl) {
+          product.productUrl = matchedUrl.url;
+        }
+      }
+    }
+    
+    // Get products that need inventory checking (no quantity found on listing)
+    const productsNeedingInventory = products.filter(
+      p => p.inStock && p.quantity === null && p.productUrl
+    );
+    
+    // Sample products for detail page visits (speed optimization)
+    const productsToCheck = productsNeedingInventory.slice(0, MAX_DETAIL_PAGE_VISITS_PER_LOCATION);
+    
+    console.log(`[Cron] ${location.name}: Checking ${productsToCheck.length} product detail pages for inventory`);
+    
+    let cartHackAttempts = 0;
+    
+    for (const product of productsToCheck) {
+      if (!product.productUrl) continue;
+      
+      try {
+        inventoryStats.checked++;
+        
+        // Navigate to product detail page
+        await session.goto(product.productUrl);
+        await session.waitForTimeout(DETAIL_PAGE_TIMEOUT_MS / 2); // Half the timeout for load
+        
+        // Extract inventory from detail page
+        const detailData = await session.evaluateFunction(
+          extractInventoryFromDetailPage
+        );
+        
+        // Update product with extracted data
+        if (detailData.quantity !== null) {
+          product.quantity = detailData.quantity;
+          product.quantityWarning = detailData.quantityWarning;
+          product.quantitySource = detailData.quantitySource;
+          product.inStock = detailData.inStock;
+          inventoryStats.found++;
+          console.log(`[Cron] ${product.rawProductName}: ${detailData.quantity} (${detailData.quantityWarning})`);
+        } else if (ENABLE_CART_HACK_FALLBACK && cartHackAttempts < MAX_CART_HACK_ATTEMPTS) {
+          // Try cart hack as fallback
+          cartHackAttempts++;
+          
+          await session.waitForTimeout(1000); // Wait for page to be interactive
+          
+          const cartResult = await session.evaluateFunction(attemptCartHack);
+          
+          if (cartResult.success && cartResult.quantity !== null) {
+            product.quantity = cartResult.quantity;
+            product.quantityWarning = cartResult.quantityWarning;
+            product.quantitySource = 'cart_hack';
+            inventoryStats.found++;
+            console.log(`[Cron] ${product.rawProductName}: ${cartResult.quantity} via cart hack`);
+          }
+        }
+        
+        // Small delay between product page visits
+        await session.waitForTimeout(500);
+        
+      } catch (detailError) {
+        // Non-fatal: continue to next product
+        console.log(`[Cron] Failed to check ${product.rawProductName}: ${detailError instanceof Error ? detailError.message : 'Unknown error'}`);
+      }
+    }
+    
+    console.log(`[Cron] ${location.name}: Inventory found for ${inventoryStats.found}/${inventoryStats.checked} products checked`);
+    
+    return { products, inventoryStats };
   } catch (error) {
     return {
       products: [],
       error: error instanceof Error ? error.message : "Unknown scraping error",
+      inventoryStats,
     };
   }
 }
@@ -510,6 +897,8 @@ export default {
     }> = [];
     const errors: string[] = [];
     let totalProducts = 0;
+    let totalInventoryChecked = 0;
+    let totalInventoryFound = 0;
     
     try {
       // Connect to BrowserBase (with circuit breaker + retry)
@@ -526,7 +915,7 @@ export default {
           attempts = attempt;
           console.log(`[Cron] Scraping ${location.name} (attempt ${attempt}/3)...`);
           
-          const { products, error } = await scrapeLocation(session, location);
+          const { products, error, inventoryStats } = await scrapeLocation(session, location);
           
           if (error) {
             lastError = error;
@@ -537,8 +926,10 @@ export default {
               await sleep(delay);
             }
           } else {
-            console.log(`[Cron] ✓ ${location.name}: ${products.length} products`);
+            console.log(`[Cron] ✓ ${location.name}: ${products.length} products (inventory: ${inventoryStats.found}/${inventoryStats.checked})`);
             totalProducts += products.length;
+            totalInventoryChecked += inventoryStats.checked;
+            totalInventoryFound += inventoryStats.found;
             results.push({
               retailerId: location.retailerSlug,
               items: products,
@@ -613,10 +1004,10 @@ export default {
         { name: "Duration", value: `${duration}s`, inline: true },
         { name: "Locations", value: `${successCount}/${activeLocations.length} (${disabledCount} disabled)`, inline: true },
         { name: "Products", value: totalProducts.toString(), inline: true },
+        { name: "Inventory", value: `${totalInventoryFound}/${totalInventoryChecked} checked`, inline: true },
         { name: "Events", value: ingestionResult?.totalEventsDetected?.toString() || "N/A", inline: true },
-        { name: "Errors", value: failCount.toString(), inline: true },
       ],
-      footer: { text: "v3.1.0 - fullscrape enabled" },
+      footer: { text: "v3.2.0 - product detail inventory" },
       timestamp: new Date().toISOString(),
     };
     
@@ -633,7 +1024,7 @@ export default {
       console.error('[Cron] Failed to send Discord summary after all retries');
     }
     
-    console.log(`[Cron] Batch ${batchId} complete: ${successCount}/${activeLocations.length} active locations, ${totalProducts} products, ${duration}s`);
+    console.log(`[Cron] Batch ${batchId} complete: ${successCount}/${activeLocations.length} active locations, ${totalProducts} products, ${totalInventoryFound} inventory counts, ${duration}s`);
   },
   
   // HTTP handler for manual triggers and status
@@ -645,7 +1036,7 @@ export default {
       return Response.json({
         status: "ok",
         service: "cannasignal-cron",
-        version: "3.1.0-fullscrape",
+        version: "3.2.0-product-detail-inventory",
         locations: {
           total: EMBEDDED_LOCATIONS.length,
           active: activeLocations.length,
@@ -660,7 +1051,14 @@ export default {
           "exponential-backoff",
           "webhook-retry",
           "disabled-location-support",
+          "product-detail-page-inventory",
+          "cart-hack-fallback",
         ],
+        config: {
+          maxDetailPageVisits: MAX_DETAIL_PAGE_VISITS_PER_LOCATION,
+          cartHackEnabled: ENABLE_CART_HACK_FALLBACK,
+          maxCartHackAttempts: MAX_CART_HACK_ATTEMPTS,
+        },
       });
     }
     
@@ -699,7 +1097,7 @@ export default {
     
     return Response.json({
       service: "cannasignal-cron",
-      version: "3.1.0-fullscrape",
+      version: "3.2.0-product-detail-inventory",
       endpoints: [
         "GET /health - Service health with location stats",
         "POST /trigger - Manual scrape trigger",
