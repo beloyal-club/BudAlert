@@ -91,10 +91,31 @@ http.route({
         return corsErrorResponse("Missing or invalid results array");
       }
 
+      // Convert retailer slugs to Convex IDs
+      const processedResults = [];
+      for (const result of body.results) {
+        // Look up retailer by slug if it's not already a Convex ID
+        let retailerId = result.retailerId;
+        if (typeof retailerId === 'string' && !retailerId.startsWith('j')) {
+          // It's a slug, look up the ID
+          const retailer = await ctx.runQuery(api.retailers.getBySlug, { slug: retailerId });
+          if (retailer) {
+            retailerId = retailer._id;
+          } else {
+            console.warn(`Retailer not found for slug: ${result.retailerId}, skipping`);
+            continue;
+          }
+        }
+        processedResults.push({
+          ...result,
+          retailerId,
+        });
+      }
+
       // Call the mutation to process the batch
       const result = await ctx.runMutation(api.ingestion.ingestScrapedBatch, {
         batchId: body.batchId,
-        results: body.results,
+        results: processedResults,
       });
 
       return corsResponse({
