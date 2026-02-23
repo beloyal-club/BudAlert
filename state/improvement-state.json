@@ -1,77 +1,46 @@
 {
-  "version": 1,
-  "lastUpdated": "2026-02-21T05:57:00Z",
-  "cycle": 109,
+  "cycle": 1,
+  "lastEval": "2026-02-23T13:41:00Z",
   "scores": {
-    "dataQuality": 65,
-    "coverage": 25,
-    "performance": 100,
-    "overall": 75,
-    "measuredAt": "2026-02-21T05:57:00Z",
-    "notes": "Cycle 109: Idle. All services healthy. 16 tasks complete. Backlog clear except DATA-003 (stealth browser)."
+    "dataQuality": 45,
+    "coverage": 8,
+    "performance": 85
   },
   "activeWork": null,
-  "parallelResearch": null,
-  "queue": {
-    "next": null,
-    "priority": [],
-    "blocked": [
-      "DATA-003"
-    ]
-  },
-  "completedTotal": [
-    "DATA-005",
-    "REL-001",
-    "DATA-001",
-    "DATA-007",
-    "UX-001",
-    "RESEARCH-001",
-    "PERF-001",
-    "DATA-004",
-    "UX-002",
-    "PERF-002",
-    "UX-003",
-    "REL-002",
-    "DATA-006",
-    "DATA-002",
-    "DATA-008",
-    "PERF-001-full"
-  ],
-  "history": [
+  "taskQueue": [
     {
-      "cycle": 109,
-      "timestamp": "2026-02-21T05:57:00Z",
-      "action": "evaluation",
-      "result": "idle",
-      "notes": "Cycle 109 hourly check. Convex healthy. Browser worker healthy (v2.0.0). 16 tasks complete. DATA-003 blocked on stealth browser."
+      "id": "COV-001",
+      "priority": "high",
+      "title": "Expand Dutchie embedded retailer coverage",
+      "description": "Currently only 9 retailers (18 locations) have been identified with scrapable Dutchie embeds. Research more NYS retailers for embedded menu platforms.",
+      "status": "queued"
     },
     {
-      "cycle": 108,
-      "timestamp": "2026-02-21T05:21:00Z",
-      "action": "evaluation",
-      "result": "idle",
-      "notes": "Cycle 108 hourly check. Convex healthy. Browser worker healthy (v2.0.0). Repo clean. 16 tasks complete. DATA-003 blocked on stealth browser."
+      "id": "DATA-001",
+      "priority": "high",
+      "title": "Update OCM retailer sync",
+      "description": "Last sync was 2026-02-17. Need fresh data from NYS OCM to track new operational retailers.",
+      "status": "queued"
     },
     {
-      "cycle": 107,
-      "timestamp": "2026-02-21T04:56:00Z",
-      "action": "evaluation",
-      "result": "idle",
-      "notes": "Cycle 107 hourly check. Convex healthy. Browser worker healthy (v2.0.0). 16 tasks complete. DATA-003 blocked on stealth browser."
-    },
-    {
-      "cycle": 106,
-      "timestamp": "2026-02-21T04:21:00Z",
-      "action": "evaluation",
-      "result": "idle",
-      "notes": "Cycle 106 hourly check. Convex healthy. Browser worker healthy (v2.0.0). Repo clean. 16 tasks complete. DATA-003 blocked on stealth browser."
-    },
-    {
-      "cycle": 105,
-      "timestamp": "2026-02-21T03:55:00Z",
-      "action": "evaluation",
-      "result": "idle",
-      "notes": "Cycle 105 hourly check. Convex healthy. Browser worker healthy (v2.0.0). Repo clean. 16 tasks complete. DATA-003 blocked on stealth browser."
+      "id": "INFRA-001",
+      "priority": "medium",
+      "title": "Verify Convex HTTP endpoints",
+      "description": "HTTP routes exist in convex/http.ts but need to verify ingestion pipeline is working.",
+      "status": "queued"
     }
-  ]
+  ],
+  "completedTasks": [],
+  "healthChecks": {
+    "convex": "unknown",
+    "browserWorker": "healthy",
+    "lastCheck": "2026-02-23T13:41:00Z"
+  },
+  "metrics": {
+    "totalOCMLicenses": 580,
+    "operationalRetailers": 238,
+    "scrapableRetailers": 9,
+    "scrapableLocations": 18,
+    "lastOCMSync": "2026-02-17T06:12:54.955Z"
+  }
 }
