@@ -104,7 +104,77 @@ async function sleep(ms: number): Promise<void> {
 }
 
 // ============================================================
-// DUTCHIE GRAPHQL
+// DUTCHIE GRAPHQL API DOCUMENTATION
+// ============================================================
+//
+// Endpoint: https://dutchie.com/graphql
+// Method: POST
+// Content-Type: application/json
+//
+// GRAPHQL RESPONSE STRUCTURE:
+// ─────────────────────────────────────────────────────────────
+// {
+//   "data": {
+//     "filteredProducts": {
+//       "products": [
+//         {
+//           "id": "abc123",
+//           "name": "Blue Dream",
+//           "brand": { "name": "Empire Cannabis" },
+//           "category": "flower",           // Main category
+//           "subcategory": "hybrid",         // Subcategory
+//           "strainType": "HYBRID",          // SATIVA, INDICA, HYBRID
+//           "potencyThc": { "formatted": "24.5%" },
+//           "potencyCbd": { "formatted": "0.1%" },
+//           "image": "https://images.dutchie.com/...",
+//           "variants": [
+//             {
+//               "option": "1g",              // Weight/size variant
+//               "price": 15.00,              // Regular price
+//               "specialPrice": null,        // Sale price (when isSpecial=true)
+//               "isSpecial": false,          // Is on sale?
+//               "quantity": 23               // ⭐ EXACT INVENTORY COUNT
+//             },
+//             {
+//               "option": "3.5g",
+//               "price": 45.00,
+//               "specialPrice": 40.00,       // On sale for $40
+//               "isSpecial": true,
+//               "quantity": 7                // Low stock!
+//             }
+//           ]
+//         }
+//       ],
+//       "totalCount": 156
+//     }
+//   }
+// }
+//
+// INVENTORY EXTRACTION LOGIC:
+// ─────────────────────────────────────────────────────────────
+// 1. Each product has multiple variants (weight/size options)
+// 2. Each variant has its own quantity field
+// 3. quantity = null means unknown (rare)
+// 4. quantity = 0 means out of stock
+// 5. quantity > 0 means exact count available
+// 6. Low stock warning generated when quantity <= 5
+//
+// PRICE EXTRACTION LOGIC:
+// ─────────────────────────────────────────────────────────────
+// - If variant.isSpecial is true:
+//   - Current price = variant.specialPrice (sale price)
+//   - Original price = variant.price (crossed-out price)
+// - If variant.isSpecial is false:
+//   - Current price = variant.price
+//   - No original price
+//
+// QUANTITY SOURCE TRACKING:
+// ─────────────────────────────────────────────────────────────
+// quantitySource: "dutchie_graphql" - Direct from API (most reliable)
+// quantitySource: "text_pattern"    - Scraped from page text
+// quantitySource: "cart_hack"       - Inferred via cart max limit
+// quantitySource: "unknown"         - Could not determine
+//
 // ============================================================
 
 const DUTCHIE_MENU_QUERY = `
