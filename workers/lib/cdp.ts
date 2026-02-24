@@ -574,20 +574,70 @@ export class CDPPage {
 }
 
 /**
+ * BrowserBase session creation options
+ */
+export interface BrowserBaseSessionOptions {
+  /** Enable residential proxies for bot detection bypass */
+  proxies?: boolean;
+  /** Proxy geolocation (e.g., 'US', 'US-NY') */
+  proxyGeolocation?: string;
+  /** Browser fingerprint ID for consistent fingerprinting */
+  fingerprintId?: string;
+  /** Enable stealth mode (recommended with proxies) */
+  stealth?: boolean;
+}
+
+/**
  * Create a BrowserBase session and get CDP connection URL
  * BrowserBase requires: 1) Create session via REST, 2) Connect to returned connectUrl
+ * 
+ * @param apiKey - BrowserBase API key
+ * @param projectId - BrowserBase project ID
+ * @param options - Session options (proxies, geolocation, stealth, etc.)
  */
 async function createBrowserBaseSession(
   apiKey: string,
-  projectId: string
+  projectId: string,
+  options?: BrowserBaseSessionOptions
 ): Promise<string> {
+  const body: Record<string, unknown> = { projectId };
+  
+  // Enable residential proxies if requested
+  if (options?.proxies) {
+    body.proxies = true;
+    console.log('[CDP] Residential proxies ENABLED');
+  }
+  
+  // Set proxy geolocation if specified (e.g., 'US-NY' for New York)
+  if (options?.proxyGeolocation) {
+    body.browserSettings = {
+      ...(body.browserSettings as Record<string, unknown> || {}),
+      proxy: {
+        geolocation: options.proxyGeolocation
+      }
+    };
+    console.log(`[CDP] Proxy geolocation: ${options.proxyGeolocation}`);
+  }
+  
+  // Enable stealth mode (helps with bot detection)
+  if (options?.stealth !== false && options?.proxies) {
+    // Stealth is auto-enabled with proxies by default
+    console.log('[CDP] Stealth mode: auto-enabled with proxies');
+  }
+  
+  // Use consistent fingerprint if specified
+  if (options?.fingerprintId) {
+    body.fingerprint = { id: options.fingerprintId };
+    console.log(`[CDP] Using fingerprint: ${options.fingerprintId}`);
+  }
+
   const response = await fetch('https://www.browserbase.com/v1/sessions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'x-bb-api-key': apiKey,
     },
-    body: JSON.stringify({ projectId }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -600,7 +650,7 @@ async function createBrowserBaseSession(
     throw new Error('BrowserBase session missing connectUrl');
   }
 
-  console.log(`[CDP] BrowserBase session created: ${session.id}`);
+  console.log(`[CDP] BrowserBase session created: ${session.id}${options?.proxies ? ' (with residential proxy)' : ''}`);
   return session.connectUrl;
 }
 
@@ -618,6 +668,20 @@ export function createBrowserBaseClient(
 }
 
 /**
+ * BrowserSession options
+ */
+export interface BrowserSessionOptions {
+  /** Enable debug logging */
+  debug?: boolean;
+  /** Enable residential proxies (bypasses datacenter IP blocking) */
+  proxies?: boolean;
+  /** Proxy geolocation (e.g., 'US', 'US-NY') */
+  proxyGeolocation?: string;
+  /** Fingerprint ID for consistent browser fingerprinting */
+  fingerprintId?: string;
+}
+
+/**
  * Higher-level browser abstraction for simple scraping tasks
  */
 export class BrowserSession {
@@ -625,20 +689,25 @@ export class BrowserSession {
   private page: CDPPage | null = null;
   private apiKey: string;
   private projectId: string;
-  private debug: boolean;
+  private options: BrowserSessionOptions;
 
-  constructor(apiKey: string, projectId: string, debug = false) {
+  constructor(apiKey: string, projectId: string, options: BrowserSessionOptions | boolean = false) {
     this.apiKey = apiKey;
     this.projectId = projectId;
-    this.debug = debug;
+    // Support legacy boolean (debug) or new options object
+    this.options = typeof options === 'boolean' ? { debug: options } : options;
   }
 
   async init(): Promise<void> {
     // Step 1: Create BrowserBase session and get connectUrl
-    const connectUrl = await createBrowserBaseSession(this.apiKey, this.projectId);
+    const connectUrl = await createBrowserBaseSession(this.apiKey, this.projectId, {
+      proxies: this.options.proxies,
+      proxyGeolocation: this.options.proxyGeolocation,
+      fingerprintId: this.options.fingerprintId,
+    });
     
     // Step 2: Create CDP client with the actual connectUrl
-    this.client = new CDPClient({ wsUrl: connectUrl, debug: this.debug });
+    this.client = new CDPClient({ wsUrl: connectUrl, debug: this.options.debug ?? false });
     
     // Step 3: Connect via WebSocket
     await this.client.connect();

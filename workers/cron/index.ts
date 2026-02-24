@@ -239,49 +239,71 @@ const ENABLE_CART_HACK_FALLBACK = true;
 const MAX_CART_HACK_ATTEMPTS = 3;
 
 // ============================================================
-// EMBEDDED DUTCHIE LOCATIONS (18 total, 11 active)
+// EMBEDDED LOCATIONS (2026-02-24 Update)
 // 
-// FULLSCRAPE UPDATE (2026-02-20):
-// - Disabled broken Just Breathe URLs (404)
-// - Disabled duplicate Gotham/Strain Stars locations (shared URL)
-// - TODO: Implement location picker for multi-location sites
+// Focus on VERIFIED WORKING embedded sites only.
+// Disabled all sites with ERR_CONNECTION_RESET or bot detection.
+// 
+// Working: Dagmar, Strain Stars, Travel Agency, Alta (LeafBridge)
+// Blocked: CONBUD (IP block), Gotham (intermittent), direct Dutchie URLs
+// Pending: Housing Works (needs Tymber selectors - SCRAPE-007)
 // ============================================================
 
 const EMBEDDED_LOCATIONS: Location[] = [
-  // CONBUD (3 locations) - All unique URLs ✅
-  { name: "CONBUD LES", menuUrl: "https://conbud.com/stores/conbud-les/products", retailerSlug: "conbud-les", retailerName: "CONBUD", address: { city: "New York", state: "NY" }, region: "nyc" },
+  // ============================================================
+  // VERIFIED WORKING (4 sites, ~156 products)
+  // ============================================================
+  
+  // Dagmar (1 location) ✅ VERIFIED - WordPress Joint-Dutchie plugin
+  { name: "Dagmar Cannabis SoHo", menuUrl: "https://dagmarcannabis.com/menu/", retailerSlug: "dagmar-cannabis-soho", retailerName: "Dagmar Cannabis", address: { street: "412 W Broadway", city: "New York", state: "NY" }, region: "nyc" },
+  
+  // Strain Stars (1 active location) ✅ VERIFIED - Custom embedded
+  { name: "Strain Stars Farmingdale", menuUrl: "https://strainstarsny.com/menu/", retailerSlug: "strain-stars-farmingdale", retailerName: "Strain Stars", address: { street: "1815 Broadhollow Rd", city: "Farmingdale", state: "NY" }, region: "long_island" },
+  { name: "Strain Stars Riverhead", menuUrl: "https://strainstarsny.com/menu/", retailerSlug: "strain-stars-riverhead", retailerName: "Strain Stars", address: { street: "1871 Old Country Rd", city: "Riverhead", state: "NY" }, region: "long_island", disabled: true, disabledReason: "shared-url-no-selector" },
+  
+  // Travel Agency (1 location) ✅ VERIFIED - SSR custom frontend
+  { name: "Travel Agency Union Square", menuUrl: "https://www.thetravelagency.co/menu/", retailerSlug: "travel-agency-union-square", retailerName: "The Travel Agency", address: { street: "835 Broadway", city: "New York", state: "NY" }, region: "nyc" },
+  
+  // Alta (1 location) ✅ VERIFIED - LeafBridge platform (not Dutchie!)
+  // Added by scraper loop SCRAPE-006
+  { name: "Alta Lower Manhattan", menuUrl: "https://altadispensary.nyc/", retailerSlug: "alta-lower-manhattan", retailerName: "Alta Dispensary", address: { street: "52 Kenmare St A", city: "New York", state: "NY", zip: "10012" }, region: "nyc" },
+  
+  // ============================================================
+  // PENDING - Needs custom selectors
+  // ============================================================
+  
+  // Housing Works - Tymber platform (SSR, products in HTML)
+  // Uses different selectors than Dutchie: [class*='product-card__name'], [class*='product-card__brand-name']
+  // Re-enabled to test with residential proxies - may need custom scraper
+  { name: "Housing Works Cannabis", menuUrl: "https://hwcannabis.co/menu/broadway/", retailerSlug: "housing-works-cannabis", retailerName: "Housing Works Cannabis", address: { street: "750 Broadway", city: "New York", state: "NY" }, region: "nyc" },
+  
+  // Smacked - Re-enabled to test with residential proxies
+  { name: "Smacked Village", menuUrl: "https://getsmacked.online/menu/", retailerSlug: "smacked-village", retailerName: "Get Smacked", address: { street: "144 Bleecker St", city: "New York", state: "NY" }, region: "nyc" },
+  
+  // ============================================================
+  // RE-ENABLED WITH RESIDENTIAL PROXIES (2026-02-24)
+  // BrowserBase proxies=true bypasses datacenter IP detection
+  // ============================================================
+  
+  // CONBUD (3 locations) - Major NYC retailer, re-enabled with residential proxies
+  { name: "CONBUD LES", menuUrl: "https://conbud.com/stores/conbud-les/products", retailerSlug: "conbud-les", retailerName: "CONBUD", address: { street: "88 E Houston St", city: "New York", state: "NY" }, region: "nyc" },
   { name: "CONBUD Bronx", menuUrl: "https://conbud.com/stores/conbud-bronx/products", retailerSlug: "conbud-bronx", retailerName: "CONBUD", address: { city: "Bronx", state: "NY" }, region: "nyc" },
   { name: "CONBUD Yankee Stadium", menuUrl: "https://conbud.com/stores/conbud-yankee-stadium/products", retailerSlug: "conbud-yankee-stadium", retailerName: "CONBUD", address: { city: "Bronx", state: "NY" }, region: "nyc" },
   
-  // Gotham (4 locations) - Shared URL, only primary enabled
-  // TODO: Implement location picker for Hudson, Williamsburg, Chelsea
-  { name: "Gotham CAURD", menuUrl: "https://gotham.nyc/menu/", retailerSlug: "gotham-caurd", retailerName: "Gotham", address: { street: "3 E 3rd St", city: "New York", state: "NY" }, region: "nyc" },
+  // Gotham (1 active + 3 shared-URL) - Major NYC retailer, re-enabled with residential proxies
+  { name: "Gotham Bowery", menuUrl: "https://gotham.nyc/menu/", retailerSlug: "gotham-bowery", retailerName: "Gotham", address: { street: "3 E 3rd St", city: "New York", state: "NY" }, region: "nyc" },
   { name: "Gotham Hudson", menuUrl: "https://gotham.nyc/menu/", retailerSlug: "gotham-hudson", retailerName: "Gotham", address: { street: "260 Warren St", city: "Hudson", state: "NY" }, region: "hudson_valley", disabled: true, disabledReason: "shared-url-no-selector" },
   { name: "Gotham Williamsburg", menuUrl: "https://gotham.nyc/menu/", retailerSlug: "gotham-williamsburg", retailerName: "Gotham", address: { street: "300 Kent Ave", city: "Brooklyn", state: "NY" }, region: "nyc", disabled: true, disabledReason: "shared-url-no-selector" },
   { name: "Gotham Chelsea", menuUrl: "https://gotham.nyc/menu/", retailerSlug: "gotham-chelsea", retailerName: "Gotham", address: { street: "146 10th Ave", city: "New York", state: "NY" }, region: "nyc", disabled: true, disabledReason: "shared-url-no-selector" },
   
-  // Housing Works (1 location) ✅
-  { name: "Housing Works Cannabis", menuUrl: "https://hwcannabis.co/", retailerSlug: "housing-works-cannabis", retailerName: "Housing Works Cannabis", address: { street: "750 Broadway", city: "New York", state: "NY" }, region: "nyc" },
+  // ============================================================
+  // BROKEN URLs (404 / offline)
+  // ============================================================
   
-  // Travel Agency (1 location) ✅
-  { name: "Travel Agency Union Square", menuUrl: "https://www.thetravelagency.co/menu/", retailerSlug: "travel-agency-union-square", retailerName: "The Travel Agency", address: { street: "835 Broadway", city: "New York", state: "NY" }, region: "nyc" },
-  
-  // Strain Stars (2 locations) - Shared URL, only primary enabled
-  // TODO: Implement location picker for Riverhead
-  { name: "Strain Stars Farmingdale", menuUrl: "https://strainstarsny.com/menu/", retailerSlug: "strain-stars-farmingdale", retailerName: "Strain Stars", address: { street: "1815 Broadhollow Rd", city: "Farmingdale", state: "NY" }, region: "long_island" },
-  { name: "Strain Stars Riverhead", menuUrl: "https://strainstarsny.com/menu/", retailerSlug: "strain-stars-riverhead", retailerName: "Strain Stars", address: { street: "1871 Old Country Rd", city: "Riverhead", state: "NY" }, region: "long_island", disabled: true, disabledReason: "shared-url-no-selector" },
-  
-  // Dagmar (1 location) ✅
-  { name: "Dagmar Cannabis SoHo", menuUrl: "https://dagmarcannabis.com/menu/", retailerSlug: "dagmar-cannabis-soho", retailerName: "Dagmar Cannabis", address: { street: "412 W Broadway", city: "New York", state: "NY" }, region: "nyc" },
-  
-  // Smacked (1 location) ✅
-  { name: "Smacked Village", menuUrl: "https://getsmacked.online/menu/", retailerSlug: "smacked-village", retailerName: "Get Smacked", address: { street: "144 Bleecker St", city: "New York", state: "NY" }, region: "nyc" },
-  
-  // Just Breathe (3 locations) - 2 broken, 1 active
-  // Syracuse & Binghamton: justbreathelife.org/menu/ returns 404 as of 2026-02-20
+  // Just Breathe - Syracuse & Binghamton return 404
   { name: "Just Breathe Syracuse", menuUrl: "https://justbreathelife.org/menu/", retailerSlug: "just-breathe-syracuse", retailerName: "Just Breathe", address: { street: "185 W Seneca St", city: "Manlius", state: "NY" }, region: "upstate", disabled: true, disabledReason: "url-404" },
   { name: "Just Breathe Binghamton", menuUrl: "https://justbreathelife.org/menu/", retailerSlug: "just-breathe-binghamton", retailerName: "Just Breathe", address: { street: "75 Court St", city: "Binghamton", state: "NY" }, region: "upstate", disabled: true, disabledReason: "url-404" },
-  { name: "Just Breathe Finger Lakes", menuUrl: "https://justbreatheflx.com/", retailerSlug: "just-breathe-finger-lakes", retailerName: "Just Breathe", address: { street: "2988 US Route 20", city: "Seneca Falls", state: "NY" }, region: "upstate" },
+  { name: "Just Breathe Finger Lakes", menuUrl: "https://justbreatheflx.com/", retailerSlug: "just-breathe-finger-lakes", retailerName: "Just Breathe", address: { street: "2988 US Route 20", city: "Seneca Falls", state: "NY" }, region: "upstate", disabled: true, disabledReason: "needs-verification" },
 ];
 
 // Get active locations (not disabled)
@@ -293,15 +315,23 @@ function getActiveLocations(): Location[] {
 // BROWSERBASE CONNECTION (with circuit breaker + retry - CRIT-005)
 // ============================================================
 
+// Enable residential proxies to bypass datacenter IP blocking (2026-02-24)
+// This helps with CONBUD, Gotham, and other sites that block datacenter IPs
+const USE_RESIDENTIAL_PROXIES = true;
+
 async function createBrowserSession(env: Env): Promise<BrowserSession> {
   return withCircuitBreaker('browserbase', async () => {
     return withRetry(
       async () => {
-        console.log('[Cron] Connecting to BrowserBase via CDP...');
+        console.log(`[Cron] Connecting to BrowserBase via CDP... (proxies: ${USE_RESIDENTIAL_PROXIES ? 'RESIDENTIAL' : 'datacenter'})`);
         const session = new BrowserSession(
           env.BROWSERBASE_API_KEY,
           env.BROWSERBASE_PROJECT_ID,
-          false // debug
+          {
+            debug: false,
+            proxies: USE_RESIDENTIAL_PROXIES,
+            proxyGeolocation: 'US-NY', // New York for NYC dispensaries
+          }
         );
         await session.init();
         console.log('[Cron] Connected to BrowserBase');
