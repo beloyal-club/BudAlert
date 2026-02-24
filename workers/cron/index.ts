@@ -42,6 +42,7 @@
 
 import { BrowserSession, CDPPage, CDPClient } from '../lib/cdp';
 import { withRetry, fetchWithRetry, withCircuitBreaker, sleep } from '../lib/retry';
+import { isTymberSite, fetchAndScrapeTymber } from '../lib/platforms/tymber';
 
 // ============================================================
 // PARALLEL PAGE MANAGER (v3.4.0 - True Parallelization)
@@ -1069,6 +1070,37 @@ export default {
         let attempts = 0;
         let success = false;
         let lastError: string | undefined;
+        
+        // ============================================================
+        // TYMBER SSR EXTRACTION (v3.5.0 - No Browser Needed)
+        // Sites like Housing Works use Tymber/Blaze with SSR JSON
+        // ============================================================
+        if (isTymberSite(location.menuUrl)) {
+          console.log(`[Cron] 🚀 Using Tymber SSR extraction for ${location.name}`);
+          try {
+            const products = await fetchAndScrapeTymber(location.menuUrl);
+            const withQty = products.filter(p => p.quantity !== null).length;
+            
+            console.log(`[Cron] ✓ ${location.name}: ${products.length} products (inventory: ${withQty}/${products.length} via Tymber SSR)`);
+            totalProducts += products.length;
+            totalInventoryChecked += products.length;
+            totalInventoryFound += withQty;
+            
+            results.push({
+              retailerSlug: location.retailerSlug,
+              items: products,
+              status: "ok",
+              attempts: 1,
+            });
+            
+            // Rate limit
+            await sleep(2000);
+            continue; // Skip to next location
+          } catch (tymberError) {
+            console.error(`[Cron] Tymber extraction failed for ${location.name}, falling back to browser:`, tymberError);
+            // Fall through to browser-based scraping
+          }
+        }
         
         // Try up to 3 times per location
         for (let attempt = 1; attempt <= 3 && !success; attempt++) {
