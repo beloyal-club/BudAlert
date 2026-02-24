@@ -537,4 +537,119 @@ app.get("/test-retry", (c) => {
   });
 });
 
+// Introspection endpoint to discover current Dutchie GraphQL schema
+app.get("/introspect", async (c) => {
+  const INTROSPECTION_QUERY = `
+    query IntrospectionQuery {
+      __schema {
+        queryType { name }
+        types {
+          name
+          kind
+          fields {
+            name
+            args { name type { name kind ofType { name kind } } }
+            type { name kind ofType { name kind ofType { name } } }
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    const response = await fetch("https://dutchie.com/graphql", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (compatible; CannaSignal/1.0; market-research)",
+      },
+      body: JSON.stringify({ query: INTROSPECTION_QUERY }),
+    });
+
+    const data = await response.json();
+    return c.json(data);
+  } catch (error) {
+    return c.json({ error: String(error) }, 500);
+  }
+});
+
+// Test different query formats to find working schema
+app.get("/test-query/:slug", async (c) => {
+  const slug = c.req.param("slug");
+  
+  // Try different GraphQL endpoints Dutchie might use
+  const endpoints = [
+    { name: "dutchie.com/graphql", url: "https://dutchie.com/graphql" },
+    { name: "api.dutchie.com/graphql", url: "https://api.dutchie.com/graphql" },
+    { name: "consumer.dutchie.com/graphql", url: "https://consumer.dutchie.com/graphql" },
+    { name: "dutchie.com/api/graphql", url: "https://dutchie.com/api/graphql" },
+  ];
+
+  const testQuery = `query { __typename }`;
+  const results: Record<string, any> = {};
+
+  for (const ep of endpoints) {
+    try {
+      const response = await fetch(ep.url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": "Mozilla/5.0 (compatible; CannaSignal/1.0)",
+        },
+        body: JSON.stringify({ query: testQuery }),
+      });
+
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { raw: text.slice(0, 200) };
+      }
+      
+      results[ep.name] = {
+        status: response.status,
+        ok: response.ok,
+        data: data,
+      };
+    } catch (error) {
+      results[ep.name] = { error: String(error) };
+    }
+  }
+
+  // Also try the original query format on dutchie.com/graphql with Referer header
+  try {
+    const response = await fetch("https://dutchie.com/graphql", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Referer": `https://dutchie.com/dispensary/${slug}`,
+        "Origin": "https://dutchie.com",
+      },
+      body: JSON.stringify({
+        operationName: "FilteredProducts",
+        variables: { dispensarySlug: slug, limit: 5 },
+        query: `query FilteredProducts($dispensarySlug: String!, $limit: Int) {
+          filteredProducts(dispensarySlug: $dispensarySlug, limit: $limit) {
+            products { id name }
+            totalCount
+          }
+        }`,
+      }),
+    });
+    
+    const data = await response.json();
+    results["with_referer"] = {
+      status: response.status,
+      errors: data.errors?.map((e: any) => e.message),
+      hasData: !!data.data,
+    };
+  } catch (error) {
+    results["with_referer"] = { error: String(error) };
+  }
+
+  return c.json({ slug, results });
+});
+
 export default app;
