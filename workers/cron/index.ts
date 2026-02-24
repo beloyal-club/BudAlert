@@ -943,14 +943,17 @@ async function scrapeLocation(
 async function postToConvex(
   convexUrl: string,
   batchId: string,
-  results: unknown[]
+  results: Array<{ retailerSlug: string; items: unknown[]; status: string; error?: string; attempts?: number }>
 ): Promise<{ totalEventsDetected?: number }> {
+  // Strip 'attempts' field - Convex schema doesn't expect it (causes ArgumentValidationError)
+  const cleanedResults = results.map(({ attempts, ...rest }) => rest);
+  
   const response = await fetchWithRetry(
     `${convexUrl}/ingest/scraped-batch`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ batchId, results }),
+      body: JSON.stringify({ batchId, results: cleanedResults }),
       timeoutMs: 60000,
     },
     {
@@ -1046,7 +1049,7 @@ export default {
     
     let session: BrowserSession | null = null;
     const results: Array<{
-      retailerId: string;
+      retailerSlug: string;
       items: ScrapedProduct[];
       status: string;
       error?: string;
@@ -1088,7 +1091,7 @@ export default {
             totalInventoryChecked += inventoryStats.checked;
             totalInventoryFound += inventoryStats.found;
             results.push({
-              retailerId: location.retailerSlug,
+              retailerSlug: location.retailerSlug,
               items: products,
               status: "ok",
               attempts,
@@ -1101,7 +1104,7 @@ export default {
         if (!success && lastError) {
           errors.push(`${location.name}: ${lastError}`);
           results.push({
-            retailerId: location.retailerSlug,
+            retailerSlug: location.retailerSlug,
             items: [],
             status: "error",
             error: lastError,

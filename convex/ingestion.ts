@@ -1,6 +1,7 @@
 import { mutation, action, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
+import { Id } from "./_generated/dataModel";
 import { normalizeProductName, extractStrainName, type NormalizedProduct } from "./lib/productNormalizer";
 
 // ============================================================
@@ -24,7 +25,9 @@ export const ingestScrapedBatch = mutation({
   args: {
     batchId: v.string(),
     results: v.array(v.object({
-      retailerId: v.id("retailers"),
+      // Accept either retailerId (Convex ID) OR retailerSlug (string) - we'll resolve slugs to IDs
+      retailerId: v.optional(v.id("retailers")),
+      retailerSlug: v.optional(v.string()),
       items: v.array(v.object({
         rawProductName: v.string(),
         rawBrandName: v.string(),
@@ -57,11 +60,55 @@ export const ingestScrapedBatch = mutation({
     let totalEventsDetected = 0;
     const eventBreakdown: Record<string, number> = {};
     
+    // Cache for slug -> retailerId lookups (Id<"retailers"> type)
+    const retailerIdCache = new Map<string, Id<"retailers">>();
+    
     for (const result of args.results) {
+      // Resolve retailerSlug to retailerId if needed
+      let retailerId: Id<"retailers"> | undefined = result.retailerId;
+      const slug = result.retailerSlug;
+      
+      if (!retailerId && slug) {
+        // Check cache first
+        if (retailerIdCache.has(slug)) {
+          retailerId = retailerIdCache.get(slug);
+        } else {
+          // Look up retailer by slug
+          const retailer = await ctx.db
+            .query("retailers")
+            .withIndex("by_slug", (q) => q.eq("slug", slug))
+            .first();
+          
+          if (retailer) {
+            retailerId = retailer._id;
+            retailerIdCache.set(slug, retailerId);
+          } else {
+            // Create new retailer if not found (minimal required fields)
+            console.log(`Creating new retailer: ${slug}`);
+            retailerId = await ctx.db.insert("retailers", {
+              name: slug.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase()),
+              slug: slug,
+              address: { street: "", city: "New York", state: "NY", zip: "" },
+              region: "nyc",
+              menuSources: [],
+              isActive: true,
+              firstSeenAt: Date.now(),
+            });
+            retailerIdCache.set(slug, retailerId);
+          }
+        }
+      }
+      
+      if (!retailerId) {
+        console.error(`No retailerId or retailerSlug provided for result`);
+        totalFailed += 1;
+        continue;
+      }
+      
       if (result.status !== "ok") {
         // Log failed scrape job
         await ctx.db.insert("scrapeJobs", {
-          retailerId: result.retailerId,
+          retailerId: retailerId,
           sourcePlatform: "unknown",
           sourceUrl: "",
           batchId: args.batchId,
@@ -152,7 +199,7 @@ export const ingestScrapedBatch = mutation({
           
           // Create menu snapshot with enhanced quantity tracking
           const snapshotId = await ctx.db.insert("menuSnapshots", {
-            retailerId: result.retailerId,
+            retailerId: retailerId,
             productId: product!._id,
             scrapedAt: item.scrapedAt,
             batchId: args.batchId,
@@ -177,7 +224,7 @@ export const ingestScrapedBatch = mutation({
           
           // Update current inventory (with enhanced delta detection)
           const eventsGenerated = await updateCurrentInventory(ctx, {
-            retailerId: result.retailerId,
+            retailerId: retailerId,
             productId: product!._id,
             brandId: brand!._id,
             snapshotId,
@@ -205,7 +252,7 @@ export const ingestScrapedBatch = mutation({
       
       // Log successful scrape job
       await ctx.db.insert("scrapeJobs", {
-        retailerId: result.retailerId,
+        retailerId: retailerId,
         sourcePlatform: result.items[0]?.sourcePlatform || "unknown",
         sourceUrl: result.items[0]?.sourceUrl || "",
         batchId: args.batchId,
