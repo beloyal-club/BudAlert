@@ -174,5 +174,33 @@
 
 ---
 
+---
+
+## Iteration Worker Deployed
+
+**Deployed:** 2026-02-24 12:26 UTC
+**Worker:** `cannasignal-scraper-loop`
+**URL:** https://cannasignal-scraper-loop.prtl.workers.dev
+**Schedule:** Every 6 hours (0 */6 * * *)
+
+**Features:**
+- Fetches data quality metrics from Convex
+- Analyzes inventory coverage by retailer
+- Identifies underperforming locations
+- Generates improvement recommendations
+- Discord reporting (when webhook configured)
+
+**Endpoints:**
+- `GET /health` — Service health
+- `POST /trigger` — Manual analysis
+
+**Convex Functions Added:**
+- `dataQuality.getInventoryQualityStats` — Overall quality stats
+- `dataQuality.getRecentScrapeQuality` — Recent scrape quality
+- `/quality/inventory` HTTP endpoint (pending Convex deploy)
+- `/quality/recent` HTTP endpoint (pending Convex deploy)
+
+---
+
 *Auto-updated by Portal during scraper improvement loop*
-*Last update: 2026-02-24 03:55 UTC*
+*Last update: 2026-02-24 12:30 UTC*
