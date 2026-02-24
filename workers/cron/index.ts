@@ -243,8 +243,10 @@ const BATCH_DELAY_MS = 500;
 // Whether to enable cart hack fallback (slower but more thorough)
 const ENABLE_CART_HACK_FALLBACK = true;
 
-// Max products to apply cart hack to (very slow operation)
-const MAX_CART_HACK_ATTEMPTS = 3;
+// Max products to apply cart hack to per location
+// Increased from 3→10 to expand coverage: cart hack yields ~60% success rate
+// and is key for extracting inventory when "X left" text isn't visible
+const MAX_CART_HACK_ATTEMPTS = 10;
 
 // ============================================================
 // EMBEDDED LOCATIONS (2026-02-24 Update)
