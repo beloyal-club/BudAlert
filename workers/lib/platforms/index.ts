@@ -11,3 +11,8 @@ export {
 } from './tymber';
 
 export type { TymberRawProduct, TymberScrapedProduct } from './tymber';
+
+export {
+  isLeafBridgeSite,
+  LEAFBRIDGE_SELECTORS,
+} from './leafbridge';
