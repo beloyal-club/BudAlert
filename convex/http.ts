@@ -691,6 +691,47 @@ http.route({
 });
 
 // ============================================================
+// DATA QUALITY ENDPOINTS (Scraper Improvement Loop)
+// ============================================================
+
+http.route({
+  path: "/quality/inventory",
+  method: "GET",
+  handler: httpAction(async (ctx) => {
+    try {
+      const stats = await ctx.runQuery(api.dataQuality.getInventoryQualityStats, {});
+      return corsResponse(stats);
+    } catch (error) {
+      console.error("Inventory quality error:", error);
+      return corsErrorResponse(
+        error instanceof Error ? error.message : "Quality stats failed",
+        500
+      );
+    }
+  }),
+});
+
+http.route({
+  path: "/quality/recent",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const url = new URL(request.url);
+      const hours = parseInt(url.searchParams.get("hours") || "1", 10);
+      
+      const stats = await ctx.runQuery(api.dataQuality.getRecentScrapeQuality, { hours });
+      return corsResponse(stats);
+    } catch (error) {
+      console.error("Recent quality error:", error);
+      return corsErrorResponse(
+        error instanceof Error ? error.message : "Recent quality stats failed",
+        500
+      );
+    }
+  }),
+});
+
+// ============================================================
 // Catch-all for unmatched routes
 // ============================================================
 

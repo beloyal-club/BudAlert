@@ -1,0 +1,10 @@
+name = "cannasignal-scraper-loop"
+main = "index.ts"
+compatibility_date = "2024-01-01"
+
+[triggers]
+crons = ["0 */6 * * *"]  # Every 6 hours
+
+[vars]
+CONVEX_URL = "https://quick-weasel-225.convex.site"
+GITHUB_REPO = "Perk4/BudAlert"
