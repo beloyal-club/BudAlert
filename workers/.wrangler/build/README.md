@@ -1,0 +1,1 @@
+This folder contains the built output assets for the worker "cannasignal-cron" generated at 2026-02-24T03:50:37.613Z.

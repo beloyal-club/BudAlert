@@ -43,6 +43,13 @@
 import { BrowserSession, CDPPage, CDPClient } from '../lib/cdp';
 import { withRetry, fetchWithRetry, withCircuitBreaker, sleep } from '../lib/retry';
 import { isTymberSite, fetchAndScrapeTymber } from '../lib/platforms/tymber';
+import { 
+  isLeafBridgeSite, 
+  extractLeafBridgeProductsFromDOM, 
+  LEAFBRIDGE_SELECTORS,
+  LEAFBRIDGE_WAIT_SELECTOR,
+  LEAFBRIDGE_AJAX_WAIT_MS,
+} from '../lib/platforms/leafbridge';
 
 // ============================================================
 // PARALLEL PAGE MANAGER (v3.4.0 - True Parallelization)
@@ -848,6 +855,56 @@ async function scrapeLocation(
     
     // Wait for menu to load after age gate - REDUCED from 3000ms (v3.3.0)
     await session.waitForTimeout(2000);
+    
+    // ============================================================
+    // LEAFBRIDGE CUSTOM EXTRACTION (v3.5.0)
+    // LeafBridge uses AJAX loading - needs longer wait + custom selectors
+    // Inventory is available on listing page via input[max] attribute
+    // ============================================================
+    if (isLeafBridgeSite(location.menuUrl)) {
+      console.log(`[Cron] 🌿 Using LeafBridge extraction for ${location.name}`);
+      
+      // Wait longer for AJAX content to load
+      await session.waitForTimeout(LEAFBRIDGE_AJAX_WAIT_MS);
+      
+      // Wait for product cards to appear
+      try {
+        await session.evaluate(`
+          // Check if LeafBridge products have loaded
+          const cards = document.querySelectorAll('${LEAFBRIDGE_WAIT_SELECTOR}');
+          if (cards.length === 0) {
+            // Try fallback selectors
+            const fallback = document.querySelectorAll('[class*="leafbridge"][class*="product"]');
+            console.log('[LeafBridge] Fallback found:', fallback.length);
+          }
+        `);
+      } catch (e) {
+        console.log(`[Cron] LeafBridge wait check failed, continuing...`);
+      }
+      
+      // Extract using LeafBridge-specific function
+      const products = await session.evaluateFunction<ScrapedProduct[]>(
+        extractLeafBridgeProductsFromDOM as (...args: unknown[]) => ScrapedProduct[],
+        location.menuUrl,
+        scrapedAt
+      );
+      
+      console.log(`[Cron] ${location.name}: Found ${products.length} products via LeafBridge extraction`);
+      
+      // LeafBridge products should already have inventory from input[max]
+      const withQty = products.filter(p => p.quantity !== null).length;
+      inventoryStats.checked = products.length;
+      inventoryStats.found = withQty;
+      
+      console.log(`[Cron] ${location.name}: Inventory found for ${withQty}/${products.length} products (LeafBridge listing)`);
+      
+      // Skip product detail page visits - LeafBridge has inventory on listing
+      return { products, inventoryStats };
+    }
+    
+    // ============================================================
+    // DUTCHIE/GENERIC EXTRACTION (existing flow)
+    // ============================================================
     
     // Extract products from category page
     const products = await session.evaluateFunction<ScrapedProduct[]>(

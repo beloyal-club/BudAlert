@@ -218,22 +218,26 @@ async function extractLeafBridgeProducts(page: Page): Promise<LeafBridgeProduct[
 
 1. **Site Identified:** Alta Dispensary added to `EMBEDDED_LOCATIONS` in cron worker
 2. **Platform Documented:** `LEAFBRIDGE_PLAN.md` created with 5-phase approach
-3. **Selectors Documented:** Working CSS selectors identified
-4. **Detection Concept:** Plan for `workers/lib/platforms/leafbridge.ts`
+3. **Platform Detector Created:** `workers/lib/platforms/leafbridge.ts` implemented with:
+   - `isLeafBridgeSite(url, html?)` detection function
+   - `LEAFBRIDGE_SELECTORS` constant with all working selectors
+   - `extractLeafBridgeProductsFromDOM()` DOM extraction function
+   - `LeafBridgeScrapedProduct` type definition
+   - AJAX wait configuration (`LEAFBRIDGE_WAIT_SELECTOR`, `LEAFBRIDGE_AJAX_WAIT_MS`)
+4. **Module Exported:** `workers/lib/platforms/index.ts` exports detection function
 
 ### What's NOT Done ❌
 
-1. **No Platform Detector:** `leafbridge.ts` not created
-2. **No Custom Scraper:** Using generic BrowserBase extraction
-3. **No Inventory Extraction:** Max attribute not being read
-4. **No Cron Integration:** No LeafBridge-specific branch in scraper
+1. **Cron Integration:** `cron/index.ts` doesn't route LeafBridge to custom scraper yet
+2. **Production Deployment:** Changes not deployed to Cloudflare Workers
+3. **Validation:** No live scrape test with custom extraction
 
 ### Current Behavior
-Alta is scraped via the generic BrowserBase flow, which:
+Alta is scraped via the generic BrowserBase flow:
 - ✅ Loads the page (waits for JS)
 - ✅ Extracts basic product info (name, price)
-- ❌ Does NOT extract inventory from input max
-- ❌ Does NOT use LeafBridge-specific selectors
+- ❌ Does NOT call `extractLeafBridgeProductsFromDOM()` yet
+- ❌ Misses inventory from input max attribute
 
 ---
 
