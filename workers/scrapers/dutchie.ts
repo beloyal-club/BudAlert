@@ -39,6 +39,9 @@ interface ScrapedItem {
   price: number;
   originalPrice?: number;
   inStock: boolean;
+  quantity: number | null;
+  quantityWarning: string | null;
+  quantitySource: string;
   imageUrl?: string;
   thcFormatted?: string;
   cbdFormatted?: string;
@@ -217,22 +220,30 @@ async function scrapeRetailerWithRetry(
       const items: ScrapedItem[] = products.flatMap((p: any) => {
         const variants = p.variants || [{ price: 0, quantity: 1 }];
         
-        return variants.map((v: any) => ({
-          rawProductName: `${p.name}${v.option ? ` - ${v.option}` : ""}`,
-          rawBrandName: p.brand?.name || "Unknown",
-          rawCategory: p.category,
-          subcategory: p.subcategory,
-          strainType: p.strainType,
-          price: v.isSpecial && v.specialPrice ? v.specialPrice : v.price,
-          originalPrice: v.isSpecial ? v.price : undefined,
-          inStock: (v.quantity || 0) > 0,
-          imageUrl: p.image,
-          thcFormatted: p.potencyThc?.formatted,
-          cbdFormatted: p.potencyCbd?.formatted,
-          sourceUrl: `https://dutchie.com/dispensary/${retailer.slug}`,
-          sourcePlatform: "dutchie",
-          scrapedAt,
-        }));
+        return variants.map((v: any) => {
+          const qty = v.quantity ?? null;
+          const quantityWarning = qty !== null && qty <= 5 ? `Low stock: ${qty} remaining` : null;
+          
+          return {
+            rawProductName: `${p.name}${v.option ? ` - ${v.option}` : ""}`,
+            rawBrandName: p.brand?.name || "Unknown",
+            rawCategory: p.category,
+            subcategory: p.subcategory,
+            strainType: p.strainType,
+            price: v.isSpecial && v.specialPrice ? v.specialPrice : v.price,
+            originalPrice: v.isSpecial ? v.price : undefined,
+            inStock: (v.quantity || 0) > 0,
+            quantity: qty,
+            quantityWarning,
+            quantitySource: "dutchie_graphql",
+            imageUrl: p.image,
+            thcFormatted: p.potencyThc?.formatted,
+            cbdFormatted: p.potencyCbd?.formatted,
+            sourceUrl: `https://dutchie.com/dispensary/${retailer.slug}`,
+            sourcePlatform: "dutchie",
+            scrapedAt,
+          };
+        });
       });
 
       return {
