@@ -55,7 +55,6 @@ export interface TymberScrapedProduct {
   sourceUrl: string;
   sourcePlatform: string;
   scrapedAt: number;
-  productUrl?: string;
 }
 
 // ============================================================================
@@ -197,7 +196,8 @@ export function mapTymberToScrapedProduct(
     sourceUrl,
     sourcePlatform: 'tymber',
     scrapedAt: Date.now(),
-    productUrl: attrs.store_url,
+    // Note: productUrl removed - Convex schema doesn't accept it
+    // productUrl: attrs.store_url,
   };
 }
 

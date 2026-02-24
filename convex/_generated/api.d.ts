@@ -20,6 +20,7 @@ import type * as b2b from "../b2b.js";
 import type * as brands from "../brands.js";
 import type * as cache from "../cache.js";
 import type * as dashboard from "../dashboard.js";
+import type * as dataQuality from "../dataQuality.js";
 import type * as deadLetterQueue from "../deadLetterQueue.js";
 import type * as discordAlerts from "../discordAlerts.js";
 import type * as http from "../http.js";
@@ -57,6 +58,7 @@ declare const fullApi: ApiFromModules<{
   brands: typeof brands;
   cache: typeof cache;
   dashboard: typeof dashboard;
+  dataQuality: typeof dataQuality;
   deadLetterQueue: typeof deadLetterQueue;
   discordAlerts: typeof discordAlerts;
   http: typeof http;
