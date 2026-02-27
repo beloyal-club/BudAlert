@@ -52,6 +52,12 @@ export function HotProductsFeed({
 
   return (
     <div className="space-y-3">
+      {/* Hello World Test Banner - Remove after testing */}
+      <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl p-4 text-center">
+        <p className="text-white font-bold">🚀 Hello World! Deployment test successful.</p>
+        <p className="text-purple-200 text-sm">Branch: feature/trend-hello-world</p>
+      </div>
+
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-white flex items-center gap-2">
           <span>🔥</span>
